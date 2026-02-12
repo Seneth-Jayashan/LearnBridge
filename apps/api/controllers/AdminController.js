@@ -3,7 +3,7 @@ import { sendWelcomeSms } from "../utils/templates/SMS.js";
 
 export const createUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, phoneNumber, password, role,  address } = req.body;
+        const { firstName, lastName, email, phoneNumber, password, role,  address, grade, level } = req.body;
 
         const newUser = new User({
             firstName,
@@ -12,8 +12,8 @@ export const createUser = async (req, res) => {
             phoneNumber,
             password,
             role: role || "student",
-            // grade,
-            // level,
+            grade,
+            level,
             address,
         });
 
@@ -108,6 +108,43 @@ export const deleteUser = async (req, res) => {
         const user = await User.findByIdAndDelete(req.params.id);
         if (!user) return res.status(404).json({ message: "User not found" });
         res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const toggleUserStatus = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+        user.isActive = !user.isActive;
+        await user.save();
+        res.status(200).json({ message: `User ${user.isActive ? "activated" : "deactivated"} successfully` });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const toggleUserLock = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+        user.isLocked = !user.isLocked;
+        await user.save();
+        res.status(200).json({ message: `User ${user.isLocked ? "locked" : "unlocked"} successfully` });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const restoreUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+        user.isDeleted = false;
+        user.isActive = true;
+        await user.save();
+        res.status(200).json({ message: "User restored successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }

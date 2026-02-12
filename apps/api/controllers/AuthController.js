@@ -130,10 +130,15 @@ export const login = async (req, res) => {
     }
 };
 
-// ... logout, forgotPassword, resetPassword ...
-// Note: ForgotPassword/ResetPassword via Phone/Email is risky with shared numbers 
-// because OTP goes to the phone, verifying *ownership of the phone*, not the user.
-// You might need to ask for RegNumber during reset if role is Student.
+export const me = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select("-password").populate("grade", "name").populate("level", "name");
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.status(200).json({ user });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
 
 export const forgotPassword = async (req, res) => {
     try {
