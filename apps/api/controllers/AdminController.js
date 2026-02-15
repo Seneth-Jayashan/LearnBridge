@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import School from "../models/School.js";
 import { sendWelcomeSms } from "../utils/templates/SMS.js";
 
 export const createUser = async (req, res) => {
@@ -47,6 +48,46 @@ export const checkEmail = async (req, res) => {
         const { email } = req.body;
         const count = await User.countDocuments({ email });
         return res.status(200).json({ exists: count > 0, count });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const createSchoolWithAdmin = async (req, res) => {
+    try {
+        // Only Super Admins should hit this route
+        if (req.user.role !== "super_admin") {
+            return res.status(403).json({ message: "Only Super Admins can create schools." });
+        }
+
+        const { schoolData, adminData } = req.body;
+
+        // 1. Create the School (Verified automatically since Super Admin is creating it)
+        const newSchool = new School({
+            ...schoolData,
+            isVerified: true 
+        });
+        await newSchool.save();
+
+        // 2. Create the School Admin
+        const schoolAdmin = new User({
+            ...adminData,
+            role: "school_admin",
+            school: newSchool._id,
+            isSchoolVerified: true
+        });
+        await schoolAdmin.save();
+
+        // 3. Link Admin back to the School
+        newSchool.admins.push(schoolAdmin._id);
+        await newSchool.save();
+
+        res.status(201).json({ 
+            message: "School and Admin created successfully", 
+            school: newSchool,
+            adminId: schoolAdmin._id
+        });
+
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }

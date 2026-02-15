@@ -16,7 +16,7 @@ export const createUserSchema = z.object({
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(9, "Phone number must be at least 9 digits"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["admin", "teacher", "donor", "student"]).optional(),
+  role: z.enum(["super_admin","school_admin", "teacher", "donor", "student"]).optional(),
   
   // Grade and Level are optional (mostly for students)
   grade: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Grade ID").optional(),

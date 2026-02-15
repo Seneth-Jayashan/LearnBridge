@@ -2,7 +2,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
 const Dashboard = () => {
-  const { user, logout, isAdmin, isTeacher } = useAuth();
+  const { user, logout, isadmin, isTeacher } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -27,13 +27,13 @@ const Dashboard = () => {
            </Link>
 
            {/* Role Based Actions */}
-           {isAdmin && (
+           {isadmin && (
              <Link to="/admin" style={{ padding: "10px", backgroundColor: "#333", color: "white", textDecoration: "none" }}>
-               Go to Admin Panel
+               Go to admin Panel
              </Link>
            )}
 
-           {(isTeacher || isAdmin) && (
+           {(isTeacher || isadmin) && (
              <Link to="/grades" style={{ padding: "10px", border: "1px solid green", textDecoration: "none", color: "green" }}>
                Manage Grades
              </Link>

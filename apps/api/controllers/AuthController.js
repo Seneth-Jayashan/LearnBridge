@@ -23,21 +23,13 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Please provide credentials." });
         }
 
-        // --- IMPROVED IDENTIFIER LOGIC ---
-        // 1. Check if it is an email (contains '@')
         const isEmail = identifier.includes("@");
-        
-        // 2. Check if it is a Student RegNumber
-        // It must start with 'STU' AND MUST NOT be an email.
         const isRegNumFormat = identifier.toUpperCase().startsWith("STU") && !isEmail;
 
         let targetUser = null;
 
         // --- SCENARIO 1: Student Login (Unique RegNumber) ---
         if (isRegNumFormat) {
-            // Because of the !isEmail check above, "stuart@email.com" will skip this block
-            // and correctly go to the Staff/Teacher block below.
-            
             targetUser = await User.findOne({ regNumber: identifier });
             
             if (!targetUser) return res.status(404).json({ message: "Invalid Registration Number." });
@@ -46,7 +38,6 @@ export const login = async (req, res) => {
                 return res.status(403).json({ message: "Only Students can login with Registration Number." });
             }
 
-            // Verify Password
             const isMatch = await targetUser.comparePassword(password);
             if (!isMatch) {
                 targetUser.loginAttempts += 1;
@@ -56,14 +47,8 @@ export const login = async (req, res) => {
             }
         } 
         
-        // --- SCENARIO 2: Staff/Donor Login (Phone OR Email) ---
+        // --- SCENARIO 2: Staff/Admin/Donor Login (Phone OR Email) ---
         else {
-            // This block now handles:
-            // 1. Phone numbers (e.g., "0771234567")
-            // 2. Emails (e.g., "teacher@email.com")
-            // 3. Emails starting with STU (e.g., "stuart@email.com")
-
-            // Find ALL users with this phone or email
             const users = await User.find({ 
                 $or: [{ email: identifier.toLowerCase() }, { phoneNumber: identifier }] 
             });
@@ -71,12 +56,10 @@ export const login = async (req, res) => {
             if (users.length === 0) {
                 return res.status(404).json({ message: "User not found." });
             }
-
-            // ... (Rest of your multiple-user password matching logic remains the same) ...
             
             let matchCount = 0;
             for (const user of users) {
-                // Determine if this user is a student trying to login via phone/email
+                // Skip students (they MUST use RegNumber)
                 if (user.role === "student") continue; 
 
                 const isMatch = await user.comparePassword(password);
@@ -92,14 +75,17 @@ export const login = async (req, res) => {
 
             if (matchCount > 1) {
                 return res.status(409).json({ 
-                    message: "Ambiguous account. Multiple users share these credentials. Please contact Admin." 
+                    message: "Ambiguous account. Multiple users share these credentials. Please contact System Admin." 
                 });
             }
         }
 
-        // --- Common Final Checks & Token Generation ---
+        // --- Common Final Checks ---
         if (!targetUser.isActive) return res.status(403).json({ message: "Account is inactive." });
         if (targetUser.isLocked) return res.status(403).json({ message: "Account is locked." });
+
+        // NOTE: We don't block login if !isSchoolVerified. We pass it to the frontend 
+        // so the frontend can redirect them to an "Awaiting Verification" screen!
 
         targetUser.loginAttempts = 0;
         targetUser.lastLogin = Date.now();
@@ -113,6 +99,7 @@ export const login = async (req, res) => {
 
         res.cookie("refreshToken", refreshToken, cookieOptions);
         
+        // --- UPDATED RESPONSE PAYLOAD ---
         res.status(200).json({ 
             message: "Login successful", 
             accessToken, 
@@ -122,6 +109,8 @@ export const login = async (req, res) => {
                 lastName: targetUser.lastName,
                 role: targetUser.role,
                 regNumber: targetUser.regNumber || null,
+                school: targetUser.school || null,             // Added multi-tenant school ID
+                isSchoolVerified: targetUser.isSchoolVerified  // Added verification status
             } 
         });
 
@@ -132,8 +121,16 @@ export const login = async (req, res) => {
 
 export const me = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select("-password").populate("grade", "name").populate("level", "name");
+        // --- UPDATED POPULATION ---
+        // We now populate the 'school' field so the frontend gets the School Name and Logo
+        const user = await User.findById(req.user._id)
+            .select("-password")
+            .populate("grade", "name")
+            .populate("level", "name")
+            .populate("school", "name logoUrl isVerified"); // New population
+
         if (!user) return res.status(404).json({ message: "User not found" });
+        
         res.status(200).json({ user });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
@@ -142,14 +139,9 @@ export const me = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     try {
-        // We really need RegNumber for students to be safe.
-        // For staff sharing a phone, OTP resets the password for the first matching user found?
-        // Or we ask for Email + Phone combo?
-        // For simplicity here, we assume the identifier is sufficient.
-        
         const { identifier } = req.body;
         const user = await User.findOne({ 
-             $or: [{ regNumber: identifier }, { phoneNumber: identifier }, { email: identifier }] 
+             $or: [{ regNumber: identifier }, { phoneNumber: identifier }, { email: identifier.toLowerCase() }] 
         });
 
         if (!user) return res.status(404).json({ message: "User not found." });
@@ -168,11 +160,8 @@ export const resetPassword = async (req, res) => {
     try {
         const { identifier, otp, newPassword } = req.body;
         
-        // Caution: If multiple users share a phone, findOne picks the first one.
-        // Ideally, in reset flow, you should pass back a temporary token from verifyOTP to ensure 
-        // we update the correct user. 
         const user = await User.findOne({ 
-             $or: [{ regNumber: identifier }, { phoneNumber: identifier }, { email: identifier }] 
+             $or: [{ regNumber: identifier }, { phoneNumber: identifier }, { email: identifier.toLowerCase() }] 
         });
 
         if (!user) return res.status(404).json({ message: "User not found." });

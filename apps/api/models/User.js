@@ -12,9 +12,15 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ["admin", "teacher", "donor", "student"],
+      enum: ["super_admin","school_admin", "teacher", "donor", "student"],
       default: "student",
     },
+    // --- NEW: Multi-Tenant / School Linking ---
+    school: { type: mongoose.Schema.Types.ObjectId, ref: "School", default: null },
+    
+    // For Teachers: True if standalone or verified by School Admin. False if pending school approval.
+    isSchoolVerified: { type: Boolean, default: true },
+    
     // regNumber remains UNIQUE because it identifies the student specifically
     regNumber: { type: String, unique: true, sparse: true, trim: true },
     grade: { type: mongoose.Schema.Types.ObjectId, ref: "Grade" },

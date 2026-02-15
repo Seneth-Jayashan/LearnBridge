@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         
         // Helper booleans for easy UI logic
         isAuthenticated: !!user,
-        isAdmin: user?.role === "admin",
+        isadmin: user?.role === "admin",
         isTeacher: user?.role === "teacher",
         isStudent: user?.role === "student",
         isDonor: user?.role === "donor",
