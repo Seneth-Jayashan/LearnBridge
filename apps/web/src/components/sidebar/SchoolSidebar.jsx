@@ -1,23 +1,21 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { 
-  FiHome, FiUsers, FiBook, FiAward, FiSettings, 
-  FiChevronLeft, FiChevronRight, FiGrid, FiLogOut, FiLayers 
+  FiHome, FiUsers, FiUserCheck, FiLayout, FiSettings, 
+  FiChevronLeft, FiChevronRight, FiBriefcase, FiLogOut 
 } from "react-icons/fi";
 
-const AdminSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
+const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
 
   const links = [
-    { name: "Dashboard", path: "/admin/dashboard", icon: FiHome },
-    { name: "Manage Users", path: "/admin/users", icon: FiUsers },
-    { name: "Manage Schools", path: "/admin/schools", icon: FiGrid }, // Added School Management
-    { name: "Manage Modules", path: "/admin/modules", icon: FiLayers }, // Added Module Management
-    { name: "Manage Levels", path: "/admin/levels", icon: FiBook },
-    { name: "Manage Grades", path: "/admin/grades", icon: FiAward },
-    { name: "Settings", path: "/admin/settings", icon: FiSettings },
+    { name: "Dashboard", path: "/school/dashboard", icon: FiHome },
+    { name: "Manage Students", path: "/school/students", icon: FiUsers },
+    { name: "Manage Teachers", path: "/school/teachers", icon: FiUserCheck },
+    { name: "School Profile", path: "/school/profile", icon: FiLayout },
+    { name: "Settings", path: "/school/settings", icon: FiSettings },
   ];
 
   const handleLogout = async () => {
@@ -50,12 +48,12 @@ const AdminSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
         <div className="h-24 flex items-center px-5 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3 overflow-hidden w-full">
             <div className="w-10 h-10 bg-gradient-to-br from-[#207D86] to-[#4CAF50] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-[#207D86]/20">
-              <FiGrid className="w-5 h-5 text-white" />
+              <FiBriefcase className="w-5 h-5 text-white" />
             </div>
             {isExpanded && (
               <div className="flex flex-col animate-in fade-in duration-300">
-                <span className="text-lg font-bold tracking-wide text-white leading-tight">Admin</span>
-                <span className="text-xs font-medium text-[#4CAF50] tracking-wider uppercase">Workspace</span>
+                <span className="text-lg font-bold tracking-wide text-white leading-tight">School</span>
+                <span className="text-xs font-medium text-[#4CAF50] tracking-wider uppercase">Admin</span>
               </div>
             )}
           </div>
@@ -120,4 +118,4 @@ const AdminSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   );
 };
 
-export default AdminSidebar;
+export default SchoolSidebar;

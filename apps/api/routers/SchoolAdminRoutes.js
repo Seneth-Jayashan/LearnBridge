@@ -7,6 +7,8 @@ import {
 } from "../controllers/SchoolAdminController.js"; 
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
+import { validate } from "../middlewares/ValidateMiddleware.js"; // Import Validate Middleware
+import { createStudentSchema } from "../validators/SchoolAdminValidator.js"; // Import Schema
 
 const router = express.Router();
 
@@ -19,8 +21,12 @@ router.use(restrictTo("school_admin"));
 // Get Dashboard Data
 router.get("/my-school", getMySchoolDetails);
 
-// Student Management
-router.post("/create-student", createStudentForSchool);
+// Student Management - NOW VALIDATED
+router.post(
+    "/create-student", 
+    validate(createStudentSchema), 
+    createStudentForSchool
+);
 
 // Teacher Verification Flow
 router.get("/teachers/pending", getPendingTeachers); // View list

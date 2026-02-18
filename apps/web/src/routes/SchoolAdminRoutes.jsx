@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
-import AdminSidebar from "../components/sidebar/AdminSidebar";
+import SchoolSidebar from "../components/sidebar/SchoolSidebar";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -11,7 +11,7 @@ const adminRoutes = () => {
   return (
     <>
       {/* 2. Pass the state and setter as props to the sidebar */}
-      <AdminSidebar 
+      <SchoolSidebar 
         isOpen={isMobileMenuOpen} 
         close={() => setIsMobileMenuOpen(false)} 
         isExpanded={isExpanded}
@@ -21,7 +21,7 @@ const adminRoutes = () => {
       {/* 3. Make the padding dynamic! */}
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
-          <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          <Route path="dashboard" element={<div>School Dashboard Content</div>} />
           {/* ... Add your other admin routes here ... */}
         </Routes>
       </div>
