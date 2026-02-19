@@ -4,14 +4,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import xss from 'xss-clean';
+import mongoSanitize from 'express-mongo-sanitize';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 import connectDB from './config/Database.js'; 
 
-// import routes from './routes/routes.js';
+import routes from './routes.js';
 
 dotenv.config();
 const app = express();
@@ -45,15 +45,28 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(xss());
-
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
+app.use((req, res, next) => {
+  // Sanitize the Body (where the user data is)
+  if (req.body) {
+    req.body = mongoSanitize.sanitize(req.body);
+  }
+  
+  // Sanitize Params (url parameters like :id)
+  if (req.params) {
+    req.params = mongoSanitize.sanitize(req.params);
+  }
 
+  // We SKIP req.query because it is read-only in Express 5
+  // If you need to sanitize query params, access them safely inside your controllers
+  
+  next();
+});
 
-//app.use('/api/v1', routes);
+app.use('/api/v1', routes);
 
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'LearnBridge API is running secure & fast!' });
