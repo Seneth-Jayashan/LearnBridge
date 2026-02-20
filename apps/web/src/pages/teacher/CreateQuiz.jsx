@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createQuiz } from "../../services/QuizService.js";
+import { createQuiz } from "../../services/QuizService.jsx";
 
 const emptyQuestion = () => ({
   questionText: "",

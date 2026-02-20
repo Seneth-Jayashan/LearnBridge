@@ -1,22 +1,32 @@
 import express from "express";
 import {
-  createQuiz, getTeacherQuizzes, updateQuiz, deleteQuiz,
-  getQuizzesByCourse, getQuizById, submitQuiz, getStudentResults
-} from "../controllers/quiz.controller.js";
-import { protect, authorizeRoles } from "../middlewares/auth.middleware.js";
+  createQuiz,
+  getTeacherQuizzes,
+  updateQuiz,
+  deleteQuiz,
+  getQuizzesByCourse,
+  getQuizById,
+  submitQuiz,
+  getStudentResults,
+} from "../controllers/QuizController.js";
+
+import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 
 const router = express.Router();
 
-// Teacher routes
-router.post("/", protect, authorizeRoles("teacher"), createQuiz);
-router.get("/my-quizzes", protect, authorizeRoles("teacher"), getTeacherQuizzes);
-router.put("/:id", protect, authorizeRoles("teacher"), updateQuiz);
-router.delete("/:id", protect, authorizeRoles("teacher"), deleteQuiz);
+// Apply protection to ALL routes in this file
+router.use(protect);
 
-// Student routes
-router.get("/course/:courseId", protect, getQuizzesByCourse);
-router.get("/:id", protect, getQuizById);
-router.post("/:id/submit", protect, authorizeRoles("student"), submitQuiz);
-router.get("/results/my", protect, authorizeRoles("student"), getStudentResults);
+// --- Teacher Routes ---
+router.post("/", restrictTo("teacher"), createQuiz);
+router.get("/my-quizzes", restrictTo("teacher"), getTeacherQuizzes);
+router.put("/:id", restrictTo("teacher"), updateQuiz);
+router.delete("/:id", restrictTo("teacher"), deleteQuiz);
+
+// --- Student Routes ---
+router.get("/results/my", restrictTo("student"), getStudentResults);
+router.get("/course/:courseId", getQuizzesByCourse);
+router.get("/:id", getQuizById);
+router.post("/:id/submit", restrictTo("student"), submitQuiz);
 
 export default router;

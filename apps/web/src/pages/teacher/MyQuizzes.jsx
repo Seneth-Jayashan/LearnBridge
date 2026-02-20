@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTeacherQuizzes, deleteQuiz, publishQuiz } from "../../services/quizService";
+import { getTeacherQuizzes, deleteQuiz, publishQuiz } from "../../services/QuizService.jsx";
 
 export default function MyQuizzes() {
   const navigate = useNavigate();
