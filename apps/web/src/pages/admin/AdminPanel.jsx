@@ -1,16 +1,16 @@
 import { Link } from "react-router-dom";
 
-const AdminPanel = () => {
+const adminPanel = () => {
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Admin Panel</h1>
+      <h1>admin Panel</h1>
       <p>Manage the entire system from here.</p>
       
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "20px", marginTop: "20px" }}>
         
         <div style={{ padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
           <h3>Users</h3>
-          <p>Create Teachers, Students, and Admins.</p>
+          <p>Create Teachers, Students, and admins.</p>
           <Link to="/admin/users">Manage Users &rarr;</Link>
         </div>
 
@@ -35,4 +35,4 @@ const AdminPanel = () => {
   );
 };
 
-export default AdminPanel;
+export default adminPanel;

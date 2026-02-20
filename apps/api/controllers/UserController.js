@@ -38,6 +38,35 @@ export const createDonorProfile = async (req, res) => {
   }
 };
 
+// --- PUBLIC / TEACHER: Register Teacher ---
+export const registerTeacher = async (req, res) => {
+    try {
+        const { firstName, lastName, email, phoneNumber, password, schoolId } = req.body;
+
+        const newTeacher = new User({
+            firstName,
+            lastName,
+            email,
+            phoneNumber,
+            password,
+            role: "teacher",
+            school: schoolId || null, // null means they are Standalone
+            isSchoolVerified: schoolId ? false : true // Standalone is true. Affiliated needs approval (false).
+        });
+
+        await newTeacher.save();
+
+        res.status(201).json({ 
+            message: schoolId 
+                ? "Teacher registered. Awaiting School Admin verification." 
+                : "Standalone Teacher registered successfully.",
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
 // --- Existing Functions ---
 
 export const updateUserProfile = async (req, res) => {

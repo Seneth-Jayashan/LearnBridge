@@ -59,8 +59,8 @@ export const protect = async (req, res, next) => {
 
 /**
  * RESTRICT TO MIDDLEWARE
- * Restricts access to specific roles (e.g., only 'admin' or 'teacher')
- * Usage: router.get('/users', protect, restrictTo('admin'), getAllUsers)
+ * Restricts access to specific roles (e.g., only 'super_admin' or 'teacher')
+ * Usage: router.get('/users', protect, restrictTo('super_admin'), getAllUsers)
  */
 export const restrictTo = (...roles) => {
   return (req, res, next) => {

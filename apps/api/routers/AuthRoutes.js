@@ -8,7 +8,7 @@ import {
 } from "../controllers/AuthController.js"; // Ensure filename casing matches your system
 
 import { protect } from "../middlewares/AuthMiddleware.js";
-import { validate } from "../middlewares/Validate.js";
+import { validate } from "../middlewares/ValidateMiddleware.js";
 import { 
     loginSchema, 
     forgotPasswordSchema, 

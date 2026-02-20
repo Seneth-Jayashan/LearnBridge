@@ -8,7 +8,7 @@ import {
 } from "../controllers/GradeController.js"; // Ensure filename casing matches your system
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
-import { validate } from "../middlewares/Validate.js";
+import { validate } from "../middlewares/ValidateMiddleware.js";
 import { createGradeSchema, updateGradeSchema } from "../validators/GradeValidator.js";
 
 const router = express.Router();
@@ -16,14 +16,14 @@ const router = express.Router();
 // --- Grade Management Routes ---
 
 router.route("/")
-    // Create: Admin Only
+    // Create: super_admin Only
     .post(
         protect, 
-        restrictTo("admin"), 
+        restrictTo("super_admin"), 
         validate(createGradeSchema), 
         createGrade
     )
-    // Read All: Authenticated Users (Admins, Teachers, etc.)
+    // Read All: Authenticated Users (super_admins, Teachers, etc.)
     .get(
         protect, 
         getAllGrades
@@ -35,17 +35,17 @@ router.route("/:id")
         protect, 
         getGradeById
     )
-    // Update: Admin Only
+    // Update: super_admin Only
     .put(
         protect, 
-        restrictTo("admin"), 
+        restrictTo("super_admin"), 
         validate(updateGradeSchema), 
         updateGrade
     )
-    // Delete: Admin Only
+    // Delete: super_admin Only
     .delete(
         protect, 
-        restrictTo("admin"), 
+        restrictTo("super_admin"), 
         deleteGrade
     );
 

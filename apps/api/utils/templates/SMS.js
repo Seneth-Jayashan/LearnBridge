@@ -102,11 +102,6 @@ export const sendCancellationSms = async (phone, className, reason) => {
   return SmsSender.send(sanitizePhone(phone), message);
 };
 
-export const sendAdminPaymentNotificationSms = async (adminPhone, userName, amount, className, refId) => {
-  const message = `Admin Alert: ${userName} made a payment of LKR ${amount} for ${className}. Ref: ${refId}.Please Review.`;
-  return SmsSender.send(sanitizePhone(adminPhone), message);
-};
-
 export const sendPaymentVerifiedSms = async (phone, amount, className) => {
   const message = `${BRAND_NAME}: Your payment of LKR ${amount} for ${className} has been verified. Thank you!`;
   return SmsSender.send(sanitizePhone(phone), message);
@@ -132,7 +127,6 @@ export default {
   sendClassReminderSms,
   sendNotificationSms,
   sendCancellationSms,
-  sendAdminPaymentNotificationSms,
   sendPaymentVerifiedSms,
   sendClassRescheduleSms,
   sendEnrollmentConfirmationSms,

@@ -8,7 +8,7 @@ import {
 } from "../controllers/UserController.js"; 
 
 import { protect } from "../middlewares/AuthMiddleware.js";
-import { validate } from "../middlewares/Validate.js";
+import { validate } from "../middlewares/ValidateMiddleware.js";
 import { 
     createDonorSchema, // Import the new schema
     updateUserProfileSchema, 

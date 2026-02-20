@@ -5,7 +5,7 @@ import { FiMenu, FiX, FiLogOut, FiUser, FiGrid, FiSettings } from "react-icons/f
 import LogoImage from "../assets/Learn Bridge Logo 2.png";
 
 const Navbar = () => {
-  const { user, logout, isAuthenticated, isAdmin, isTeacher } = useAuth();
+  const { user, logout, isAuthenticated, isadmin, isTeacher } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -64,8 +64,8 @@ const Navbar = () => {
               <>
                 <NavLink to="/dashboard" icon={FiGrid}>Dashboard</NavLink>
                 
-                {isAdmin && <NavLink to="/admin" icon={FiSettings}>Admin</NavLink>}
-                {(isTeacher || isAdmin) && <NavLink to="/grades">Grades</NavLink>}
+                {isadmin && <NavLink to="/admin" icon={FiSettings}>admin</NavLink>}
+                {(isTeacher || isadmin) && <NavLink to="/grades">Grades</NavLink>}
                 
                 <div className="h-6 w-px bg-slate-200 mx-2"></div>
                 
@@ -115,8 +115,8 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" icon={FiGrid}>Dashboard</NavLink>
-                {isAdmin && <NavLink to="/admin" icon={FiSettings}>Admin Panel</NavLink>}
-                {(isTeacher || isAdmin) && <NavLink to="/grades">Manage Grades</NavLink>}
+                {isadmin && <NavLink to="/admin" icon={FiSettings}>admin Panel</NavLink>}
+                {(isTeacher || isadmin) && <NavLink to="/grades">Manage Grades</NavLink>}
                 <NavLink to="/profile" icon={FiUser}>My Profile</NavLink>
                 <button 
                   onClick={handleLogout}
