@@ -1,0 +1,102 @@
+import Level from "../models/Level.js";
+
+export const createLevel = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+
+        // 1. Validation: Prevent crash if name is missing
+        if (!name) {
+            return res.status(400).json({ message: "Level name is required" });
+        }
+
+        // 2. Check for duplicates
+        const existingLevel = await Level.findOne({ name: name.trim() });
+        if (existingLevel) {
+            return res.status(400).json({ message: "Level with this name already exists" });
+        }
+
+        const level = new Level({ 
+            name: name.trim(), 
+            description 
+        });
+        
+        await level.save();
+        res.status(201).json({ message: "Level created successfully", level });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const getAllLevels = async (req, res) => {
+    try {
+        const levels = await Level.find().sort({ createdAt: -1 });
+        res.status(200).json(levels);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const getLevelById = async (req, res) => {
+    try {
+        const level = await Level.findById(req.params.id);
+        if (!level) {
+            return res.status(404).json({ message: "Level not found" });
+        }
+        res.status(200).json(level);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const updateLevel = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        
+        // Find the level first
+        const level = await Level.findById(req.params.id);
+        if (!level) {
+            return res.status(404).json({ message: "Level not found" });
+        }
+
+        // 1. Handle Name Update
+        if (name) {
+            const newName = name.trim();
+            
+            // Only check duplicates if the name is actually changing
+            if (newName !== level.name) {
+                const existingLevel = await Level.findOne({ name: newName });
+                if (existingLevel) {
+                    return res.status(400).json({ message: "Level with this name already exists" });
+                }
+                level.name = newName;
+            }
+        }
+
+        // 2. Handle Description Update
+        if (description !== undefined) {
+            level.description = description;
+        }
+
+        await level.save();
+        res.status(200).json({ message: "Level updated successfully", level });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const deleteLevel = async (req, res) => {
+    try {
+        // Optimization: Find and Delete in one DB call
+        // 'level.remove()' is deprecated in Mongoose 6+
+        const level = await Level.findByIdAndDelete(req.params.id);
+
+        if (!level) {
+            return res.status(404).json({ message: "Level not found" });
+        }
+        
+        res.status(200).json({ message: "Level deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
