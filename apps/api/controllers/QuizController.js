@@ -26,8 +26,7 @@ export const createQuiz = async (req, res) => {
 // --- 2. Get All Quizzes Created by Teacher ---
 export const getTeacherQuizzes = async (req, res) => {
     try {
-        const quizzes = await Quiz.find({ createdBy: req.user._id, isDeleted: false })
-            .populate("courseId", "title");
+        const quizzes = await Quiz.find({ createdBy: req.user._id, isDeleted: false });
 
         res.status(200).json(quizzes);
 
