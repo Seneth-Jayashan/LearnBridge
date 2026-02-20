@@ -10,14 +10,23 @@ const api = axios.create({
     },
 });
 
-// Optional: Interceptor to handle global errors (like 401 Unauthorized)
+// ← ADDED: Attach JWT token to every request
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// Handle global response errors
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // If the backend says "Unauthorized" (token expired/invalid), 
-            // you might want to redirect to login or clear local storage here.
-            // For now, we reject so the Context can handle it.
             console.error("API Error: Unauthorized");
         }
         return Promise.reject(error);

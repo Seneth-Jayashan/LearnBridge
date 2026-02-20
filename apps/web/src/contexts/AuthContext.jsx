@@ -33,6 +33,12 @@ export const AuthProvider = ({ children }) => {
         try {
             const data = await authService.login(identifier, password);
             setUser(data.user);
+
+            // ← ADDED: Save token so every API request gets it attached
+            if (data.accessToken) {
+                localStorage.setItem("accessToken", data.accessToken);
+            }
+
             return { success: true };
         } catch (err) {
             const msg = err.response?.data?.message || "Login failed";
@@ -48,6 +54,9 @@ export const AuthProvider = ({ children }) => {
         try {
             await authService.logout();
             setUser(null);
+
+            // ← ADDED: Clear token on logout
+            localStorage.removeItem("accessToken");
         } catch (err) {
             console.error("Logout failed", err);
         }
