@@ -8,25 +8,23 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 1. Check Session (Memoized to prevent loops if added to dependencies)
+    // 1️⃣ Check Session
     const checkSession = useCallback(async () => {
         try {
             const data = await authService.getCurrentUser();
             setUser(data.user);
         } catch (err) {
-            // 401 Unauthorized is expected if no session exists
             setUser(null);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Run on Mount
     useEffect(() => {
         checkSession();
     }, [checkSession]);
 
-    // 2. Login Action
+    // 2️⃣ Login
     const login = async (identifier, password) => {
         setLoading(true);
         setError(null);
@@ -34,7 +32,6 @@ export const AuthProvider = ({ children }) => {
             const data = await authService.login(identifier, password);
             setUser(data.user);
 
-            // ← ADDED: Save token so every API request gets it attached
             if (data.accessToken) {
                 localStorage.setItem("accessToken", data.accessToken);
             }
@@ -49,20 +46,33 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 3. Logout Action
+    // 3️⃣ NEW: Register Donor
+    const registerDonor = async (formData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await authService.registerDonor(formData);
+            return { success: true };
+        } catch (err) {
+            const msg = err.response?.data?.message || "Registration failed";
+            setError(msg);
+            return { success: false, message: msg };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 4️⃣ Logout
     const logout = async () => {
         try {
             await authService.logout();
             setUser(null);
-
-            // ← ADDED: Clear token on logout
             localStorage.removeItem("accessToken");
         } catch (err) {
             console.error("Logout failed", err);
         }
     };
 
-    // 4. Manual Refresh (Useful if you update profile and want to reload user data)
     const refreshUser = async () => {
         await checkSession();
     };
@@ -74,18 +84,15 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         refreshUser,
-        
-        // Helper booleans
+        registerDonor, 
+
         isAuthenticated: !!user,
-        // Standardized role checks (using optional chaining safely)
         isSuperAdmin: user?.role === "super_admin",
         isSchoolAdmin: user?.role === "school_admin",
-        isAdmin: ["super_admin", "school_admin"].includes(user?.role), // Generic Admin check
+        isAdmin: ["super_admin", "school_admin"].includes(user?.role),
         isTeacher: user?.role === "teacher",
         isStudent: user?.role === "student",
         isDonor: user?.role === "donor",
-        
-        // Verification Helpers
         isSchoolVerified: user?.isSchoolVerified ?? false,
     };
 
