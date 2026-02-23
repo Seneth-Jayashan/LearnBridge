@@ -43,7 +43,10 @@ const limiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
 });
-app.use(limiter);
+// Only enable rate limiting in production
+if (process.env.NODE_ENV === "production") {
+   app.use(limiter);
+}
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));

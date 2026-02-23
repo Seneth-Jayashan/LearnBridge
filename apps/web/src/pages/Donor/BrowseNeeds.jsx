@@ -1,6 +1,6 @@
 // src/pages/donor/BrowseNeeds.jsx
 import { useEffect, useState } from "react";
-import { getAllNeeds, pledgeDonation } from "../../services/donorServices";
+import { getAllNeeds, pledgeDonation } from "../../services/DonorServices";
 import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 6;

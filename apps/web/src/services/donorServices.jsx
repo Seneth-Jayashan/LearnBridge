@@ -16,3 +16,12 @@ export const markFulfilled = (id) =>
 
 export const getImpactReport = () =>
   api.get("/donations/impact");
+
+export const getDonorProfile = () =>
+  api.get("/donor/profile");
+
+export const updateDonorProfile = (data) =>
+  api.put("/donor/profile", data);
+
+export const changePassword = (data) =>
+  api.put("/donor/profile/change-password", data);

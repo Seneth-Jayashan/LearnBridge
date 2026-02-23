@@ -73,3 +73,11 @@ export const restrictTo = (...roles) => {
     next();
   };
 };
+
+export const donorOnly = (req, res, next) => {
+  if (req.user && req.user.role === "donor") {
+    next();
+  } else {
+    res.status(403).json({ message: "Access denied: Donors only" });
+  }
+};
