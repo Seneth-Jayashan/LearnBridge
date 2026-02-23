@@ -1,5 +1,24 @@
 import mongoose from "mongoose";
 
+const onlineMeetingSchema = new mongoose.Schema(
+  {
+    provider: {
+      type: String,
+      enum: ["zoom"],
+      required: true,
+    },
+    meetingId: { type: String, trim: true, default: "" },
+    joinUrl: { type: String, trim: true, default: "" },
+    startUrl: { type: String, trim: true, default: "" },
+    password: { type: String, trim: true, default: "" },
+    startTime: { type: Date, required: true },
+    duration: { type: Number, min: 1, default: 60 },
+    title: { type: String, trim: true, default: "" },
+    description: { type: String, trim: true, default: "" },
+  },
+  { _id: false },
+);
+
 const lessonSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -19,6 +38,10 @@ const lessonSchema = new mongoose.Schema(
     school: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "School",
+      default: null,
+    },
+    onlineMeeting: {
+      type: onlineMeetingSchema,
       default: null,
     },
   },

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Lesson from "../models/Lesson.js";
 import Course from "../models/Course.js";
+import { createZoomMeeting } from "../services/ZoomService.js";
 
 const buildMediaUrl = (req, file) => {
   if (!file) return "";
@@ -49,10 +50,47 @@ const toNullableObjectId = (value) => {
 };
 
 const ensureHasResource = (materialUrl, videoUrl) => Boolean(materialUrl || videoUrl);
+const isTruthy = (value) => {
+  if (value === true || value === 1) return true;
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "on" || normalized === "yes";
+};
+
+const buildOnlineMeeting = async ({ title, description, createMeeting, startTime }) => {
+  if (!createMeeting) return null;
+
+  const zoomMeeting = await createZoomMeeting({
+    topic: title,
+    agenda: description || "",
+    startTime,
+  });
+
+  return {
+    provider: "zoom",
+    meetingId: zoomMeeting.id ? String(zoomMeeting.id) : "",
+    joinUrl: zoomMeeting.join_url || "",
+    startUrl: zoomMeeting.start_url || "",
+    password: zoomMeeting.password || "",
+    startTime: zoomMeeting.start_time || startTime,
+    duration: Number(zoomMeeting.duration) || 60,
+    title,
+    description: description || "",
+  };
+};
 
 export const createLesson = async (req, res) => {
   try {
-    const { title, description, course, materialUrl, videoUrl } = req.body;
+    const {
+      title,
+      description,
+      course,
+      materialUrl,
+      videoUrl,
+      createZoomMeeting,
+      zoomStartTime,
+      onlineMeetingStartTime,
+    } = req.body;
 
     const materialFile = req.files?.material?.[0] || req.files?.materialUrl?.[0];
     const videoFile = req.files?.video?.[0] || req.files?.videoUrl?.[0];
@@ -80,17 +118,39 @@ export const createLesson = async (req, res) => {
       });
     }
 
+    const meetingStartTime = zoomStartTime || onlineMeetingStartTime;
+    const shouldCreateZoomMeeting = isTruthy(createZoomMeeting) || Boolean(meetingStartTime);
+
+    let onlineMeeting = null;
+    try {
+      onlineMeeting = await buildOnlineMeeting({
+        title: title.trim(),
+        description: description ?? "",
+        createMeeting: shouldCreateZoomMeeting,
+        startTime: meetingStartTime,
+      });
+    } catch (zoomError) {
+      return res.status(400).json({
+        message: `Failed to create Zoom meeting: ${zoomError.message}`,
+      });
+    }
+
     const lesson = await Lesson.create({
       title: title.trim(),
       description: description ?? "",
       course: selectedCourse._id,
       materialUrl: nextMaterialUrl,
       videoUrl: nextVideoUrl,
+      onlineMeeting,
       createdBy: req.user._id,
       school: toNullableObjectId(selectedCourse.school || req.user.school),
     });
 
-    res.status(201).json({ message: "Lesson created successfully", lesson });
+    res.status(201).json({
+      message: "Lesson created successfully",
+      lesson,
+      onlineMeeting: lesson.onlineMeeting || null,
+    });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
@@ -153,7 +213,16 @@ export const getLessonById = async (req, res) => {
 
 export const updateLesson = async (req, res) => {
   try {
-    const { title, description, course, materialUrl, videoUrl } = req.body;
+    const {
+      title,
+      description,
+      course,
+      materialUrl,
+      videoUrl,
+      createZoomMeeting,
+      zoomStartTime,
+      onlineMeetingStartTime,
+    } = req.body;
 
     const materialFile = req.files?.material?.[0] || req.files?.materialUrl?.[0];
     const videoFile = req.files?.video?.[0] || req.files?.videoUrl?.[0];
@@ -211,6 +280,29 @@ export const updateLesson = async (req, res) => {
       return res.status(400).json({
         message: "Lesson must include at least one resource (document or video)",
       });
+    }
+
+    const meetingStartTime = zoomStartTime || onlineMeetingStartTime;
+    const shouldCreateZoomMeeting = isTruthy(createZoomMeeting) || Boolean(meetingStartTime);
+    const hasExplicitZoomToggle = createZoomMeeting !== undefined;
+
+    if (hasExplicitZoomToggle || meetingStartTime !== undefined) {
+      if (shouldCreateZoomMeeting) {
+        try {
+          lesson.onlineMeeting = await buildOnlineMeeting({
+            title: lesson.title,
+            description: lesson.description,
+            createMeeting: true,
+            startTime: meetingStartTime,
+          });
+        } catch (zoomError) {
+          return res.status(400).json({
+            message: `Failed to create Zoom meeting: ${zoomError.message}`,
+          });
+        }
+      } else {
+        lesson.onlineMeeting = null;
+      }
     }
 
     await lesson.save();

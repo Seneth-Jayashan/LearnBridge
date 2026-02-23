@@ -9,6 +9,7 @@ const initialForm = {
   course: "",
   materialUrl: "",
   videoUrl: "",
+  zoomStartTime: "",
 };
 
 const toPublicMediaUrl = (value) => {
@@ -17,6 +18,14 @@ const toPublicMediaUrl = (value) => {
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
   const origin = apiBase.replace(/\/api\/v1\/?$/i, "");
   return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
+const toDateTimeLocalValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
 };
 
 const LessonsEdit = () => {
@@ -51,6 +60,7 @@ const LessonsEdit = () => {
           course: lesson.course?._id || "",
           materialUrl: toPublicMediaUrl(lesson.materialUrl || ""),
           videoUrl: toPublicMediaUrl(lesson.videoUrl || ""),
+          zoomStartTime: toDateTimeLocalValue(lesson.onlineMeeting?.startTime),
         });
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load lesson");
@@ -63,8 +73,11 @@ const LessonsEdit = () => {
   }, [id]);
 
   const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleFileChange = (event) => {
@@ -94,7 +107,6 @@ const LessonsEdit = () => {
     if (!formData.materialUrl && !formData.videoUrl && !mediaFiles.material && !mediaFiles.video) {
       return setError("Please add at least one lesson resource (document or video)");
     }
-
     setIsSubmitting(true);
     setError("");
 
@@ -103,6 +115,11 @@ const LessonsEdit = () => {
       payload.append("title", formData.title.trim());
       payload.append("description", formData.description.trim());
       payload.append("course", formData.course);
+      payload.append("createZoomMeeting", String(Boolean(formData.zoomStartTime)));
+
+      if (formData.zoomStartTime) {
+        payload.append("zoomStartTime", new Date(formData.zoomStartTime).toISOString());
+      }
 
       if (mediaFiles.material) {
         payload.append("material", mediaFiles.material);
@@ -163,6 +180,21 @@ const LessonsEdit = () => {
             <div className="md:col-span-2">
               <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
               <textarea id="description" name="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]" />
+            </div>
+
+            <div className="md:col-span-2 rounded-lg border border-slate-200 p-4 bg-slate-50">
+              <label htmlFor="zoomStartTime" className="block text-sm font-semibold text-slate-700 mb-1">
+                Zoom Meeting Date & Time (optional)
+              </label>
+              <input
+                id="zoomStartTime"
+                name="zoomStartTime"
+                type="datetime-local"
+                value={formData.zoomStartTime}
+                onChange={handleInputChange}
+                className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
+              />
+              <p className="text-xs text-slate-600 mt-2">Set a value to create/update Zoom meeting. Clear it and save to remove the Zoom meeting link.</p>
             </div>
 
             <div>

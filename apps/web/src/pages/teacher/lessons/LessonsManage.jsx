@@ -10,6 +10,31 @@ const toPublicMediaUrl = (value) => {
   return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+};
+
+const getZoomJoinUrl = (lesson) => {
+  return (
+    lesson?.onlineMeeting?.joinUrl ||
+    lesson?.onlineMeeting?.join_url ||
+    lesson?.zoomJoinUrl ||
+    ""
+  );
+};
+
+const getZoomStartTime = (lesson) => {
+  return (
+    lesson?.onlineMeeting?.startTime ||
+    lesson?.onlineMeeting?.start_time ||
+    lesson?.zoomStartTime ||
+    ""
+  );
+};
+
 const LessonsManage = () => {
   const navigate = useNavigate();
   const [lessons, setLessons] = useState([]);
@@ -121,6 +146,25 @@ const LessonsManage = () => {
                             <span className="text-sm text-slate-500">No video uploaded</span>
                           )}
                         </div>
+
+                        {getZoomJoinUrl(lesson) && (
+                          <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
+                            <p className="text-sm font-semibold text-slate-800">Zoom Meeting</p>
+                            {getZoomStartTime(lesson) && (
+                              <p className="text-sm text-slate-700 mt-1">
+                                Starts: {formatDateTime(getZoomStartTime(lesson))}
+                              </p>
+                            )}
+                            <a
+                              href={getZoomJoinUrl(lesson)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex mt-2 text-sm font-semibold text-[#207D86] hover:text-[#14555B]"
+                            >
+                              Join Zoom Meeting
+                            </a>
+                          </div>
+                        )}
 
                         {lesson.videoUrl && (
                           <div className="mt-3">
