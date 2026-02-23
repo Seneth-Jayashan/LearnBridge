@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import TeacherSidebar from "../components/sidebar/TeacherSidebar";
+import Courses from "../pages/Courses";
 
 const TeacherRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -22,7 +23,7 @@ const TeacherRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
           <Route path="dashboard" element={<div>Dashboard Content</div>} />
-          {/* Add other teacher routes here */}
+          <Route path="courses" element={<Courses />} />
         </Routes>
       </div>
     </>

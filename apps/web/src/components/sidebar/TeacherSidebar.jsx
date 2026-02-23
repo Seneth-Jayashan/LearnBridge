@@ -12,7 +12,7 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
 
   const links = [
     { name: "Overview", path: "/teacher/dashboard", icon: FiHome },
-    { name: "My Classes", path: "/teacher/classes", icon: FiBookOpen },
+    { name: "Courses", path: "/teacher/courses", icon: FiBookOpen },
     { name: "Grading", path: "/teacher/grades", icon: FiEdit3 },
     { name: "Messages", path: "/teacher/messages", icon: FiMessageSquare },
   ];

@@ -4,7 +4,7 @@ export const validate = (schema) => (req, res, next) => {
   try {
     // Parse the request body against the schema
     // strip() removes unknown keys to prevent pollution
-    schema.parse(req.body);
+    req.body = schema.parse(req.body);
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
