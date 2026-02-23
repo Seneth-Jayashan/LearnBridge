@@ -15,6 +15,7 @@ const LessonsManage = () => {
   const [lessons, setLessons] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [openCourses, setOpenCourses] = useState({});
 
   const loadLessons = async () => {
     try {
@@ -67,48 +68,71 @@ const LessonsManage = () => {
           <p className="text-slate-600">No lessons found. Add your first lesson.</p>
         ) : (
           <div className="space-y-4">
-            {lessons.map((lesson) => (
-              <article key={lesson._id} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+            {/* Group lessons by course */}
+            {Object.values(
+              lessons.reduce((acc, lesson) => {
+                const courseId = lesson.course?._id || "_unassigned";
+                if (!acc[courseId]) {
+                  acc[courseId] = { course: lesson.course || { name: "Unassigned" , _id: courseId }, lessons: [] };
+                }
+                acc[courseId].lessons.push(lesson);
+                return acc;
+              }, {})
+            ).map((group) => (
+              <div key={group.course._id} className="border border-slate-200 rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenCourses((s) => ({ ...s, [group.course._id]: !s[group.course._id] }))}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100"
+                >
                   <div>
-                    <h4 className="font-semibold text-[#0E2A47]">{lesson.title}</h4>
-                    <p className="text-sm text-slate-600 mt-1">{lesson.course?.name || "Unknown course"}</p>
-                    {lesson.description && (
-                      <p className="text-sm text-slate-700 mt-2">{lesson.description}</p>
-                    )}
+                    <div className="font-semibold text-[#0E2A47]">{group.course.name || "Unassigned"}</div>
+                    <div className="text-sm text-slate-600">{group.lessons.length} lesson{group.lessons.length !== 1 ? "s" : ""}</div>
                   </div>
+                  <div className="text-slate-500">{openCourses[group.course._id] ? "▾" : "▸"}</div>
+                </button>
 
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => navigate(`/teacher/lessons/edit/${lesson._id}`)} className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-white">
-                      Edit
-                    </button>
-                    <button type="button" onClick={() => handleDelete(lesson._id)} className="px-3 py-1.5 text-sm rounded-lg border border-red-300 text-red-700 hover:bg-red-50">
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                {openCourses[group.course._id] && (
+                  <div className="p-4 bg-white space-y-3">
+                    {group.lessons.map((lesson) => (
+                      <article key={lesson._id} className="border border-slate-100 rounded-lg p-3 bg-slate-50">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="font-semibold text-[#0E2A47]">{lesson.title}</h4>
+                            {lesson.description && <p className="text-sm text-slate-700 mt-1">{lesson.description}</p>}
+                          </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-4">
-                  {lesson.materialUrl ? (
-                    <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
-                  ) : (
-                    <span className="text-sm text-slate-500">No document uploaded</span>
-                  )}
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => navigate(`/teacher/lessons/edit/${lesson._id}`)} className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-white">Edit</button>
+                            <button type="button" onClick={() => handleDelete(lesson._id)} className="px-3 py-1.5 text-sm rounded-lg border border-red-300 text-red-700 hover:bg-red-50">Delete</button>
+                          </div>
+                        </div>
 
-                  {lesson.videoUrl ? (
-                    <a href={toPublicMediaUrl(lesson.videoUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Video</a>
-                  ) : (
-                    <span className="text-sm text-slate-500">No video uploaded</span>
-                  )}
-                </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-4">
+                          {lesson.materialUrl ? (
+                            <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
+                          ) : (
+                            <span className="text-sm text-slate-500">No document uploaded</span>
+                          )}
 
-                {lesson.videoUrl && (
-                  <div className="mt-3">
-                    <p className="text-sm text-slate-700 mb-2">Watch online</p>
-                    <video controls className="w-full max-h-72 rounded-lg border border-slate-300 bg-black" src={toPublicMediaUrl(lesson.videoUrl)} />
+                          {lesson.videoUrl ? (
+                            <a href={toPublicMediaUrl(lesson.videoUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Video</a>
+                          ) : (
+                            <span className="text-sm text-slate-500">No video uploaded</span>
+                          )}
+                        </div>
+
+                        {lesson.videoUrl && (
+                          <div className="mt-3">
+                            <p className="text-sm text-slate-700 mb-2">Watch online</p>
+                            <video controls className="w-full max-h-72 rounded-lg border border-slate-300 bg-black" src={toPublicMediaUrl(lesson.videoUrl)} />
+                          </div>
+                        )}
+                      </article>
+                    ))}
                   </div>
                 )}
-              </article>
+              </div>
             ))}
           </div>
         )}

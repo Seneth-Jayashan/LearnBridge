@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import TeacherSidebar from "../components/sidebar/TeacherSidebar";
+import TeacherDashboard from "../pages/teacher/Dashboard";
 import CoursesAdd from "../pages/teacher/courses/CoursesAdd";
 import CoursesManage from "../pages/teacher/courses/CoursesManage";
 import CoursesEdit from "../pages/teacher/courses/CoursesEdit";
@@ -27,7 +28,7 @@ const TeacherRoutes = () => {
       {/* 3. Make the padding dynamic based on the isExpanded state! */}
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
-          <Route path="dashboard" element={<div>Dashboard Content</div>} />
+          <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="courses" element={<Navigate to="manage" replace />} />
           <Route path="courses/add" element={<CoursesAdd />} />
           <Route path="courses/manage" element={<CoursesManage />} />
