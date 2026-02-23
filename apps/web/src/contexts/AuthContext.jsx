@@ -8,13 +8,15 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 1. Check Session (Memoized to prevent loops if added to dependencies)
+    // 1. Check Session 
     const checkSession = useCallback(async () => {
         try {
+            // This will now successfully pass the token via the Axios interceptor
             const data = await authService.getCurrentUser();
             setUser(data.user);
         } catch (err) {
-            // 401 Unauthorized is expected if no session exists
+            // If the token is invalid/expired, wipe it and log the user out
+            localStorage.removeItem("accessToken");
             setUser(null);
         } finally {
             setLoading(false);
@@ -23,7 +25,13 @@ export const AuthProvider = ({ children }) => {
 
     // Run on Mount
     useEffect(() => {
-        checkSession();
+        // Only bother checking session if we actually have a token saved
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+            checkSession();
+        } else {
+            setLoading(false); // Instantly stop loading if no token
+        }
     }, [checkSession]);
 
     // 2. Login Action
@@ -32,6 +40,12 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         try {
             const data = await authService.login(identifier, password);
+            
+            // --- NEW: Save the token! ---
+            if (data.accessToken) {
+                localStorage.setItem("accessToken", data.accessToken);
+            }
+            
             setUser(data.user);
             return { success: true };
         } catch (err) {
@@ -47,13 +61,18 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             await authService.logout();
+            // --- NEW: Remove the token! ---
+            localStorage.removeItem("accessToken");
             setUser(null);
         } catch (err) {
             console.error("Logout failed", err);
+            // Even if the backend fails, clear local state
+            localStorage.removeItem("accessToken");
+            setUser(null);
         }
     };
 
-    // 4. Manual Refresh (Useful if you update profile and want to reload user data)
+    // 4. Manual Refresh 
     const refreshUser = async () => {
         await checkSession();
     };
@@ -66,17 +85,13 @@ export const AuthProvider = ({ children }) => {
         logout,
         refreshUser,
         
-        // Helper booleans
         isAuthenticated: !!user,
-        // Standardized role checks (using optional chaining safely)
         isSuperAdmin: user?.role === "super_admin",
         isSchoolAdmin: user?.role === "school_admin",
-        isAdmin: ["super_admin", "school_admin"].includes(user?.role), // Generic Admin check
+        isAdmin: ["super_admin", "school_admin"].includes(user?.role), 
         isTeacher: user?.role === "teacher",
         isStudent: user?.role === "student",
         isDonor: user?.role === "donor",
-        
-        // Verification Helpers
         isSchoolVerified: user?.isSchoolVerified ?? false,
     };
 

@@ -9,7 +9,10 @@ const addressSchema = z.object({
   country: z.string().optional(),
 });
 
-// --- Create User Schema ---
+// ==========================================
+// --- USER VALIDATION ---
+// ==========================================
+
 export const createUserSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -18,19 +21,49 @@ export const createUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["super_admin","school_admin", "teacher", "donor", "student"]).optional(),
   
-  // Grade and Level are optional (mostly for students)
   grade: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Grade ID").optional(),
   level: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Level ID").optional(),
   
   address: addressSchema.optional(),
 });
 
-// --- Update User Schema ---
-// extend 'createUser' but make everything optional
 export const updateUserSchema = createUserSchema.partial().omit({ password: true }); 
-// Note: We usually don't allow password updates via the general 'update profile' route
 
-// --- Utility Schemas ---
+// ==========================================
+// --- SCHOOL VALIDATION ---
+// ==========================================
+
+// --- NEW: Create School + Admin Schema ---
+export const createSchoolWithAdminSchema = z.object({
+  schoolData: z.object({
+    name: z.string().min(1, "School name is required"),
+    contactEmail: z.string().email("Invalid school email").optional().or(z.literal("")),
+    contactPhone: z.string().optional(),
+    address: addressSchema.optional(),
+  }),
+  adminData: z.object({
+    firstName: z.string().min(1, "Admin first name is required"),
+    lastName: z.string().min(1, "Admin last name is required"),
+    email: z.string().email("Invalid admin email"),
+    phoneNumber: z.string().min(9, "Admin phone must be at least 9 digits"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  })
+});
+
+// --- NEW: Update School Schema ---
+export const updateSchoolSchema = z.object({
+  name: z.string().min(1, "School name cannot be empty").optional(),
+  contactEmail: z.string().email("Invalid email").optional().or(z.literal("")),
+  contactPhone: z.string().optional(),
+  logoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  isActive: z.boolean().optional(),
+  address: addressSchema.optional(),
+});
+
+// ==========================================
+// --- UTILITY SCHEMAS ---
+// ==========================================
+
 export const checkPhoneSchema = z.object({
   phoneNumber: z.string().min(1, "Phone number is required"),
 });

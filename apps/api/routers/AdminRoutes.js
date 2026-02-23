@@ -7,11 +7,15 @@ import {
     deleteUser, 
     checkPhoneNumber, 
     checkEmail,
-    // --- New Controller Imports ---
     createSchoolWithAdmin,
     toggleUserStatus,
     toggleUserLock,
-    restoreUser
+    restoreUser,
+    // --- New School Controller Imports ---
+    getAllSchools,
+    getSchoolById,
+    updateSchool,
+    deleteSchool
 } from "../controllers/AdminController.js"; 
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
@@ -34,15 +38,46 @@ router.post(
     "/create-school",
     protect,
     restrictTo("super_admin"),
-    // Note: You can add a specific validation schema here later (e.g., validate(createSchoolSchema))
     createSchoolWithAdmin
+);
+
+// Get All Schools
+router.get(
+    "/schools", 
+    protect, 
+    restrictTo("super_admin"), 
+    getAllSchools
+);
+
+// Get Single School by ID
+router.get(
+    "/schools/:id", 
+    protect, 
+    restrictTo("super_admin"), 
+    getSchoolById
+);
+
+// Update School
+router.put(
+    "/schools/:id", 
+    protect, 
+    restrictTo("super_admin"), 
+    updateSchool
+);
+
+// Delete School
+router.delete(
+    "/schools/:id", 
+    protect, 
+    restrictTo("super_admin"), 
+    deleteSchool
 );
 
 // ==========================================
 // SUPER ADMIN: USER MANAGEMENT
 // ==========================================
 
-// Create User: Protect -> super_admin Only -> Validate Body -> Controller
+// Create User
 router.post(
     "/create-user", 
     protect, 

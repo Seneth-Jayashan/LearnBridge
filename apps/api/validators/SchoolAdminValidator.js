@@ -10,17 +10,26 @@ const addressSchema = z.object({
 });
 
 // --- Create Student Schema ---
-// Used by School Admins to manually create students in their school
 export const createStudentSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phoneNumber: z.string().min(9, "Phone number must be at least 9 digits"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   
-  // Grade and Level IDs (Mongo ObjectIDs)
   grade: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Grade ID").optional(),
   level: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Level ID").optional(),
   
+  address: addressSchema.optional(),
+});
+
+// --- NEW: Update Student Schema ---
+export const updateSchoolStudentSchema = createStudentSchema.partial().omit({ password: true });
+
+// --- NEW: Update School Profile Schema ---
+export const updateSchoolProfileSchema = z.object({
+  contactEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
+  contactPhone: z.string().min(9, "Phone number must be at least 9 digits").optional().or(z.literal("")),
+  logoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   address: addressSchema.optional(),
 });

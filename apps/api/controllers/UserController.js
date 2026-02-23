@@ -1,12 +1,11 @@
 import User from "../models/User.js";
 
-// --- NEW: Create Donor Profile (Public Registration) ---
+// --- Create Donor Profile (Public Registration) ---
 export const createDonorProfile = async (req, res) => {
   try {
     const { firstName, lastName, email, phoneNumber, password, address } = req.body;
 
-    // 1. Check for duplicates (email and phone should be unique)
-    // Note: We use findOne with $or to check both at once
+    // Check for duplicates (email and phone should be unique for donors)
     const existingUser = await User.findOne({
       $or: [{ email: email.toLowerCase() }, { phoneNumber }] 
     });
@@ -15,15 +14,14 @@ export const createDonorProfile = async (req, res) => {
       return res.status(400).json({ message: "Email or phone number already in use" });
     }
 
-    // 2. Create Donor
     const donor = new User({
       firstName,
       lastName,
       email: email.toLowerCase(),
       phoneNumber,
-      password, // Pre-save hook will hash this
+      password,
       address,
-      role: "donor" // Force role to donor for public registration
+      role: "donor"
     });
 
     await donor.save();
@@ -43,15 +41,24 @@ export const registerTeacher = async (req, res) => {
     try {
         const { firstName, lastName, email, phoneNumber, password, schoolId } = req.body;
 
+        // Check for duplicates (email and phone should be unique for teachers)
+        const existingUser = await User.findOne({
+            $or: [{ email: email.toLowerCase() }, { phoneNumber }] 
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ message: "Email or phone number already in use." });
+        }
+
         const newTeacher = new User({
             firstName,
             lastName,
-            email,
+            email: email.toLowerCase(),
             phoneNumber,
             password,
             role: "teacher",
-            school: schoolId || null, // null means they are Standalone
-            isSchoolVerified: schoolId ? false : true // Standalone is true. Affiliated needs approval (false).
+            school: schoolId || null, 
+            isSchoolVerified: schoolId ? false : true 
         });
 
         await newTeacher.save();
@@ -80,16 +87,32 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Check if the NEW email/phone is already taken by someone else
+    if (email || phoneNumber) {
+      const duplicateQuery = [];
+      
+      if (email && email.toLowerCase() !== user.email) {
+          duplicateQuery.push({ email: email.toLowerCase() });
+      }
+      if (phoneNumber && phoneNumber !== user.phoneNumber) {
+          duplicateQuery.push({ phoneNumber });
+      }
+
+      if (duplicateQuery.length > 0) {
+          const existingUser = await User.findOne({ $or: duplicateQuery });
+          if (existingUser) {
+              return res.status(400).json({ message: "Email or phone number is already taken by another account." });
+          }
+      }
+    }
+
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
-    if (email) user.email = email;
+    if (email) user.email = email.toLowerCase();
     if (phoneNumber) user.phoneNumber = phoneNumber;
     
     if (address) {
-        user.address = {
-            ...user.address, 
-            ...address
-        };
+        user.address = { ...user.address, ...address };
     }
 
     await user.save();
@@ -165,7 +188,7 @@ export const restoreUserProfile = async (req, res) => {
     
     const user = await User.findOne({
       $or: [
-        { email: identifier },
+        { email: identifier.toLowerCase() },
         { phoneNumber: identifier },
         { regNumber: identifier },
       ],
