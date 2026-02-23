@@ -27,7 +27,7 @@ const toPublicMediaUrl = (value) => {
   return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
 };
 
-const Courses = () => {
+const Courses = ({ mode = "both" }) => {
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [formData, setFormData] = useState(initialForm);
@@ -204,6 +204,16 @@ const Courses = () => {
     setEditingCourseId(null);
   };
 
+  // When route mode changes, ensure the UI shows the correct view
+  useEffect(() => {
+    if (mode === "add") {
+      resetForm();
+    }
+    if (mode === "manage") {
+      setEditingCourseId(null);
+    }
+  }, [mode]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formData.name.trim()) {
@@ -351,10 +361,11 @@ const Courses = () => {
         <p className="text-slate-600 mt-1">Create, update, and delete your courses.</p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white border border-slate-200 rounded-xl p-5 space-y-4"
-      >
+      {mode !== "manage" && (
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white border border-slate-200 rounded-xl p-5 space-y-4"
+        >
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1">
@@ -615,7 +626,8 @@ const Courses = () => {
             </button>
           )}
         </div>
-      </form>
+        </form>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3">
@@ -623,7 +635,8 @@ const Courses = () => {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      {mode !== "add" && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200">
           <h3 className="text-lg font-semibold text-slate-800">Your Courses</h3>
         </div>
@@ -669,7 +682,8 @@ const Courses = () => {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };

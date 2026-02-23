@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { 
   FiHome, FiBookOpen, FiEdit3, FiMessageSquare, 
@@ -10,8 +11,11 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+  const [coursesOpen, setCoursesOpen] = useState(false);
+
   const links = [
     { name: "Overview", path: "/teacher/dashboard", icon: FiHome },
+    // Courses handled with dropdown
     { name: "Courses", path: "/teacher/courses", icon: FiBookOpen },
     { name: "Grading", path: "/teacher/grades", icon: FiEdit3 },
     { name: "Messages", path: "/teacher/messages", icon: FiMessageSquare },
@@ -55,6 +59,45 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
 
         <nav className="flex-1 py-6 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar overflow-x-hidden">
           {links.map((link) => {
+            // Render Courses with a dropdown
+            if (link.name === "Courses") {
+              const isActive = location.pathname.includes(link.path);
+              return (
+                <div key={link.name} className={`relative transition-all duration-200 group ${isExpanded ? "px-5" : ""}`}>
+                  <button
+                    onClick={() => setCoursesOpen((s) => !s)}
+                    className={`w-full flex items-center gap-4 py-3.5 transition-all duration-200 outline-none text-left ${isExpanded ? "" : "justify-center"} ${isActive ? "bg-gradient-to-r from-[#207D86]/20 to-transparent text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
+                  >
+                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#4CAF50] to-[#207D86] rounded-r-full shadow-[0_0_10px_rgba(32,125,134,0.5)]" />}
+                    <link.icon className={`w-5 h-5 shrink-0 transition-transform duration-200 ${!isActive && "group-hover:scale-110"} ${isActive ? "text-[#4CAF50]" : "text-slate-400 group-hover:text-[#4CAF50]"}`} />
+                    {isExpanded && <span className={`font-medium tracking-wide transition-all duration-200 ${!isActive && "group-hover:translate-x-1"}`}>{link.name}</span>}
+                    {isExpanded && (
+                      <FiChevronRight className={`ml-auto transition-transform ${coursesOpen ? "rotate-90" : ""}`} />
+                    )}
+                    {!isExpanded && (
+                      <div className="absolute left-full ml-4 px-3 py-2 bg-[#207D86] text-white text-sm font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-xl shadow-black/20 pointer-events-none before:content-[''] before:absolute before:top-1/2 before:-left-1 before:-translate-y-1/2 before:border-4 before:border-transparent before:border-r-[#207D86]">
+                        {link.name}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Submenu */}
+                  {coursesOpen && (
+                    <div className={`mt-1 ${isExpanded ? "pl-9" : ""} flex flex-col gap-1`}>
+                      <Link to="/teacher/courses/add" onClick={close} className="flex items-center gap-3 py-2 px-3 rounded-md text-slate-300 hover:bg-white/5 hover:text-white text-sm">
+                        <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
+                        <span>Add Course</span>
+                      </Link>
+                      <Link to="/teacher/courses/manage" onClick={close} className="flex items-center gap-3 py-2 px-3 rounded-md text-slate-300 hover:bg-white/5 hover:text-white text-sm">
+                        <span className="w-1.5 h-1.5 bg-white/30 rounded-full" />
+                        <span>Manage Courses</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             const isActive = location.pathname.includes(link.path);
             return (
               <Link key={link.name} to={link.path} onClick={close}
@@ -66,7 +109,7 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
                 {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#4CAF50] to-[#207D86] rounded-r-full shadow-[0_0_10px_rgba(32,125,134,0.5)]" />}
                 <link.icon className={`w-5 h-5 shrink-0 transition-transform duration-200 ${!isActive && "group-hover:scale-110"} ${isActive ? "text-[#4CAF50]" : "text-slate-400 group-hover:text-[#4CAF50]"}`} />
                 {isExpanded && <span className={`font-medium tracking-wide transition-all duration-200 ${!isActive && "group-hover:translate-x-1"}`}>{link.name}</span>}
-                
+
                 {!isExpanded && (
                   <div className="absolute left-full ml-4 px-3 py-2 bg-[#207D86] text-white text-sm font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 shadow-xl shadow-black/20 pointer-events-none before:content-[''] before:absolute before:top-1/2 before:-left-1 before:-translate-y-1/2 before:border-4 before:border-transparent before:border-r-[#207D86]">
                     {link.name}

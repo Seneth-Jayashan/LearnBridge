@@ -23,7 +23,10 @@ const TeacherRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
           <Route path="dashboard" element={<div>Dashboard Content</div>} />
-          <Route path="courses" element={<Courses />} />
+          {/* Course routes: allow /courses, /courses/add, /courses/manage */}
+          <Route path="courses" element={<Courses mode="both" />} />
+          <Route path="courses/add" element={<Courses mode="add" />} />
+          <Route path="courses/manage" element={<Courses mode="manage" />} />
         </Routes>
       </div>
     </>
