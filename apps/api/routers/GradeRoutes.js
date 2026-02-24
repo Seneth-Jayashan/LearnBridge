@@ -15,6 +15,13 @@ const router = express.Router();
 
 // --- Grade Management Routes ---
 
+router.post(
+    "/seed-defaults",
+    protect,
+    restrictTo("super_admin"),
+    seedDefaultGrades
+);
+
 router.route("/")
     // Create: super_admin Only
     .post(

@@ -5,6 +5,9 @@ import ModulesManage from "../pages/admin/Modules/ModulesManage";
 import LevelManage from "../pages/admin/Levels/LevelManage";
 import AddLevels from "../pages/admin/Levels/AddLevels";
 import EditLevels from "../pages/admin/Levels/EditLevels";
+import GradeManage from "../pages/admin/Grades/GradeManage";
+import AddGrade from "../pages/admin/Grades/AddGrade";
+import EditGrade from "../pages/admin/Grades/EditGrade";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -31,6 +34,10 @@ const adminRoutes = () => {
           <Route path="levels/manage" element={<LevelManage />} />
           <Route path="levels/add" element={<AddLevels />} />
           <Route path="levels/edit/:id" element={<EditLevels />} />
+          <Route path="grades" element={<Navigate to="grades/manage" replace />} />
+          <Route path="grades/manage" element={<GradeManage />} />
+          <Route path="grades/add" element={<AddGrade />} />
+          <Route path="grades/edit/:id" element={<EditGrade />} />
           {/* ... Add your other admin routes here ... */}
         </Routes>
       </div>

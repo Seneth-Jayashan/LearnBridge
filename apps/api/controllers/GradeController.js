@@ -1,5 +1,10 @@
 import Grade from "../models/Grade.js";
 
+const defaultGrades = Array.from({ length: 13 }, (_, i) => ({
+    name: String(i + 1),
+    description: `Grade ${i + 1}`,
+}));
+
 export const createGrade = async (req, res) => {
     try {
         const { name, description } = req.body;
@@ -92,6 +97,31 @@ export const deleteGrade = async (req, res) => {
         }
 
         res.status(200).json({ message: "Grade deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const seedDefaultGrades = async (req, res) => {
+    try {
+        let created = 0;
+        let updated = 0;
+
+        for (const grade of defaultGrades) {
+            const result = await Grade.updateOne(
+                { name: grade.name },
+                { $set: { description: grade.description } },
+                { upsert: true },
+            );
+
+            if (result.upsertedCount > 0) {
+                created += 1;
+            } else if (result.modifiedCount > 0) {
+                updated += 1;
+            }
+        }
+
+        res.status(200).json({ message: "Default grades synced successfully", created, updated });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
