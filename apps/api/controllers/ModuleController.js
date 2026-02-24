@@ -1,6 +1,8 @@
 import Module from "../models/Module.js";
 import Grade from "../models/Grade.js";
 import Level from "../models/Level.js";
+import Lesson from "../models/Lesson.js";
+import mongoose from "mongoose";
 
 const STREAMS = [
     "Mathematics Stream",
@@ -204,13 +206,31 @@ export const updateModule = async (req, res) => {
 // --- Delete Module ---
 export const deleteModule = async (req, res) => {
     try {
-        const module = await Module.findByIdAndDelete(req.params.id);
+        const module = await Module.findById(req.params.id);
         
         if (!module) {
             return res.status(404).json({ message: "Module not found" });
         }
 
-        res.status(200).json({ message: "Module deleted successfully" });
+        const moduleObjectId = mongoose.Types.ObjectId.isValid(req.params.id)
+            ? new mongoose.Types.ObjectId(req.params.id)
+            : null;
+
+        const lessonDeleteFilter = {
+            $or: [
+                { module: req.params.id },
+                { moduleId: req.params.id },
+                ...(moduleObjectId ? [{ module: moduleObjectId }, { moduleId: moduleObjectId }] : []),
+            ],
+        };
+
+        const lessonDeleteResult = await Lesson.deleteMany(lessonDeleteFilter);
+        await Module.deleteOne({ _id: req.params.id });
+
+        res.status(200).json({
+            message: "Module deleted successfully",
+            deletedLessons: lessonDeleteResult.deletedCount || 0,
+        });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }

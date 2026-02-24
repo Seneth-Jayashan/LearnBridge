@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Lesson from "./Lesson.js";
 
 const moduleSchema = new mongoose.Schema(
   {
@@ -21,6 +22,18 @@ moduleSchema.index(
   { name: 1, level: 1, grade: 1, subjectStream: 1 },
   { unique: true, name: "module_name_level_grade_stream_unique" },
 );
+
+moduleSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const moduleDoc = await this.model.findOne(this.getFilter());
+    if (moduleDoc?._id) {
+      await Lesson.deleteMany({ module: moduleDoc._id });
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const Module = mongoose.model("Module", moduleSchema);
 export default Module;

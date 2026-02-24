@@ -159,7 +159,17 @@ export const getAllLessons = async (req, res) => {
       .populate("createdBy", "firstName lastName role")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(lessons);
+    const orphanLessonIds = lessons
+      .filter((lesson) => !lesson.module)
+      .map((lesson) => lesson._id);
+
+    if (orphanLessonIds.length > 0) {
+      await Lesson.deleteMany({ _id: { $in: orphanLessonIds } });
+    }
+
+    const validLessons = lessons.filter((lesson) => Boolean(lesson.module));
+
+    res.status(200).json(validLessons);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -172,6 +182,11 @@ export const getLessonById = async (req, res) => {
       .populate("createdBy", "firstName lastName role");
 
     if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+
+    if (!lesson.module) {
+      await Lesson.deleteOne({ _id: lesson._id });
       return res.status(404).json({ message: "Lesson not found" });
     }
 

@@ -95,7 +95,9 @@ const LessonsManage = () => {
           <div className="space-y-4">
             {/* Group lessons by module */}
             {Object.values(
-              lessons.reduce((acc, lesson) => {
+              lessons
+                .filter((lesson) => lesson.module?._id)
+                .reduce((acc, lesson) => {
                 const moduleId = lesson.module?._id || "_unassigned";
                 if (!acc[moduleId]) {
                   acc[moduleId] = { module: lesson.module || { name: "Unassigned", _id: moduleId }, lessons: [] };
