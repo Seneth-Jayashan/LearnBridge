@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { 
   FiHome, FiUsers, FiUserCheck, FiLayout, FiSettings, 
-  FiChevronLeft, FiChevronRight, FiBriefcase, FiLogOut 
+  FiChevronLeft, FiChevronRight, FiBriefcase, FiLogOut,FiClipboard 
 } from "react-icons/fi";
 
 const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
@@ -14,6 +14,7 @@ const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
     { name: "Dashboard", path: "/school/dashboard", icon: FiHome },
     { name: "Manage Students", path: "/school/students", icon: FiUsers },
     { name: "Manage Teachers", path: "/school/teachers", icon: FiUserCheck },
+    { name: "Needs Registry", path: "/school/needsRegistry", icon: FiClipboard },
     { name: "School Profile", path: "/school/profile", icon: FiLayout },
     { name: "Settings", path: "/school/settings", icon: FiSettings },
   ];

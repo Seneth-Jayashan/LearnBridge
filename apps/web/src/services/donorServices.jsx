@@ -25,3 +25,15 @@ export const updateDonorProfile = (data) =>
 
 export const changePassword = (data) =>
   api.put("/donor/profile/change-password", data);
+
+export const createNeed = (data) =>
+  api.post("/school-admin/needs", data);
+
+export const getMyPostedNeeds = () =>
+  api.get("/school-admin/school/my-needs");
+
+export const updateNeed = (id, data) =>
+  api.put(`/school-admin/school/${id}`, data);
+
+export const deleteNeed = (id) =>
+  api.delete(`/school-admin/school/${id}`);

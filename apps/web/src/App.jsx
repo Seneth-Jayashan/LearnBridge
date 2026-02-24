@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // --- Context Providers ---
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -50,6 +52,9 @@ function App() {
       <AuthProvider>
         <AdminProvider>         {/* Wrap for Super Admin State */}
           <SchoolAdminProvider> {/* Wrap for School Admin State */}
+
+            <ToastContainer position="top-right" autoClose={3000} newestOnTop closeOnClick
+              pauseOnHover draggable theme="colored"/>
             
             <Routes>
               

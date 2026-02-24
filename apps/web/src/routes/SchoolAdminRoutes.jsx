@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import SchoolSidebar from "../components/sidebar/SchoolSidebar";
+import NeedsRegistry from "../pages/SchoolAdmin/NeedsRegistry";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -22,7 +23,8 @@ const adminRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
           <Route path="dashboard" element={<div>School Dashboard Content</div>} />
-          {/* ... Add your other admin routes here ... */}
+          <Route path="needsRegistry" element={<NeedsRegistry />} />
+          
         </Routes>
       </div>
     </>
