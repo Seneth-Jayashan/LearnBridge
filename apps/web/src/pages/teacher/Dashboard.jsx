@@ -8,8 +8,8 @@ const TeacherDashboard = () => {
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 border rounded-lg bg-white">
-          <h3 className="text-lg font-semibold">Your Courses</h3>
-          <p className="text-sm text-slate-600 mt-1">Quick link to manage courses</p>
+          <h3 className="text-lg font-semibold">Your Modules</h3>
+          <p className="text-sm text-slate-600 mt-1">Quick link to manage modules</p>
         </div>
 
         <div className="p-4 border rounded-lg bg-white">

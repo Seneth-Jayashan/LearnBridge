@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { 
-  FiHome, FiBookOpen, FiFileText, FiEdit3, FiMessageSquare, 
+  FiHome, FiBookOpen, FiFileText, FiEdit3, FiMessageSquare,
   FiChevronLeft, FiChevronRight, FiLogOut 
 } from "react-icons/fi";
 
@@ -11,13 +11,10 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  const [coursesOpen, setCoursesOpen] = useState(false);
   const [lessonsOpen, setLessonsOpen] = useState(false);
 
   const links = [
     { name: "Overview", path: "/teacher/dashboard", icon: FiHome },
-    // Courses handled with dropdown
-    { name: "Courses", path: "/teacher/courses", icon: FiBookOpen },
     { name: "Lessons", path: "/teacher/lessons", icon: FiFileText },
     { name: "Grading", path: "/teacher/grades", icon: FiEdit3 },
     { name: "Messages", path: "/teacher/messages", icon: FiMessageSquare },
@@ -61,34 +58,19 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
 
         <nav className="flex-1 py-6 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar overflow-x-hidden">
           {links.map((link) => {
-            // Render Courses with a dropdown
-            if (link.name === "Courses" || link.name === "Lessons") {
+            if (link.name === "Lessons") {
               const isActive = location.pathname.includes(link.path);
-              const isDropdownOpen = link.name === "Courses" ? coursesOpen : lessonsOpen;
+              const isDropdownOpen = lessonsOpen;
 
-              const handleDropdownToggle = () => {
-                if (link.name === "Courses") {
-                  setCoursesOpen((s) => !s);
-                  return;
-                }
-                setLessonsOpen((s) => !s);
-              };
-
-              const submenuItems =
-                link.name === "Courses"
-                  ? [
-                      { label: "Add Course", path: "/teacher/courses/add" },
-                      { label: "Manage Courses", path: "/teacher/courses/manage" },
-                    ]
-                  : [
-                      { label: "Add Lesson", path: "/teacher/lessons/add" },
-                      { label: "Manage Lessons", path: "/teacher/lessons/manage" },
-                    ];
+              const submenuItems = [
+                { label: "Add Lesson", path: "/teacher/lessons/add" },
+                { label: "Manage Lessons", path: "/teacher/lessons/manage" },
+              ];
 
               return (
                 <div key={link.name} className={`relative transition-all duration-200 group ${isExpanded ? "px-5" : ""}`}>
                   <button
-                    onClick={handleDropdownToggle}
+                    onClick={() => setLessonsOpen((s) => !s)}
                     className={`w-full flex items-center gap-4 py-3.5 transition-all duration-200 outline-none text-left ${isExpanded ? "" : "justify-center"} ${isActive ? "bg-gradient-to-r from-[#207D86]/20 to-transparent text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
                   >
                     {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#4CAF50] to-[#207D86] rounded-r-full shadow-[0_0_10px_rgba(32,125,134,0.5)]" />}

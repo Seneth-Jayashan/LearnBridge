@@ -26,10 +26,10 @@ export const createLessonSchema = z
   .object({
     title: z.string().min(1, "Lesson title is required").trim(),
     description: z.string().trim().optional(),
-    course: z
+    module: z
       .string()
-      .min(1, "Course is required")
-      .refine(isObjectId, "Course id is invalid"),
+      .min(1, "Module is required")
+      .refine(isObjectId, "Module id is invalid"),
     materialUrl: optionalUrl,
     videoUrl: optionalUrl,
     createZoomMeeting: optionalBoolean,
@@ -50,7 +50,7 @@ export const updateLessonSchema = z
   .object({
     title: z.string().min(1, "Lesson title cannot be empty").trim().optional(),
     description: z.string().trim().optional(),
-    course: z.string().refine(isObjectId, "Course id is invalid").optional(),
+    module: z.string().refine(isObjectId, "Module id is invalid").optional(),
     materialUrl: optionalUrl,
     videoUrl: optionalUrl,
     createZoomMeeting: optionalBoolean,

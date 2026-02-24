@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import AdminSidebar from "../components/sidebar/AdminSidebar";
+import ModulesManage from "../pages/admin/Modules/ModulesManage";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -22,6 +23,7 @@ const adminRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          <Route path="modules" element={<ModulesManage />} />
           {/* ... Add your other admin routes here ... */}
         </Routes>
       </div>

@@ -1,29 +1,11 @@
 import mongoose from "mongoose";
 import Lesson from "../models/Lesson.js";
-import Course from "../models/Course.js";
+import Module from "../models/Module.js";
 import { createZoomMeeting } from "../services/ZoomService.js";
 
 const buildMediaUrl = (req, file) => {
   if (!file) return "";
   return `${req.protocol}://${req.get("host")}/uploads/lessons/${file.filename}`;
-};
-
-const canManageCourse = (user, course) => {
-  if (user.role === "super_admin") return true;
-
-  if (user.role === "school_admin") {
-    return (
-      user.school &&
-      course.school &&
-      user.school.toString() === course.school.toString()
-    );
-  }
-
-  if (user.role === "teacher") {
-    return course.createdBy.toString() === user._id.toString();
-  }
-
-  return false;
 };
 
 const canManageLesson = (user, lesson) => {
@@ -84,7 +66,7 @@ export const createLesson = async (req, res) => {
     const {
       title,
       description,
-      course,
+      module,
       materialUrl,
       videoUrl,
       createZoomMeeting,
@@ -97,16 +79,10 @@ export const createLesson = async (req, res) => {
     const uploadedMaterialUrl = buildMediaUrl(req, materialFile);
     const uploadedVideoUrl = buildMediaUrl(req, videoFile);
 
-    const selectedCourse = await Course.findById(course);
+    const selectedModule = await Module.findById(module);
 
-    if (!selectedCourse) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    if (!canManageCourse(req.user, selectedCourse)) {
-      return res
-        .status(403)
-        .json({ message: "You do not have permission to add lessons to this course" });
+    if (!selectedModule) {
+      return res.status(404).json({ message: "Module not found" });
     }
 
     const nextMaterialUrl = uploadedMaterialUrl || materialUrl || "";
@@ -138,12 +114,12 @@ export const createLesson = async (req, res) => {
     const lesson = await Lesson.create({
       title: title.trim(),
       description: description ?? "",
-      course: selectedCourse._id,
+      module: selectedModule._id,
       materialUrl: nextMaterialUrl,
       videoUrl: nextVideoUrl,
       onlineMeeting,
       createdBy: req.user._id,
-      school: toNullableObjectId(selectedCourse.school || req.user.school),
+      school: toNullableObjectId(req.user.school),
     });
 
     res.status(201).json({
@@ -154,7 +130,7 @@ export const createLesson = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
-        message: "A lesson with this title already exists in this course",
+        message: "A lesson with this title already exists in this module",
       });
     }
     if (error.name === "ValidationError" || error.name === "CastError") {
@@ -174,12 +150,12 @@ export const getAllLessons = async (req, res) => {
       query.school = req.user.school;
     }
 
-    if (req.query.course && mongoose.Types.ObjectId.isValid(req.query.course)) {
-      query.course = req.query.course;
+    if (req.query.module && mongoose.Types.ObjectId.isValid(req.query.module)) {
+      query.module = req.query.module;
     }
 
     const lessons = await Lesson.find(query)
-      .populate("course", "name subject grade stream")
+      .populate("module", "name description contentUrl")
       .populate("createdBy", "firstName lastName role")
       .sort({ createdAt: -1 });
 
@@ -192,7 +168,7 @@ export const getAllLessons = async (req, res) => {
 export const getLessonById = async (req, res) => {
   try {
     const lesson = await Lesson.findById(req.params.id)
-      .populate("course", "name subject grade stream")
+      .populate("module", "name description contentUrl")
       .populate("createdBy", "firstName lastName role");
 
     if (!lesson) {
@@ -216,7 +192,7 @@ export const updateLesson = async (req, res) => {
     const {
       title,
       description,
-      course,
+      module,
       materialUrl,
       videoUrl,
       createZoomMeeting,
@@ -240,21 +216,15 @@ export const updateLesson = async (req, res) => {
         .json({ message: "You do not have permission to update this lesson" });
     }
 
-    if (course !== undefined) {
-      const selectedCourse = await Course.findById(course);
+    if (module !== undefined) {
+      const selectedModule = await Module.findById(module);
 
-      if (!selectedCourse) {
-        return res.status(404).json({ message: "Course not found" });
+      if (!selectedModule) {
+        return res.status(404).json({ message: "Module not found" });
       }
 
-      if (!canManageCourse(req.user, selectedCourse)) {
-        return res.status(403).json({
-          message: "You do not have permission to move this lesson to that course",
-        });
-      }
-
-      lesson.course = selectedCourse._id;
-      lesson.school = toNullableObjectId(selectedCourse.school || req.user.school);
+      lesson.module = selectedModule._id;
+      lesson.school = toNullableObjectId(req.user.school);
     }
 
     if (title !== undefined) {
@@ -311,7 +281,7 @@ export const updateLesson = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
-        message: "A lesson with this title already exists in this course",
+        message: "A lesson with this title already exists in this module",
       });
     }
     if (error.name === "ValidationError" || error.name === "CastError") {

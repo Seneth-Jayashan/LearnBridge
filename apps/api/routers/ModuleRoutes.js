@@ -20,22 +20,22 @@ router.get("/", getAllModules);
 router.get("/:id", getModuleById);
 
 // --- Restricted Access (Write Access) ---
-// Only Super Admins and School Admins can manage modules
+// Only Super Admins can manage modules
 router.post(
     "/", 
-    restrictTo("super_admin", "school_admin"), 
+    restrictTo("super_admin"), 
     createModule
 );
 
 router.put(
     "/:id", 
-    restrictTo("super_admin", "school_admin"), 
+    restrictTo("super_admin"), 
     updateModule
 );
 
 router.delete(
     "/:id", 
-    restrictTo("super_admin", "school_admin"), 
+    restrictTo("super_admin"), 
     deleteModule
 );
 

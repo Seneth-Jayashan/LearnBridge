@@ -40,7 +40,7 @@ const LessonsManage = () => {
   const [lessons, setLessons] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [openCourses, setOpenCourses] = useState({});
+  const [openModules, setOpenModules] = useState({});
 
   const loadLessons = async () => {
     try {
@@ -93,31 +93,31 @@ const LessonsManage = () => {
           <p className="text-slate-600">No lessons found. Add your first lesson.</p>
         ) : (
           <div className="space-y-4">
-            {/* Group lessons by course */}
+            {/* Group lessons by module */}
             {Object.values(
               lessons.reduce((acc, lesson) => {
-                const courseId = lesson.course?._id || "_unassigned";
-                if (!acc[courseId]) {
-                  acc[courseId] = { course: lesson.course || { name: "Unassigned" , _id: courseId }, lessons: [] };
+                const moduleId = lesson.module?._id || "_unassigned";
+                if (!acc[moduleId]) {
+                  acc[moduleId] = { module: lesson.module || { name: "Unassigned", _id: moduleId }, lessons: [] };
                 }
-                acc[courseId].lessons.push(lesson);
+                acc[moduleId].lessons.push(lesson);
                 return acc;
               }, {})
             ).map((group) => (
-              <div key={group.course._id} className="border border-slate-200 rounded-lg overflow-hidden">
+              <div key={group.module._id} className="border border-slate-200 rounded-lg overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => setOpenCourses((s) => ({ ...s, [group.course._id]: !s[group.course._id] }))}
+                  onClick={() => setOpenModules((s) => ({ ...s, [group.module._id]: !s[group.module._id] }))}
                   className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100"
                 >
                   <div>
-                    <div className="font-semibold text-[#0E2A47]">{group.course.name || "Unassigned"}</div>
+                    <div className="font-semibold text-[#0E2A47]">{group.module.name || "Unassigned"}</div>
                     <div className="text-sm text-slate-600">{group.lessons.length} lesson{group.lessons.length !== 1 ? "s" : ""}</div>
                   </div>
-                  <div className="text-slate-500">{openCourses[group.course._id] ? "▾" : "▸"}</div>
+                  <div className="text-slate-500">{openModules[group.module._id] ? "▾" : "▸"}</div>
                 </button>
 
-                {openCourses[group.course._id] && (
+                {openModules[group.module._id] && (
                   <div className="p-4 bg-white space-y-3">
                     {group.lessons.map((lesson) => (
                       <article key={lesson._id} className="border border-slate-100 rounded-lg p-3 bg-slate-50">

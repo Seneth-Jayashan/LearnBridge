@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import courseService from "../../../services/CourseService";
 import lessonService from "../../../services/LessonService";
+import moduleService from "../../../services/ModuleService";
 
 const initialForm = {
   title: "",
   description: "",
-  course: "",
+  module: "",
   materialUrl: "",
   videoUrl: "",
   zoomStartTime: "",
@@ -31,7 +31,7 @@ const toDateTimeLocalValue = (value) => {
 const LessonsEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [modules, setModules] = useState([]);
   const [formData, setFormData] = useState(initialForm);
   const [mediaFiles, setMediaFiles] = useState({ material: null, video: null });
   const [isLoading, setIsLoading] = useState(true);
@@ -42,9 +42,9 @@ const LessonsEdit = () => {
     const loadData = async () => {
       try {
         setError("");
-        const [lessonData, courseData] = await Promise.all([
+        const [lessonData, moduleData] = await Promise.all([
           lessonService.getAllLessons(),
-          courseService.getAllCourses(),
+          moduleService.getAllModules(),
         ]);
 
         const lesson = Array.isArray(lessonData) ? lessonData.find((item) => item._id === id) : null;
@@ -53,11 +53,11 @@ const LessonsEdit = () => {
           return;
         }
 
-        setCourses(Array.isArray(courseData) ? courseData : []);
+        setModules(Array.isArray(moduleData) ? moduleData : []);
         setFormData({
           title: lesson.title || "",
           description: lesson.description || "",
-          course: lesson.course?._id || "",
+          module: lesson.module?._id || "",
           materialUrl: toPublicMediaUrl(lesson.materialUrl || ""),
           videoUrl: toPublicMediaUrl(lesson.videoUrl || ""),
           zoomStartTime: toDateTimeLocalValue(lesson.onlineMeeting?.startTime),
@@ -103,7 +103,7 @@ const LessonsEdit = () => {
     event.preventDefault();
 
     if (!formData.title.trim()) return setError("Lesson title is required");
-    if (!formData.course.trim()) return setError("Please select a course");
+    if (!formData.module.trim()) return setError("Please select a module");
     if (!formData.materialUrl && !formData.videoUrl && !mediaFiles.material && !mediaFiles.video) {
       return setError("Please add at least one lesson resource (document or video)");
     }
@@ -114,7 +114,7 @@ const LessonsEdit = () => {
       const payload = new FormData();
       payload.append("title", formData.title.trim());
       payload.append("description", formData.description.trim());
-      payload.append("course", formData.course);
+      payload.append("module", formData.module);
       payload.append("createZoomMeeting", String(Boolean(formData.zoomStartTime)));
 
       if (formData.zoomStartTime) {
@@ -163,11 +163,11 @@ const LessonsEdit = () => {
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="course" className="block text-sm font-semibold text-slate-700 mb-1">Course</label>
-              <select id="course" name="course" value={formData.course} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]">
-                <option value="">Select course</option>
-                {courses.map((course) => (
-                  <option key={course._id} value={course._id}>{course.name}</option>
+              <label htmlFor="module" className="block text-sm font-semibold text-slate-700 mb-1">Module</label>
+              <select id="module" name="module" value={formData.module} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]">
+                <option value="">Select module</option>
+                {modules.map((item) => (
+                  <option key={item._id} value={item._id}>{item.name}</option>
                 ))}
               </select>
             </div>

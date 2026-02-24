@@ -12,7 +12,7 @@ const StudentSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
 
   const links = [
     { name: "My Hub", path: "/student/dashboard", icon: FiHome },
-    { name: "Courses", path: "/student/courses", icon: FiPlayCircle },
+    { name: "Modules", path: "/student/modules", icon: FiPlayCircle },
     { name: "Assignments", path: "/student/assignments", icon: FiCheckSquare },
     { name: "Achievements", path: "/student/achievements", icon: FiAward },
   ];

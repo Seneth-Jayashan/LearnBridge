@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import courseService from "../../../services/CourseService";
 import lessonService from "../../../services/LessonService";
+import moduleService from "../../../services/ModuleService";
 
 const initialForm = {
   title: "",
   description: "",
-  course: "",
+  module: "",
   materialUrl: "",
   videoUrl: "",
   zoomStartTime: "",
@@ -22,7 +22,7 @@ const toPublicMediaUrl = (value) => {
 
 const LessonsAdd = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [modules, setModules] = useState([]);
   const [formData, setFormData] = useState(initialForm);
   const [mediaFiles, setMediaFiles] = useState({ material: null, video: null });
   const [isLoading, setIsLoading] = useState(true);
@@ -30,19 +30,19 @@ const LessonsAdd = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadCourses = async () => {
+    const loadModules = async () => {
       try {
         setError("");
-        const courseData = await courseService.getAllCourses();
-        setCourses(Array.isArray(courseData) ? courseData : []);
+        const moduleData = await moduleService.getAllModules();
+        setModules(Array.isArray(moduleData) ? moduleData : []);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load courses");
+        setError(err.response?.data?.message || "Failed to load modules");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadCourses();
+    loadModules();
   }, []);
 
   const handleInputChange = (event) => {
@@ -76,7 +76,7 @@ const LessonsAdd = () => {
     event.preventDefault();
 
     if (!formData.title.trim()) return setError("Lesson title is required");
-    if (!formData.course.trim()) return setError("Please select a course");
+    if (!formData.module.trim()) return setError("Please select a module");
     if (!formData.materialUrl && !formData.videoUrl && !mediaFiles.material && !mediaFiles.video) {
       return setError("Please add at least one lesson resource (document or video)");
     }
@@ -87,7 +87,7 @@ const LessonsAdd = () => {
       const payload = new FormData();
       payload.append("title", formData.title.trim());
       payload.append("description", formData.description.trim());
-      payload.append("course", formData.course);
+      payload.append("module", formData.module);
       payload.append("createZoomMeeting", String(Boolean(formData.zoomStartTime)));
 
       if (formData.zoomStartTime) {
@@ -121,7 +121,7 @@ const LessonsAdd = () => {
     <section className="max-w-5xl mx-auto space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-[#0E2A47]">Add Lesson</h2>
-        <p className="text-slate-600 mt-1">Upload lesson materials and videos under your courses.</p>
+        <p className="text-slate-600 mt-1">Upload lesson materials and videos under your modules.</p>
       </div>
 
       {error && (
@@ -131,16 +131,16 @@ const LessonsAdd = () => {
       )}
 
       {isLoading ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 text-slate-600">Loading courses...</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-5 text-slate-600">Loading modules...</div>
       ) : (
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="course" className="block text-sm font-semibold text-slate-700 mb-1">Course</label>
-              <select id="course" name="course" value={formData.course} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]">
-                <option value="">Select course</option>
-                {courses.map((course) => (
-                  <option key={course._id} value={course._id}>{course.name}</option>
+              <label htmlFor="module" className="block text-sm font-semibold text-slate-700 mb-1">Module</label>
+              <select id="module" name="module" value={formData.module} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]">
+                <option value="">Select module</option>
+                {modules.map((item) => (
+                  <option key={item._id} value={item._id}>{item.name}</option>
                 ))}
               </select>
             </div>

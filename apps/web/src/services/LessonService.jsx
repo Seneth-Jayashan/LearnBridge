@@ -47,9 +47,9 @@ const buildRequestConfig = (payload) => {
 };
 
 const lessonService = {
-  async getAllLessons(courseId = "") {
-    const endpoint = courseId
-      ? `${lessonPath()}?course=${encodeURIComponent(courseId)}`
+  async getAllLessons(moduleId = "") {
+    const endpoint = moduleId
+      ? `${lessonPath()}?module=${encodeURIComponent(moduleId)}`
       : lessonPath();
     const response = await api.get(endpoint, { headers: getAuthHeaders() });
     return response.data;
