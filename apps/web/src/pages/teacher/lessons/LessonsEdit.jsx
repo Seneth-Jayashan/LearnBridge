@@ -10,6 +10,7 @@ const initialForm = {
   materialUrl: "",
   videoUrl: "",
   zoomStartTime: "",
+  isLive: false,
 };
 
 const toPublicMediaUrl = (value) => {
@@ -61,6 +62,7 @@ const LessonsEdit = () => {
           materialUrl: toPublicMediaUrl(lesson.materialUrl || ""),
           videoUrl: toPublicMediaUrl(lesson.videoUrl || ""),
           zoomStartTime: toDateTimeLocalValue(lesson.onlineMeeting?.startTime),
+          isLive: Boolean(lesson.onlineMeeting && (lesson.onlineMeeting.startTime || lesson.onlineMeeting.joinUrl)),
         });
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load lesson");
@@ -104,8 +106,14 @@ const LessonsEdit = () => {
 
     if (!formData.title.trim()) return setError("Lesson title is required");
     if (!formData.module.trim()) return setError("Please select a module");
-    if (!formData.materialUrl && !formData.videoUrl && !mediaFiles.material && !mediaFiles.video) {
-      return setError("Please add at least one lesson resource (document or video)");
+    if (formData.isLive) {
+      if (!formData.materialUrl && !mediaFiles.material) {
+        return setError("Live sessions require a lesson material (PDF/Word)");
+      }
+    } else {
+      if (!formData.materialUrl && !formData.videoUrl && !mediaFiles.material && !mediaFiles.video) {
+        return setError("Please add at least one lesson resource (document or video)");
+      }
     }
     setIsSubmitting(true);
     setError("");
@@ -115,9 +123,9 @@ const LessonsEdit = () => {
       payload.append("title", formData.title.trim());
       payload.append("description", formData.description.trim());
       payload.append("module", formData.module);
-      payload.append("createZoomMeeting", String(Boolean(formData.zoomStartTime)));
+      payload.append("createZoomMeeting", String(Boolean(formData.isLive)));
 
-      if (formData.zoomStartTime) {
+      if (formData.isLive && formData.zoomStartTime) {
         payload.append("zoomStartTime", new Date(formData.zoomStartTime).toISOString());
       }
 
@@ -127,10 +135,12 @@ const LessonsEdit = () => {
         payload.append("materialUrl", formData.materialUrl.trim());
       }
 
-      if (mediaFiles.video) {
-        payload.append("video", mediaFiles.video);
-      } else if (formData.videoUrl && /^https?:\/\//i.test(formData.videoUrl)) {
-        payload.append("videoUrl", formData.videoUrl.trim());
+      if (!formData.isLive) {
+        if (mediaFiles.video) {
+          payload.append("video", mediaFiles.video);
+        } else if (formData.videoUrl && /^https?:\/\//i.test(formData.videoUrl)) {
+          payload.append("videoUrl", formData.videoUrl.trim());
+        }
       }
 
       await lessonService.updateLesson(id, payload);
@@ -177,25 +187,41 @@ const LessonsEdit = () => {
               <input id="title" name="title" value={formData.title} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]" />
             </div>
 
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center">
+                <input id="isLive" name="isLive" type="checkbox" checked={formData.isLive} disabled className="sr-only peer" />
+                <div className={`w-11 h-6 ${formData.isLive ? 'bg-[#207D86]' : 'bg-gray-200'} rounded-full transition-colors duration-200 ease-in-out`} />
+                <span className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transform translate-x-0 transition-transform duration-200 ease-in-out ${formData.isLive ? 'translate-x-5' : ''}`} />
+              </label>
+              <div>
+                <div className="text-sm font-semibold text-slate-700">Online live (Zoom) session</div>
+                <div className={formData.isLive ? "text-xs font-medium text-green-600" : "text-xs font-medium text-slate-500"}>
+                  {formData.isLive ? "Online — meeting exists (cannot toggle here)" : "Not live — can upload video/material"}
+                </div>
+              </div>
+            </div>
+
             <div className="md:col-span-2">
               <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
               <textarea id="description" name="description" rows={3} value={formData.description} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]" />
             </div>
 
-            <div className="md:col-span-2 rounded-lg border border-slate-200 p-4 bg-slate-50">
-              <label htmlFor="zoomStartTime" className="block text-sm font-semibold text-slate-700 mb-1">
-                Zoom Meeting Date & Time (optional)
-              </label>
-              <input
-                id="zoomStartTime"
-                name="zoomStartTime"
-                type="datetime-local"
-                value={formData.zoomStartTime}
-                onChange={handleInputChange}
-                className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-              />
-              <p className="text-xs text-slate-600 mt-2">Set a value to create/update Zoom meeting. Clear it and save to remove the Zoom meeting link.</p>
-            </div>
+            {formData.isLive && (
+              <div className="md:col-span-2 rounded-lg border border-slate-200 p-4 bg-slate-50">
+                <label htmlFor="zoomStartTime" className="block text-sm font-semibold text-slate-700 mb-1">
+                  Zoom Meeting Date & Time
+                </label>
+                <input
+                  id="zoomStartTime"
+                  name="zoomStartTime"
+                  type="datetime-local"
+                  value={formData.zoomStartTime}
+                  onChange={handleInputChange}
+                  className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
+                />
+                <p className="text-xs text-slate-600 mt-2">Set a value to create/update Zoom meeting. Clearing it will remove the meeting.</p>
+              </div>
+            )}
 
             <div>
               <label htmlFor="materialUrl" className="block text-sm font-semibold text-slate-700 mb-1">Lesson Material (PDF/Word)</label>
@@ -207,18 +233,20 @@ const LessonsEdit = () => {
               )}
             </div>
 
-            <div>
-              <label htmlFor="videoUrl" className="block text-sm font-semibold text-slate-700 mb-1">Lesson Video (watchable + downloadable)</label>
-              <input id="videoUrl" name="videoUrl" type="file" accept="video/*" onChange={handleFileChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" />
-              {formData.videoUrl && (
-                <a href={toPublicMediaUrl(formData.videoUrl)} target="_blank" rel="noopener noreferrer" download className="inline-flex mt-2 text-sm text-[#207D86] font-semibold hover:text-[#14555B]">
-                  Download current video
-                </a>
-              )}
-            </div>
+            {!formData.isLive && (
+              <div>
+                <label htmlFor="videoUrl" className="block text-sm font-semibold text-slate-700 mb-1">Lesson Video (watchable + downloadable)</label>
+                <input id="videoUrl" name="videoUrl" type="file" accept="video/*" onChange={handleFileChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" />
+                {formData.videoUrl && (
+                  <a href={toPublicMediaUrl(formData.videoUrl)} target="_blank" rel="noopener noreferrer" download className="inline-flex mt-2 text-sm text-[#207D86] font-semibold hover:text-[#14555B]">
+                    Download current video
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
-          {formData.videoUrl && (
+          {!formData.isLive && formData.videoUrl && (
             <div>
               <p className="text-sm font-semibold text-slate-700 mb-2">Video Preview</p>
               <video controls className="w-full max-h-72 rounded-lg border border-slate-300 bg-black" src={toPublicMediaUrl(formData.videoUrl)} />
