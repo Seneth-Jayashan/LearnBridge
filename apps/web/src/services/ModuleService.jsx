@@ -28,6 +28,13 @@ const moduleService = {
     return response.data;
   },
 
+  async getModuleById(id) {
+    const response = await api.get(modulePath(id), {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  },
+
   async updateModule(id, moduleData) {
     const response = await api.put(modulePath(id), moduleData, {
       headers: getAuthHeaders(),

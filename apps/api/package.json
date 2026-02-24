@@ -8,6 +8,8 @@
     "start": "node server.js",
     "seed:levels": "node scripts/seedLevels.js",
     "seed:grades": "node scripts/seedGrades.js",
+    "migrate:module-indexes": "node scripts/migrateModuleIndexes.js",
+    "migrate:remove-module-content": "node scripts/removeModuleContentUrl.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

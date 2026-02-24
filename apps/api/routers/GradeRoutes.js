@@ -4,7 +4,8 @@ import {
     getAllGrades, 
     getGradeById, 
     updateGrade, 
-    deleteGrade 
+    deleteGrade,
+    seedDefaultGrades,
 } from "../controllers/GradeController.js"; // Ensure filename casing matches your system
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";

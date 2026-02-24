@@ -155,7 +155,7 @@ export const getAllLessons = async (req, res) => {
     }
 
     const lessons = await Lesson.find(query)
-      .populate("module", "name description contentUrl")
+      .populate("module", "name description thumbnailUrl")
       .populate("createdBy", "firstName lastName role")
       .sort({ createdAt: -1 });
 
@@ -168,7 +168,7 @@ export const getAllLessons = async (req, res) => {
 export const getLessonById = async (req, res) => {
   try {
     const lesson = await Lesson.findById(req.params.id)
-      .populate("module", "name description contentUrl")
+      .populate("module", "name description thumbnailUrl")
       .populate("createdBy", "firstName lastName role");
 
     if (!lesson) {
