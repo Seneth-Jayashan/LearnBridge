@@ -28,6 +28,7 @@ export default function BrowseNeeds() {
       const res=await getAllNeeds();
       setNeeds(res.data);
       setFiltered(res.data);
+      console.log(res);
     }catch(err){
       toast.error("Failed to load needs.");
     }finally{

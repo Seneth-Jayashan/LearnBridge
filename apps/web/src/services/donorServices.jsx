@@ -3,19 +3,19 @@ import api from "../api/Axios";
 // ─── DONOR SERVICES ───────────────────────────────────────────────
 
 export const getAllNeeds = (filters = {}) =>
-  api.get("/donations", { params: filters });
+  api.get("/donor", { params: filters });
 
 export const pledgeDonation = (id) =>
-  api.put(`/donations/${id}/pledge`);
+  api.put(`/donor/${id}/pledge`);
 
 export const getMyDonations = () =>
-  api.get("/donations/my");
+  api.get("/donor/my");
 
 export const markFulfilled = (id) =>
-  api.put(`/donations/${id}/complete`);
+  api.put(`/donor/${id}/complete`);
 
 export const getImpactReport = () =>
-  api.get("/donations/impact");
+  api.get("/donor/impact");
 
 export const getDonorProfile = () =>
   api.get("/donor/profile");

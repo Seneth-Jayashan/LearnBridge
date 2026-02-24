@@ -6,7 +6,6 @@ const resourceRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",  // references the schoolAdmin user
       required: true,
-      default: null,
     },
     itemName: {
       type: String,
