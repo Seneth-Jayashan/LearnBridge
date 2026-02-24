@@ -17,6 +17,15 @@ const formatDateTime = (value) => {
   return date.toLocaleString();
 };
 
+const getZoomStartUrl = (lesson) => {
+  return (
+    lesson?.onlineMeeting?.startUrl ||
+    lesson?.onlineMeeting?.start_url ||
+    lesson?.zoomStartUrl ||
+    ""
+  );
+};
+
 const getZoomJoinUrl = (lesson) => {
   return (
     lesson?.onlineMeeting?.joinUrl ||
@@ -25,6 +34,8 @@ const getZoomJoinUrl = (lesson) => {
     ""
   );
 };
+
+const getTeacherZoomUrl = (lesson) => getZoomStartUrl(lesson) || getZoomJoinUrl(lesson);
 
 const getZoomStartTime = (lesson) => {
   return (
@@ -149,7 +160,7 @@ const LessonsManage = () => {
                           )}
                         </div>
 
-                        {getZoomJoinUrl(lesson) && (
+                        {getTeacherZoomUrl(lesson) && (
                           <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
                             <p className="text-sm font-semibold text-slate-800">Zoom Meeting</p>
                             {getZoomStartTime(lesson) && (
@@ -158,12 +169,12 @@ const LessonsManage = () => {
                               </p>
                             )}
                             <a
-                              href={getZoomJoinUrl(lesson)}
+                              href={getTeacherZoomUrl(lesson)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex mt-2 text-sm font-semibold text-[#207D86] hover:text-[#14555B]"
                             >
-                              Join Zoom Meeting
+                              Start Zoom Meeting
                             </a>
                           </div>
                         )}
