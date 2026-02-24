@@ -4,7 +4,8 @@ import {
     getAllLevels, 
     getLevelById, 
     updateLevel, 
-    deleteLevel 
+    deleteLevel,
+    seedDefaultLevels
 } from "../controllers/LevelController.js"; // Ensure filename casing matches your system
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
@@ -14,6 +15,13 @@ import { createLevelSchema, updateLevelSchema } from "../validators/LevelValidat
 const router = express.Router();
 
 // --- Level Management Routes ---
+
+router.post(
+    "/seed-defaults",
+    protect,
+    restrictTo("super_admin"),
+    seedDefaultLevels
+);
 
 router.route("/")
     // Create: super_admin Only

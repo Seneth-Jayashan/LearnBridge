@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { useOutletContext, Routes, Route } from "react-router-dom";
+import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import AdminSidebar from "../components/sidebar/AdminSidebar";
 import ModulesManage from "../pages/admin/Modules/ModulesManage";
+import LevelManage from "../pages/admin/Levels/LevelManage";
+import AddLevels from "../pages/admin/Levels/AddLevels";
+import EditLevels from "../pages/admin/Levels/EditLevels";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -24,6 +27,10 @@ const adminRoutes = () => {
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
           <Route path="modules" element={<ModulesManage />} />
+          <Route path="levels" element={<Navigate to="levels/manage" replace />} />
+          <Route path="levels/manage" element={<LevelManage />} />
+          <Route path="levels/add" element={<AddLevels />} />
+          <Route path="levels/edit/:id" element={<EditLevels />} />
           {/* ... Add your other admin routes here ... */}
         </Routes>
       </div>
