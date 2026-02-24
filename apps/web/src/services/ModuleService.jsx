@@ -15,6 +15,37 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const buildRequestConfig = (payload) => {
+  const headers = { ...getAuthHeaders() };
+  const isFormDataPayload =
+    typeof FormData !== "undefined" && payload instanceof FormData;
+
+  if (!isFormDataPayload) {
+    return { headers };
+  }
+
+  return {
+    headers,
+    transformRequest: [
+      (data, requestHeaders) => {
+        if (requestHeaders) {
+          delete requestHeaders["Content-Type"];
+          if (requestHeaders.common) {
+            delete requestHeaders.common["Content-Type"];
+          }
+          if (requestHeaders.post) {
+            delete requestHeaders.post["Content-Type"];
+          }
+          if (requestHeaders.put) {
+            delete requestHeaders.put["Content-Type"];
+          }
+        }
+        return data;
+      },
+    ],
+  };
+};
+
 const moduleService = {
   async getAllModules() {
     const response = await api.get(modulePath(), { headers: getAuthHeaders() });
@@ -22,9 +53,11 @@ const moduleService = {
   },
 
   async createModule(moduleData) {
-    const response = await api.post(modulePath(), moduleData, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.post(
+      modulePath(),
+      moduleData,
+      buildRequestConfig(moduleData),
+    );
     return response.data;
   },
 
@@ -36,9 +69,11 @@ const moduleService = {
   },
 
   async updateModule(id, moduleData) {
-    const response = await api.put(modulePath(id), moduleData, {
-      headers: getAuthHeaders(),
-    });
+    const response = await api.put(
+      modulePath(id),
+      moduleData,
+      buildRequestConfig(moduleData),
+    );
     return response.data;
   },
 

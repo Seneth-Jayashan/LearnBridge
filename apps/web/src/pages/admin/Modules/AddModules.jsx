@@ -21,6 +21,14 @@ const initialForm = {
     description: "",
 };
 
+const toPublicMediaUrl = (value) => {
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value) || /^blob:/i.test(value)) return value;
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+    const origin = apiBase.replace(/\/api\/v1\/?$/i, "");
+    return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
 const AddModules = () => {
     const navigate = useNavigate();
     const [levels, setLevels] = useState([]);
@@ -30,6 +38,7 @@ const AddModules = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [selectedSuggestion, setSelectedSuggestion] = useState("");
+    const [thumbnailFile, setThumbnailFile] = useState(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -108,6 +117,15 @@ const AddModules = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    const handleFileChange = (event) => {
+        const { files } = event.target;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+        setThumbnailFile(file);
+        setFormData((prev) => ({ ...prev, thumbnailUrl: URL.createObjectURL(file) }));
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -120,14 +138,16 @@ const AddModules = () => {
         setIsSubmitting(true);
         setError("");
 
-        const payload = {
-            level: formData.level,
-            grade: formData.grade,
-            subjectStream: isAdvanced ? formData.subjectStream : null,
-            name: formData.name.trim(),
-            thumbnailUrl: formData.thumbnailUrl.trim(),
-            description: formData.description.trim(),
-        };
+        const payload = new FormData();
+        payload.append("level", formData.level);
+        payload.append("grade", formData.grade);
+        payload.append("subjectStream", isAdvanced ? formData.subjectStream : "");
+        payload.append("name", formData.name.trim());
+        payload.append("description", formData.description.trim());
+
+        if (thumbnailFile) {
+            payload.append("thumbnail", thumbnailFile);
+        }
 
         try {
             await moduleService.createModule(payload);
@@ -263,16 +283,23 @@ const AddModules = () => {
                                 htmlFor="thumbnailUrl"
                                 className="block text-sm font-semibold text-slate-700 mb-1"
                             >
-                                Thumbnail Image URL
+                                Thumbnail Image
                             </label>
                             <input
                                 id="thumbnailUrl"
                                 name="thumbnailUrl"
-                                value={formData.thumbnailUrl}
-                                onChange={handleInputChange}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-                                placeholder="https://example.com/module-thumbnail.jpg"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"
                             />
+                            {formData.thumbnailUrl && (
+                                <img
+                                    src={toPublicMediaUrl(formData.thumbnailUrl)}
+                                    alt="Module thumbnail preview"
+                                    className="mt-2 h-24 w-24 rounded-md object-cover border border-slate-200"
+                                />
+                            )}
                         </div>
 
                         {/* Content URL removed */}

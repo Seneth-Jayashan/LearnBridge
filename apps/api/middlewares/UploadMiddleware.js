@@ -1,27 +1,5 @@
 import multer from "multer";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const lessonUploadDir = path.join(__dirname, "..", "uploads", "lessons");
-
-const lessonStorage = multer.diskStorage({
-	destination: (_req, _file, cb) => {
-		fs.mkdirSync(lessonUploadDir, { recursive: true });
-		cb(null, lessonUploadDir);
-	},
-	filename: (_req, file, cb) => {
-		const sanitized = file.originalname
-			.toLowerCase()
-			.replace(/[^a-z0-9._-]/g, "-")
-			.replace(/-+/g, "-");
-		const timestamp = Date.now();
-		cb(null, `${timestamp}-${sanitized}`);
-	},
-});
+const storage = multer.memoryStorage();
 
 const lessonFileFilter = (_req, file, cb) => {
 	const isMaterialField =
@@ -46,7 +24,7 @@ const lessonFileFilter = (_req, file, cb) => {
 };
 
 const lessonUploader = multer({
-	storage: lessonStorage,
+	storage,
 	fileFilter: lessonFileFilter,
 	limits: {
 		fileSize: 200 * 1024 * 1024,
@@ -62,6 +40,44 @@ const uploadLessonMediaFields = lessonUploader.fields([
 
 export const uploadLessonMedia = (req, res, next) => {
 	uploadLessonMediaFields(req, res, (err) => {
+		if (!err) {
+			return next();
+		}
+
+		if (err instanceof multer.MulterError) {
+			return res.status(400).json({ message: err.message });
+		}
+
+		return res.status(400).json({ message: err.message || "File upload failed" });
+	});
+};
+
+const moduleFileFilter = (_req, file, cb) => {
+	const isThumbnailField =
+		file.fieldname === "thumbnail" || file.fieldname === "thumbnailUrl";
+
+	if (isThumbnailField && file.mimetype.startsWith("image/")) {
+		return cb(null, true);
+	}
+
+	cb(new Error("Invalid module thumbnail file type. Only images are allowed"));
+};
+
+const moduleUploader = multer({
+	storage,
+	fileFilter: moduleFileFilter,
+	limits: {
+		fileSize: 15 * 1024 * 1024,
+	},
+});
+
+const uploadModuleThumbnailFields = moduleUploader.fields([
+	{ name: "thumbnail", maxCount: 1 },
+	{ name: "thumbnailUrl", maxCount: 1 },
+]);
+
+export const uploadModuleThumbnail = (req, res, next) => {
+	uploadModuleThumbnailFields(req, res, (err) => {
 		if (!err) {
 			return next();
 		}

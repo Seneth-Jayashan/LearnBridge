@@ -2,11 +2,7 @@ import mongoose from "mongoose";
 import Lesson from "../models/Lesson.js";
 import Module from "../models/Module.js";
 import { createZoomMeeting } from "../services/ZoomService.js";
-
-const buildMediaUrl = (req, file) => {
-  if (!file) return "";
-  return `${req.protocol}://${req.get("host")}/uploads/lessons/${file.filename}`;
-};
+import { uploadFileToCloudinary } from "../services/CloudinaryService.js";
 
 const canManageLesson = (user, lesson) => {
   if (user.role === "super_admin") return true;
@@ -76,8 +72,24 @@ export const createLesson = async (req, res) => {
 
     const materialFile = req.files?.material?.[0] || req.files?.materialUrl?.[0];
     const videoFile = req.files?.video?.[0] || req.files?.videoUrl?.[0];
-    const uploadedMaterialUrl = buildMediaUrl(req, materialFile);
-    const uploadedVideoUrl = buildMediaUrl(req, videoFile);
+    let uploadedMaterialUrl = "";
+    let uploadedVideoUrl = "";
+
+    if (materialFile) {
+      const materialUpload = await uploadFileToCloudinary(materialFile, {
+        folder: "learnbridge/lessons/materials",
+        resourceType: "raw",
+      });
+      uploadedMaterialUrl = materialUpload.secure_url || "";
+    }
+
+    if (videoFile) {
+      const videoUpload = await uploadFileToCloudinary(videoFile, {
+        folder: "learnbridge/lessons/videos",
+        resourceType: "video",
+      });
+      uploadedVideoUrl = videoUpload.secure_url || "";
+    }
 
     const selectedModule = await Module.findById(module);
 
@@ -217,8 +229,24 @@ export const updateLesson = async (req, res) => {
 
     const materialFile = req.files?.material?.[0] || req.files?.materialUrl?.[0];
     const videoFile = req.files?.video?.[0] || req.files?.videoUrl?.[0];
-    const uploadedMaterialUrl = buildMediaUrl(req, materialFile);
-    const uploadedVideoUrl = buildMediaUrl(req, videoFile);
+    let uploadedMaterialUrl = "";
+    let uploadedVideoUrl = "";
+
+    if (materialFile) {
+      const materialUpload = await uploadFileToCloudinary(materialFile, {
+        folder: "learnbridge/lessons/materials",
+        resourceType: "raw",
+      });
+      uploadedMaterialUrl = materialUpload.secure_url || "";
+    }
+
+    if (videoFile) {
+      const videoUpload = await uploadFileToCloudinary(videoFile, {
+        folder: "learnbridge/lessons/videos",
+        resourceType: "video",
+      });
+      uploadedVideoUrl = videoUpload.secure_url || "";
+    }
 
     const lesson = await Lesson.findById(req.params.id);
     if (!lesson) {

@@ -3,6 +3,7 @@ import Grade from "../models/Grade.js";
 import Level from "../models/Level.js";
 import Lesson from "../models/Lesson.js";
 import mongoose from "mongoose";
+import { uploadFileToCloudinary } from "../services/CloudinaryService.js";
 
 const STREAMS = [
     "Mathematics Stream",
@@ -27,6 +28,7 @@ const parseGradeNumber = (gradeName) => {
 export const createModule = async (req, res) => {
     try {
         const { name, description, thumbnailUrl, level, grade, subjectStream } = req.body;
+        const thumbnailFile = req.files?.thumbnail?.[0] || req.files?.thumbnailUrl?.[0];
 
         if (!name?.trim()) {
             return res.status(400).json({ message: "Module name is required." });
@@ -64,6 +66,16 @@ export const createModule = async (req, res) => {
         }
 
         const normalizedName = name.trim();
+        const providedThumbnailUrl = typeof thumbnailUrl === "string" ? thumbnailUrl.trim() : "";
+
+        let finalThumbnailUrl = providedThumbnailUrl;
+        if (thumbnailFile) {
+            const thumbnailUpload = await uploadFileToCloudinary(thumbnailFile, {
+                folder: "learnbridge/modules/thumbnails",
+                resourceType: "image",
+            });
+            finalThumbnailUrl = thumbnailUpload.secure_url || "";
+        }
 
         const existingModule = await Module.findOne({
             name: normalizedName,
@@ -78,7 +90,7 @@ export const createModule = async (req, res) => {
         const newModule = new Module({
             name: normalizedName,
             description,
-            thumbnailUrl,
+            thumbnailUrl: finalThumbnailUrl,
             level,
             grade,
             subjectStream: normalizedSubjectStream,
@@ -130,6 +142,7 @@ export const getModuleById = async (req, res) => {
 export const updateModule = async (req, res) => {
     try {
         const { name, description, thumbnailUrl, level, grade, subjectStream } = req.body;
+        const thumbnailFile = req.files?.thumbnail?.[0] || req.files?.thumbnailUrl?.[0];
         
         const module = await Module.findById(req.params.id);
         if (!module) {
@@ -186,7 +199,15 @@ export const updateModule = async (req, res) => {
 
         module.name = normalizedName;
         if (description !== undefined) module.description = description;
-        if (thumbnailUrl !== undefined) module.thumbnailUrl = thumbnailUrl;
+        if (thumbnailFile) {
+            const thumbnailUpload = await uploadFileToCloudinary(thumbnailFile, {
+                folder: "learnbridge/modules/thumbnails",
+                resourceType: "image",
+            });
+            module.thumbnailUrl = thumbnailUpload.secure_url || "";
+        } else if (thumbnailUrl !== undefined) {
+            module.thumbnailUrl = typeof thumbnailUrl === "string" ? thumbnailUrl.trim() : thumbnailUrl;
+        }
         module.level = nextLevel;
         module.grade = nextGrade;
         module.subjectStream = normalizedSubjectStream;

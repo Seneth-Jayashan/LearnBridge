@@ -8,6 +8,7 @@ import {
 } from "../controllers/ModuleController.js";
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
+import { uploadModuleThumbnail } from "../middlewares/UploadMiddleware.js";
 
 const router = express.Router();
 
@@ -23,13 +24,15 @@ router.get("/:id", getModuleById);
 // Only Super Admins can manage modules
 router.post(
     "/", 
-    restrictTo("super_admin"), 
+    restrictTo("super_admin"),
+    uploadModuleThumbnail,
     createModule
 );
 
 router.put(
     "/:id", 
-    restrictTo("super_admin"), 
+    restrictTo("super_admin"),
+    uploadModuleThumbnail,
     updateModule
 );
 
