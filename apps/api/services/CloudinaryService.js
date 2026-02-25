@@ -113,6 +113,102 @@ export const getCloudinaryFileNameFromUrl = (assetUrl) => {
   return sanitizeAttachmentFileName(parsedAsset.fileName);
 };
 
+export const deleteCloudinaryAssetFromUrl = async (assetUrl) => {
+  const parsedAsset = parseCloudinaryAssetUrl(assetUrl);
+  if (!parsedAsset) {
+    return false;
+  }
+
+  ensureCloudinaryConfigured();
+
+  const parsedUrl = new URL(assetUrl);
+  const pathAfterUpload = (() => {
+    const match = parsedUrl.pathname.match(/\/upload\/(.+)$/i);
+    return match?.[1] || "";
+  })();
+
+  const pathWithoutVersion = pathAfterUpload.replace(/^.*?\/v\d+\//i, "");
+  const folderMarkerIndex = pathAfterUpload.toLowerCase().indexOf("learnbridge/");
+  const pathFromFolder = folderMarkerIndex >= 0 ? pathAfterUpload.slice(folderMarkerIndex) : "";
+
+  const stripExtensionFromLastSegment = (value) => {
+    if (!value) return "";
+    const segments = value.split("/");
+    const last = segments.pop() || "";
+    const normalizedLast = last.replace(/\.[^./]+$/, "");
+    return [...segments, normalizedLast].filter(Boolean).join("/");
+  };
+
+  const publicIdCandidates = Array.from(
+    new Set(
+      [
+        parsedAsset.publicId,
+        stripExtensionFromLastSegment(parsedAsset.publicId),
+        pathWithoutVersion,
+        stripExtensionFromLastSegment(pathWithoutVersion),
+        pathFromFolder,
+        stripExtensionFromLastSegment(pathFromFolder),
+      ].filter(Boolean),
+    ),
+  );
+
+  const resourceTypeCandidates = Array.from(
+    new Set([parsedAsset.resourceType || "raw", "video", "raw", "image"]),
+  );
+  const deliveryTypeCandidates = Array.from(
+    new Set([parsedAsset.deliveryType || "upload", "upload"]),
+  );
+
+  let sawNotFound = false;
+
+  for (const resourceType of resourceTypeCandidates) {
+    for (const deliveryType of deliveryTypeCandidates) {
+      for (const publicId of publicIdCandidates) {
+        try {
+          const result = await cloudinary.uploader.destroy(publicId, {
+            resource_type: resourceType,
+            type: deliveryType,
+            invalidate: true,
+          });
+
+          if (result?.result === "ok") {
+            return true;
+          }
+
+          if (result?.result === "not found") {
+            sawNotFound = true;
+          }
+        } catch {
+          // Try next candidate.
+        }
+      }
+
+      try {
+        const bulkResult = await cloudinary.api.delete_resources(publicIdCandidates, {
+          resource_type: resourceType,
+          type: deliveryType,
+          invalidate: true,
+        });
+
+        const deletedMap = bulkResult?.deleted || {};
+        const deleteStatuses = Object.values(deletedMap);
+
+        if (deleteStatuses.some((status) => status === "deleted")) {
+          return true;
+        }
+
+        if (deleteStatuses.some((status) => status === "not_found")) {
+          sawNotFound = true;
+        }
+      } catch {
+        // Continue trying other candidate combinations.
+      }
+    }
+  }
+
+  return sawNotFound;
+};
+
 export const uploadFileToCloudinary = async (file, { folder, resourceType = "auto" } = {}) => {
   if (!file) {
     throw new Error("No file received for Cloudinary upload");

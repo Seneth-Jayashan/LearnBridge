@@ -4,6 +4,7 @@ import Module from "../models/Module.js";
 import { createZoomMeeting } from "../services/ZoomService.js";
 import {
   createSignedDownloadUrlFromCloudinaryUrl,
+  deleteCloudinaryAssetFromUrl,
   getCloudinaryFileNameFromUrl,
   uploadFileToCloudinary,
 } from "../services/CloudinaryService.js";
@@ -295,6 +296,9 @@ export const updateLesson = async (req, res) => {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
+    const previousMaterialUrl = lesson.materialUrl || "";
+    const previousVideoUrl = lesson.videoUrl || "";
+
     if (!canManageLesson(req.user, lesson)) {
       return res
         .status(403)
@@ -362,6 +366,18 @@ export const updateLesson = async (req, res) => {
 
     await lesson.save();
 
+    const cleanupTargets = [];
+    if (previousMaterialUrl && previousMaterialUrl !== lesson.materialUrl) {
+      cleanupTargets.push(previousMaterialUrl);
+    }
+    if (previousVideoUrl && previousVideoUrl !== lesson.videoUrl) {
+      cleanupTargets.push(previousVideoUrl);
+    }
+
+    if (cleanupTargets.length > 0) {
+      await Promise.allSettled(cleanupTargets.map((assetUrl) => deleteCloudinaryAssetFromUrl(assetUrl)));
+    }
+
     res.status(200).json({ message: "Lesson updated successfully", lesson });
   } catch (error) {
     if (error.code === 11000) {
@@ -390,7 +406,15 @@ export const deleteLesson = async (req, res) => {
         .json({ message: "You do not have permission to delete this lesson" });
     }
 
+    const mediaToCleanup = [lesson.materialUrl, lesson.videoUrl].filter(Boolean);
+
     await Lesson.findByIdAndDelete(req.params.id);
+
+    if (mediaToCleanup.length > 0) {
+      await Promise.allSettled(
+        mediaToCleanup.map((assetUrl) => deleteCloudinaryAssetFromUrl(assetUrl)),
+      );
+    }
 
     res.status(200).json({ message: "Lesson deleted successfully" });
   } catch (error) {
