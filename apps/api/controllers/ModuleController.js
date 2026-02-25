@@ -1,28 +1,12 @@
 import Module from "../models/Module.js";
-import Grade from "../models/Grade.js";
-import Level from "../models/Level.js";
 import Lesson from "../models/Lesson.js";
 import mongoose from "mongoose";
 import { uploadFileToCloudinary, deleteCloudinaryAssetFromUrl } from "../services/CloudinaryService.js";
-
-const STREAMS = [
-    "Mathematics Stream",
-    "Biology Stream",
-    "Commerce Stream",
-    "Arts Stream",
-    "Technology Stream",
-];
-
-const getNormalizedStream = (value) => {
-    if (value === undefined || value === null) return null;
-    const normalized = String(value).trim();
-    return normalized.length > 0 ? normalized : null;
-};
-
-const parseGradeNumber = (gradeName) => {
-    const parsed = Number.parseInt(String(gradeName || "").trim(), 10);
-    return Number.isNaN(parsed) ? null : parsed;
-};
+import {
+    ModuleValidationError,
+    validateCreateModuleBusinessRules,
+    validateUpdateModuleBusinessRules,
+} from "../validators/ModuleValidator.js";
 
 // --- Create a New Module ---
 export const createModule = async (req, res) => {
@@ -30,42 +14,18 @@ export const createModule = async (req, res) => {
         const { name, description, thumbnailUrl, level, grade, subjectStream } = req.body;
         const thumbnailFile = req.files?.thumbnail?.[0] || req.files?.thumbnailUrl?.[0];
 
-        if (!name?.trim()) {
-            return res.status(400).json({ message: "Module name is required." });
-        }
+        const {
+            normalizedName,
+            normalizedSubjectStream,
+            nextLevel,
+            nextGrade,
+        } = await validateCreateModuleBusinessRules({
+            name,
+            level,
+            grade,
+            subjectStream,
+        });
 
-        if (!level) {
-            return res.status(400).json({ message: "Level is required." });
-        }
-
-        if (!grade) {
-            return res.status(400).json({ message: "Grade is required." });
-        }
-
-        const levelRecord = await Level.findById(level);
-        if (!levelRecord) {
-            return res.status(400).json({ message: "Selected level is invalid." });
-        }
-
-        const gradeRecord = await Grade.findById(grade);
-        if (!gradeRecord) {
-            return res.status(400).json({ message: "Selected grade is invalid." });
-        }
-
-        const gradeNumber = parseGradeNumber(gradeRecord.name);
-        const normalizedSubjectStream = getNormalizedStream(subjectStream);
-
-        if (gradeNumber !== null && gradeNumber >= 12) {
-            if (!normalizedSubjectStream || !STREAMS.includes(normalizedSubjectStream)) {
-                return res.status(400).json({ message: "Subject stream is required for grades 12 and 13." });
-            }
-        }
-
-        if (gradeNumber !== null && gradeNumber < 12 && normalizedSubjectStream) {
-            return res.status(400).json({ message: "Subject stream can only be selected for grades 12 and 13." });
-        }
-
-        const normalizedName = name.trim();
         const providedThumbnailUrl = typeof thumbnailUrl === "string" ? thumbnailUrl.trim() : "";
 
         let finalThumbnailUrl = providedThumbnailUrl;
@@ -77,22 +37,12 @@ export const createModule = async (req, res) => {
             finalThumbnailUrl = thumbnailUpload.secure_url || "";
         }
 
-        const existingModule = await Module.findOne({
-            name: normalizedName,
-            level,
-            grade,
-            subjectStream: normalizedSubjectStream,
-        });
-        if (existingModule) {
-            return res.status(400).json({ message: "Module with this name already exists for selected level/grade/stream." });
-        }
-
         const newModule = new Module({
             name: normalizedName,
             description,
             thumbnailUrl: finalThumbnailUrl,
-            level,
-            grade,
+            level: nextLevel,
+            grade: nextGrade,
             subjectStream: normalizedSubjectStream,
         });
 
@@ -104,6 +54,9 @@ export const createModule = async (req, res) => {
         });
 
     } catch (error) {
+        if (error instanceof ModuleValidationError) {
+            return res.status(400).json({ message: error.message });
+        }
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
@@ -149,53 +102,22 @@ export const updateModule = async (req, res) => {
             return res.status(404).json({ message: "Module not found" });
         }
 
-        const nextLevel = level || module.level;
-        const nextGrade = grade || module.grade;
-
-        if (!nextLevel) {
-            return res.status(400).json({ message: "Level is required." });
-        }
-
-        if (!nextGrade) {
-            return res.status(400).json({ message: "Grade is required." });
-        }
-
-        const levelRecord = await Level.findById(nextLevel);
-        if (!levelRecord) {
-            return res.status(400).json({ message: "Selected level is invalid." });
-        }
-
-        const gradeRecord = await Grade.findById(nextGrade);
-        if (!gradeRecord) {
-            return res.status(400).json({ message: "Selected grade is invalid." });
-        }
-
-        const gradeNumber = parseGradeNumber(gradeRecord.name);
-        const normalizedSubjectStream = getNormalizedStream(subjectStream !== undefined ? subjectStream : module.subjectStream);
-
-        if (gradeNumber !== null && gradeNumber >= 12) {
-            if (!normalizedSubjectStream || !STREAMS.includes(normalizedSubjectStream)) {
-                return res.status(400).json({ message: "Subject stream is required for grades 12 and 13." });
-            }
-        }
-
-        if (gradeNumber !== null && gradeNumber < 12 && normalizedSubjectStream) {
-            return res.status(400).json({ message: "Subject stream can only be selected for grades 12 and 13." });
-        }
-
-        const normalizedName = name?.trim() || module.name;
-
-        const duplicate = await Module.findOne({
-            _id: { $ne: module._id },
-            name: normalizedName,
-            level: nextLevel,
-            grade: nextGrade,
-            subjectStream: normalizedSubjectStream,
+        const {
+            normalizedName,
+            normalizedSubjectStream,
+            nextLevel,
+            nextGrade,
+        } = await validateUpdateModuleBusinessRules({
+            moduleId: module._id,
+            currentName: module.name,
+            currentLevel: module.level,
+            currentGrade: module.grade,
+            currentSubjectStream: module.subjectStream,
+            name,
+            level,
+            grade,
+            subjectStream,
         });
-
-        if (duplicate) {
-            return res.status(400).json({ message: "Module with this name already exists for selected level/grade/stream." });
-        }
 
         module.name = normalizedName;
         if (description !== undefined) module.description = description;
@@ -220,6 +142,9 @@ export const updateModule = async (req, res) => {
         });
 
     } catch (error) {
+        if (error instanceof ModuleValidationError) {
+            return res.status(400).json({ message: error.message });
+        }
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };

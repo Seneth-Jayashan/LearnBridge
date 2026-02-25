@@ -9,6 +9,11 @@ import {
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 import { uploadModuleThumbnail } from "../middlewares/UploadMiddleware.js";
+import { validate } from "../middlewares/ValidateMiddleware.js";
+import {
+    createModuleSchema,
+    updateModuleSchema,
+} from "../validators/ModuleValidator.js";
 
 const router = express.Router();
 
@@ -26,6 +31,7 @@ router.post(
     "/", 
     restrictTo("super_admin"),
     uploadModuleThumbnail,
+    validate(createModuleSchema),
     createModule
 );
 
@@ -33,6 +39,7 @@ router.put(
     "/:id", 
     restrictTo("super_admin"),
     uploadModuleThumbnail,
+    validate(updateModuleSchema),
     updateModule
 );
 
