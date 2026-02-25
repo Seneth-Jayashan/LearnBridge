@@ -3,7 +3,7 @@ import Grade from "../models/Grade.js";
 import Level from "../models/Level.js";
 import Lesson from "../models/Lesson.js";
 import mongoose from "mongoose";
-import { uploadFileToCloudinary } from "../services/CloudinaryService.js";
+import { uploadFileToCloudinary, deleteCloudinaryAssetFromUrl } from "../services/CloudinaryService.js";
 
 const STREAMS = [
     "Mathematics Stream",
@@ -236,6 +236,21 @@ export const deleteModule = async (req, res) => {
         const moduleObjectId = mongoose.Types.ObjectId.isValid(req.params.id)
             ? new mongoose.Types.ObjectId(req.params.id)
             : null;
+
+        // Attempt to remove module thumbnail from Cloudinary (ignore errors)
+        try {
+            if (module?.thumbnailUrl) {
+                if (Array.isArray(module.thumbnailUrl)) {
+                    for (const url of module.thumbnailUrl) {
+                        try { await deleteCloudinaryAssetFromUrl(url); } catch (e) { /* ignore */ }
+                    }
+                } else {
+                    try { await deleteCloudinaryAssetFromUrl(module.thumbnailUrl); } catch (e) { /* ignore */ }
+                }
+            }
+        } catch (err) {
+            // Swallow thumbnail deletion errors so module deletion can proceed
+        }
 
         const lessonDeleteFilter = {
             $or: [
