@@ -52,6 +52,9 @@ const LessonsManage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [openModules, setOpenModules] = useState({});
+  const [gradeFilter, setGradeFilter] = useState("");
+  const [visibleVideos, setVisibleVideos] = useState({});
+  const [visibleMaterials, setVisibleMaterials] = useState({});
 
   const loadLessons = async () => {
     try {
@@ -96,7 +99,39 @@ const LessonsManage = () => {
       )}
 
       <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <h3 className="text-lg font-semibold text-[#0E2A47] mb-4">Your Lessons</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-[#0E2A47]">Your Lessons</h3>
+
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-700">Filter by grade:</label>
+            <select
+              value={gradeFilter}
+              onChange={(e) => setGradeFilter(e.target.value)}
+              className="text-sm border border-slate-300 rounded px-2 py-1 bg-white"
+            >
+              <option value="">All grades</option>
+              {(() => {
+                const gradeMap = new Map();
+                let hasUnassigned = false;
+                lessons.forEach((l) => {
+                  if (!l.module) return;
+                  const g = l.module.grade;
+                  if (g && g._id) gradeMap.set(g._id, g.name || "Unnamed grade");
+                  if (!g) hasUnassigned = true;
+                });
+                const opts = Array.from(gradeMap.entries()).map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ));
+                if (hasUnassigned) opts.push(
+                  <option key="__unassigned" value="__unassigned">Unassigned</option>
+                );
+                return opts;
+              })()}
+            </select>
+          </div>
+        </div>
 
         {isLoading ? (
           <p className="text-slate-600">Loading lessons...</p>
@@ -107,7 +142,12 @@ const LessonsManage = () => {
             {/* Group lessons by module */}
             {Object.values(
               lessons
-                .filter((lesson) => lesson.module?._id)
+                .filter((lesson) => {
+                  if (!lesson.module?._id) return false;
+                  if (!gradeFilter) return true;
+                  if (gradeFilter === "__unassigned") return !lesson.module.grade;
+                  return lesson.module.grade?._id === gradeFilter;
+                })
                 .reduce((acc, lesson) => {
                 const moduleId = lesson.module?._id || "_unassigned";
                 if (!acc[moduleId]) {
@@ -124,7 +164,12 @@ const LessonsManage = () => {
                   className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100"
                 >
                   <div>
-                    <div className="font-semibold text-[#0E2A47]">{group.module.name || "Unassigned"}</div>
+                    <div className="font-semibold text-[#0E2A47]">
+                      {group.module.name || "Unassigned"}
+                      {group.module.grade?.name && (
+                        <span className="ml-2 text-sm font-normal text-slate-600">({group.module.grade.name})</span>
+                      )}
+                    </div>
                     <div className="text-sm text-slate-600">{group.lessons.length} lesson{group.lessons.length !== 1 ? "s" : ""}</div>
                   </div>
                   <div className="text-slate-500">{openModules[group.module._id] ? "▾" : "▸"}</div>
@@ -148,7 +193,48 @@ const LessonsManage = () => {
 
                         <div className="mt-3 flex flex-wrap items-center gap-4">
                           {lesson.materialUrl ? (
-                            <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
+                            <div>
+                              {!visibleMaterials[lesson._id] ? (
+                                <div className="flex items-center gap-3">
+                                  <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
+                                  <button
+                                    type="button"
+                                    onClick={() => setVisibleMaterials((s) => ({ ...s, [lesson._id]: true }))}
+                                    className="text-sm px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                                  >
+                                    Preview
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="mt-2">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
+                                    <button
+                                      type="button"
+                                      onClick={() => setVisibleMaterials((s) => ({ ...s, [lesson._id]: false }))}
+                                      className="text-sm text-slate-500"
+                                    >
+                                      Close
+                                    </button>
+                                  </div>
+                                  {(() => {
+                                    const url = toPublicMediaUrl(lesson.materialUrl);
+                                    const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+                                    if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) {
+                                      return <img src={url} alt="Material preview" className="w-full max-h-96 object-contain rounded-lg border border-slate-300" />;
+                                    }
+                                    if (ext === 'pdf') {
+                                      return <iframe src={url} title="Material preview" className="w-full h-96 rounded-lg border border-slate-300" />;
+                                    }
+                                    return (
+                                      <div className="text-sm text-slate-700">
+                                        Preview not available for this file type. <a href={url} download className="text-[#207D86]">Download</a>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-sm text-slate-500">No document uploaded</span>
                           )}
@@ -181,8 +267,32 @@ const LessonsManage = () => {
 
                         {lesson.videoUrl && (
                           <div className="mt-3">
-                            <p className="text-sm text-slate-700 mb-2">Watch online</p>
-                            <video controls className="w-full max-h-72 rounded-lg border border-slate-300 bg-black" src={toPublicMediaUrl(lesson.videoUrl)} />
+                            {!visibleVideos[lesson._id] ? (
+                              <div>
+                                <p className="text-sm text-slate-700 mb-2">Watch online</p>
+                                <button
+                                  type="button"
+                                  onClick={() => setVisibleVideos((s) => ({ ...s, [lesson._id]: true }))}
+                                  className="inline-block px-3 py-1.5 text-sm rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+                                >
+                                  Open Video
+                                </button>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-sm text-slate-700">Watch online</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => setVisibleVideos((s) => ({ ...s, [lesson._id]: false }))}
+                                    className="text-sm text-slate-500"
+                                  >
+                                    Close
+                                  </button>
+                                </div>
+                                <video controls className="w-full max-h-72 rounded-lg border border-slate-300 bg-black" src={toPublicMediaUrl(lesson.videoUrl)} />
+                              </div>
+                            )}
                           </div>
                         )}
                       </article>
