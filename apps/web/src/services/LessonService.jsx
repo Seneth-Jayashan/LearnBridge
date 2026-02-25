@@ -77,6 +77,16 @@ const lessonService = {
     const response = await api.delete(lessonPath(id), { headers: getAuthHeaders() });
     return response.data;
   },
+
+  async getMaterialDownloadUrl(id) {
+    const response = await api.get(`${lessonPath(id)}/material-download`, {
+      headers: getAuthHeaders(),
+    });
+    return {
+      downloadUrl: response.data?.downloadUrl || "",
+      fileName: response.data?.fileName || "",
+    };
+  },
 };
 
 export default lessonService;

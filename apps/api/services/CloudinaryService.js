@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import path from "path";
 import { v2 as cloudinary } from "cloudinary";
 
 let isConfigured = false;
@@ -44,6 +45,74 @@ const uploadFromBuffer = (fileBuffer, options) =>
     stream.end(fileBuffer);
   });
 
+const sanitizeBaseName = (name) =>
+  (name || "file")
+    .replace(/[^a-zA-Z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 120) || "file";
+
+const parseCloudinaryAssetUrl = (assetUrl) => {
+  if (!assetUrl || !/^https?:\/\//i.test(assetUrl)) return null;
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(assetUrl);
+  } catch {
+    return null;
+  }
+
+  if (!/res\.cloudinary\.com$/i.test(parsedUrl.hostname)) {
+    return null;
+  }
+
+  const segments = parsedUrl.pathname.split("/").filter(Boolean);
+  if (segments.length < 4) {
+    return null;
+  }
+
+  const resourceType = segments[1] || "raw";
+  const deliveryType = segments[2] || "upload";
+  const versionIndex = segments.findIndex(
+    (segment, index) => index >= 3 && /^v\d+$/i.test(segment),
+  );
+  const publicIdStart = versionIndex >= 0 ? versionIndex + 1 : 3;
+  if (publicIdStart >= segments.length) {
+    return null;
+  }
+
+  const publicId = decodeURIComponent(segments.slice(publicIdStart).join("/"));
+  const fileName = publicId.split("/").pop() || "";
+  const extensionIndex = fileName.lastIndexOf(".");
+  const format =
+    extensionIndex > 0 && extensionIndex < fileName.length - 1
+      ? fileName.slice(extensionIndex + 1).toLowerCase()
+      : "";
+
+  return {
+    resourceType,
+    deliveryType,
+    publicId,
+    fileName,
+    format,
+  };
+};
+
+const sanitizeAttachmentFileName = (name) => {
+  if (!name) return "";
+  const cleaned = String(name)
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, " ")
+    .slice(0, 180);
+  return cleaned || "";
+};
+
+export const getCloudinaryFileNameFromUrl = (assetUrl) => {
+  const parsedAsset = parseCloudinaryAssetUrl(assetUrl);
+  if (!parsedAsset?.fileName) return "";
+  return sanitizeAttachmentFileName(parsedAsset.fileName);
+};
+
 export const uploadFileToCloudinary = async (file, { folder, resourceType = "auto" } = {}) => {
   if (!file) {
     throw new Error("No file received for Cloudinary upload");
@@ -51,12 +120,50 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
 
   ensureCloudinaryConfigured();
 
+  // Auto-detect common document mimetypes and force raw upload so Cloudinary
+  // doesn't treat them as images or attempt conversions.
+  let resolvedResourceType = resourceType;
+  const mimetype = file.mimetype || "";
+  const docMimeMarkers = ["pdf", "msword", "officedocument", "vnd.openxmlformats"];
+  if (resourceType === "auto" && mimetype) {
+    const lower = mimetype.toLowerCase();
+    if (docMimeMarkers.some((m) => lower.includes(m))) {
+      resolvedResourceType = "raw";
+    }
+  }
+  // If mimetype is missing or unreliable, fall back to filename extension detection
+  if (resourceType === "auto" && resolvedResourceType === "auto") {
+    const filename = (file.originalname || file.path || "").toString();
+    const ext = (filename.split("?")[0].split('.').pop() || '').toLowerCase();
+    const docExts = ["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx"];
+    if (docExts.includes(ext)) {
+      resolvedResourceType = "raw";
+    }
+  }
+
   const uploadOptions = {
     folder,
-    resource_type: resourceType,
+    resource_type: resolvedResourceType,
     use_filename: true,
     unique_filename: true,
   };
+
+  const originalName = (file.originalname || "").toString().trim();
+  if (originalName) {
+    const parsed = path.parse(originalName);
+    const safeBaseName = sanitizeBaseName(parsed.name);
+    const ext = (parsed.ext || "").replace(/^\./, "").toLowerCase();
+    const uniqueSuffix = Date.now();
+
+    if (resolvedResourceType === "raw" && ext) {
+      uploadOptions.public_id = `${safeBaseName}_${uniqueSuffix}.${ext}`;
+    } else {
+      uploadOptions.public_id = `${safeBaseName}_${uniqueSuffix}`;
+    }
+
+    uploadOptions.use_filename = false;
+    uploadOptions.unique_filename = false;
+  }
 
   if (file.path) {
     try {
@@ -71,4 +178,46 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
   }
 
   throw new Error("Unsupported file payload for Cloudinary upload");
+};
+
+export const createSignedDownloadUrlFromCloudinaryUrl = (
+  assetUrl,
+  { expiresInSeconds = 300, fileName = "" } = {},
+) => {
+  if (!assetUrl) return "";
+
+  const parsedAsset = parseCloudinaryAssetUrl(assetUrl);
+  if (!parsedAsset) {
+    return assetUrl;
+  }
+
+  const attachmentFileName =
+    sanitizeAttachmentFileName(fileName) || sanitizeAttachmentFileName(parsedAsset.fileName);
+
+  ensureCloudinaryConfigured();
+
+  const expiresAt = Math.floor(Date.now() / 1000) + Math.max(60, Number(expiresInSeconds) || 300);
+
+  if (parsedAsset.resourceType === "raw" && parsedAsset.format) {
+    return cloudinary.utils.private_download_url(parsedAsset.publicId, parsedAsset.format, {
+      resource_type: "raw",
+      type: parsedAsset.deliveryType || "upload",
+      expires_at: expiresAt,
+      attachment: attachmentFileName || true,
+      secure: true,
+    });
+  }
+
+  const attachmentFlag = attachmentFileName
+    ? `attachment:${attachmentFileName}`
+    : "attachment";
+
+  return cloudinary.url(parsedAsset.publicId, {
+    resource_type: parsedAsset.resourceType || "raw",
+    type: parsedAsset.deliveryType || "upload",
+    secure: true,
+    sign_url: true,
+    expires_at: expiresAt,
+    flags: attachmentFlag,
+  });
 };

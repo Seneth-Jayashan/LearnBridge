@@ -10,6 +10,51 @@ const toPublicMediaUrl = (value) => {
   return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
 };
 
+const inferFileNameFromUrl = (url) => {
+  if (!url) return "";
+  try {
+    const parsedUrl = new URL(url);
+    const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+    const lastSegment = pathSegments[pathSegments.length - 1] || "";
+    return decodeURIComponent(lastSegment).trim();
+  } catch {
+    return "";
+  }
+};
+
+const downloadFile = async (url, fileName = "") => {
+  if (!url) return;
+
+  if (/^blob:/i.test(url)) {
+    const blobLink = document.createElement("a");
+    blobLink.href = url;
+    blobLink.download = fileName || "material";
+    document.body.appendChild(blobLink);
+    blobLink.click();
+    document.body.removeChild(blobLink);
+    return;
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to download file");
+  }
+
+  const fileBlob = await response.blob();
+  const objectUrl = URL.createObjectURL(fileBlob);
+
+  try {
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName || inferFileNameFromUrl(url) || "material";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
 const formatDateTime = (value) => {
   if (!value) return "";
   const date = new Date(value);
@@ -54,7 +99,6 @@ const LessonsManage = () => {
   const [openModules, setOpenModules] = useState({});
   const [gradeFilter, setGradeFilter] = useState("");
   const [visibleVideos, setVisibleVideos] = useState({});
-  const [visibleMaterials, setVisibleMaterials] = useState({});
 
   const loadLessons = async () => {
     try {
@@ -82,6 +126,32 @@ const LessonsManage = () => {
       await loadLessons();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete lesson");
+    }
+  };
+
+  const handleMaterialDownload = async (lesson) => {
+    if (!lesson?.materialUrl) return;
+
+    const fallbackUrl = toPublicMediaUrl(lesson.materialUrl);
+    const isRemoteAsset = /^https?:\/\//i.test(fallbackUrl);
+
+    if (!lesson._id) {
+      await downloadFile(fallbackUrl, inferFileNameFromUrl(fallbackUrl));
+      return;
+    }
+
+    try {
+      setError("");
+      const { downloadUrl: signedUrl, fileName } = await lessonService.getMaterialDownloadUrl(lesson._id);
+      const targetUrl = signedUrl || fallbackUrl;
+      const targetFileName = fileName || inferFileNameFromUrl(targetUrl);
+      await downloadFile(targetUrl, targetFileName);
+    } catch {
+      if (!isRemoteAsset || /^blob:/i.test(fallbackUrl)) {
+        await downloadFile(fallbackUrl, inferFileNameFromUrl(fallbackUrl));
+        return;
+      }
+      setError("Failed to generate secure material link. Please refresh and try again.");
     }
   };
 
@@ -194,46 +264,13 @@ const LessonsManage = () => {
                         <div className="mt-3 flex flex-wrap items-center gap-4">
                           {lesson.materialUrl ? (
                             <div>
-                              {!visibleMaterials[lesson._id] ? (
-                                <div className="flex items-center gap-3">
-                                  <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
-                                  <button
-                                    type="button"
-                                    onClick={() => setVisibleMaterials((s) => ({ ...s, [lesson._id]: true }))}
-                                    className="text-sm px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                                  >
-                                    Preview
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="mt-2">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <a href={toPublicMediaUrl(lesson.materialUrl)} target="_blank" rel="noopener noreferrer" download className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]">Download Material</a>
-                                    <button
-                                      type="button"
-                                      onClick={() => setVisibleMaterials((s) => ({ ...s, [lesson._id]: false }))}
-                                      className="text-sm text-slate-500"
-                                    >
-                                      Close
-                                    </button>
-                                  </div>
-                                  {(() => {
-                                    const url = toPublicMediaUrl(lesson.materialUrl);
-                                    const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
-                                    if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) {
-                                      return <img src={url} alt="Material preview" className="w-full max-h-96 object-contain rounded-lg border border-slate-300" />;
-                                    }
-                                    if (ext === 'pdf') {
-                                      return <iframe src={url} title="Material preview" className="w-full h-96 rounded-lg border border-slate-300" />;
-                                    }
-                                    return (
-                                      <div className="text-sm text-slate-700">
-                                        Preview not available for this file type. <a href={url} download className="text-[#207D86]">Download</a>
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleMaterialDownload(lesson)}
+                                className="text-sm font-semibold text-[#207D86] hover:text-[#14555B]"
+                              >
+                                Download Material
+                              </button>
                             </div>
                           ) : (
                             <span className="text-sm text-slate-500">No document uploaded</span>

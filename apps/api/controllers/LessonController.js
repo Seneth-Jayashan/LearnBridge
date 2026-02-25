@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 import Lesson from "../models/Lesson.js";
 import Module from "../models/Module.js";
 import { createZoomMeeting } from "../services/ZoomService.js";
-import { uploadFileToCloudinary } from "../services/CloudinaryService.js";
+import {
+  createSignedDownloadUrlFromCloudinaryUrl,
+  getCloudinaryFileNameFromUrl,
+  uploadFileToCloudinary,
+} from "../services/CloudinaryService.js";
 
 const canManageLesson = (user, lesson) => {
   if (user.role === "super_admin") return true;
@@ -219,6 +223,36 @@ export const getLessonById = async (req, res) => {
     res.status(200).json(lesson);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getLessonMaterialDownloadUrl = async (req, res) => {
+  try {
+    const lesson = await Lesson.findById(req.params.id);
+
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+
+    if (!canManageLesson(req.user, lesson)) {
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to view this lesson material" });
+    }
+
+    if (!lesson.materialUrl) {
+      return res.status(404).json({ message: "Lesson material not found" });
+    }
+
+    const fileName = getCloudinaryFileNameFromUrl(lesson.materialUrl);
+    const downloadUrl = createSignedDownloadUrlFromCloudinaryUrl(lesson.materialUrl, {
+      expiresInSeconds: 300,
+      fileName,
+    });
+
+    return res.status(200).json({ downloadUrl, fileName });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
