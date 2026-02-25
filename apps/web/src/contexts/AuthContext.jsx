@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import authService from "../services/AuthService";
+import { setAccessToken } from "../api/Axios"; // Import the setter
 
 const AuthContext = createContext();
 
@@ -8,30 +9,42 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 1. Check Session 
+    // 1. Check Session (The "Silent Refresh")
     const checkSession = useCallback(async () => {
-        try {
-            // This will now successfully pass the token via the Axios interceptor
-            const data = await authService.getCurrentUser();
-            setUser(data.user);
-        } catch (err) {
-            // If the token is invalid/expired, wipe it and log the user out
-            localStorage.removeItem("accessToken");
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    setLoading(true);
+    try {
+        console.log("🔄 checkSession: Attempting to restore session...");
+        
+        // DIRECT CALL: Skip authService to verify raw API response
+        // Using the same 'api' instance ensures 'withCredentials: true' is sent
+        const data  = await authService.refresh(); // This will attempt to refresh the token using the cookie
+        
+        console.log("✅ checkSession: Refresh Success!", data);
+        
+        // 1. Set Token
+        setAccessToken(data.accessToken);
+
+        // 2. Fetch User
+        const userRes = await authService.getCurrentUser(); // This should now succeed with the new token
+        console.log("👤 checkSession: User Loaded", userRes);
+        
+        setUser(userRes.user);
+
+    } catch (err) {
+        console.error("❌ checkSession: Failed", err.response?.data || err.message);
+        
+        // If this fails, it means the Cookie is missing or invalid.
+        // We must clear everything to be safe.
+        setUser(null);
+        setAccessToken(null);
+    } finally {
+        setLoading(false);
+    }
+}, []);
 
     // Run on Mount
     useEffect(() => {
-        // Only bother checking session if we actually have a token saved
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            checkSession();
-        } else {
-            setLoading(false); // Instantly stop loading if no token
-        }
+        checkSession();
     }, [checkSession]);
 
     // 2. Login Action
@@ -41,10 +54,11 @@ export const AuthProvider = ({ children }) => {
         try {
             const data = await authService.login(identifier, password);
             
-            // --- NEW: Save the token! ---
+            // Save Access Token to Memory
             if (data.accessToken) {
-                localStorage.setItem("accessToken", data.accessToken);
+                setAccessToken(data.accessToken);
             }
+            console.log("Login successful. User data:", data);
             
             setUser(data.user);
             return { success: true };
@@ -60,21 +74,25 @@ export const AuthProvider = ({ children }) => {
     // 3. Logout Action
     const logout = async () => {
         try {
-            await authService.logout();
-            // --- NEW: Remove the token! ---
-            localStorage.removeItem("accessToken");
+            await authService.logout(); // Backend clears the cookie
+            setAccessToken(null);       // Clear memory
             setUser(null);
         } catch (err) {
             console.error("Logout failed", err);
-            // Even if the backend fails, clear local state
-            localStorage.removeItem("accessToken");
+            setAccessToken(null);
             setUser(null);
         }
     };
 
-    // 4. Manual Refresh 
     const refreshUser = async () => {
-        await checkSession();
+        // Just re-fetching the profile is enough if the token is still valid
+        try {
+             const userData = await authService.getCurrentUser();
+             console.log("User data refreshed:", userData);
+             setUser(userData.user);
+        } catch (err) {
+             console.error("Refresh user failed", err);
+        }
     };
 
     const value = {

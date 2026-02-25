@@ -18,7 +18,6 @@ export const createStudentSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   
   grade: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Grade ID").optional(),
-  level: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Level ID").optional(),
   
   address: addressSchema.optional(),
 });

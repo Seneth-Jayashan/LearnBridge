@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../../../api/Axios";
 import { useSchoolAdmin } from "../../../contexts/SchoolAdminContext";
 import { FiArrowLeft, FiCheck } from "react-icons/fi";
+import schoolService from "../../../services/SchoolService";
 
 const CreateTeacher = () => {
   const navigate = useNavigate();
@@ -29,8 +30,7 @@ const CreateTeacher = () => {
     setError("");
 
     try {
-      // Use the public teacher registration endpoint, but pass this school's ID
-      await api.post("/user/register-teacher", {
+      await schoolService.createTeacher({
         ...formData,
         schoolId: schoolDetails._id 
       });

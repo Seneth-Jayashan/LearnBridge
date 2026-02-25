@@ -6,6 +6,27 @@ import {
 } from "react-icons/fi";
 import userService from "../services/UserService";
 
+// --- FIXED: Component defined OUTSIDE the main component ---
+const InputField = ({ label, name, type = "text", placeholder, icon: Icon, onChange, value, required = true }) => (
+  <div className="space-y-1.5">
+    <label className="text-sm font-semibold text-slate-700 ml-1">{label}</label>
+    <div className="relative group">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+        <Icon className="w-5 h-5" />
+      </div>
+      <input
+        type={type}
+        name={name}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#207D86] focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all duration-200 placeholder:text-slate-400 text-slate-700 font-medium"
+      />
+    </div>
+  </div>
+);
+
 const RegisterDonor = () => {
   const navigate = useNavigate();
 
@@ -25,14 +46,14 @@ const RegisterDonor = () => {
       city: "",
       state: "",
       zipCode: "",
-      country: "Sri Lanka" // Defaulting to Sri Lanka
+      country: "Sri Lanka"
     }
   });
 
   // Handle top-level fields
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (error) setError(null); // Clear error when user types
+    if (error) setError(null);
   };
 
   // Handle nested address fields
@@ -49,10 +70,9 @@ const RegisterDonor = () => {
     setError(null);
 
     try {
-      const result = await userService.registerDonor(formData);
+      await userService.registerDonor(formData);
       setIsSuccess(true);
       
-      // Redirect after 3 seconds so they can see the success message
       setTimeout(() => {
         navigate("/login");
       }, 3000);
@@ -62,27 +82,6 @@ const RegisterDonor = () => {
       setLoading(false);
     }
   };
-
-  // --- Reusable Components ---
-  const InputField = ({ label, name, type = "text", placeholder, icon: Icon, onChange, value, required = true }) => (
-    <div className="space-y-1.5">
-      <label className="text-sm font-semibold text-slate-700 ml-1">{label}</label>
-      <div className="relative group">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-          <Icon className="w-5 h-5" />
-        </div>
-        <input
-          type={type}
-          name={name}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          required={required}
-          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#207D86] focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all duration-200 placeholder:text-slate-400 text-slate-700 font-medium"
-        />
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen w-full flex justify-center items-center py-10 px-4 bg-linear-to-br from-[#0E2A47] via-[#207D86] to-[#4CAF50] font-sans">

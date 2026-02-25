@@ -24,7 +24,6 @@ const userSchema = new mongoose.Schema(
     // regNumber remains UNIQUE because it identifies the student specifically
     regNumber: { type: String, unique: true, sparse: true, trim: true },
     grade: { type: mongoose.Schema.Types.ObjectId, ref: "Grade" },
-    level: { type: mongoose.Schema.Types.ObjectId, ref: "Level" },
     address: {
       street: { type: String },
       city: { type: String },

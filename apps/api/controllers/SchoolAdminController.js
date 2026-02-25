@@ -56,13 +56,21 @@ export const createStudentForSchool = async (req, res) => {
 
         const studentData = req.body;
 
+        // [NEW] Enforce Grade Validation
+        if (!studentData.grade) {
+            return res.status(400).json({ message: "Grade is required when creating a Student." });
+        }
+
         // NOTE: No duplicate check here! Students can share parent emails/phones.
         const newStudent = new User({
             ...studentData,
             email: studentData.email ? studentData.email.toLowerCase() : undefined,
             role: "student",
             school: schoolId, 
-            isSchoolVerified: true 
+            isSchoolVerified: true,
+            // Ensure grade is passed explicitly
+            grade: studentData.grade,
+            level: studentData.level 
         });
 
         await newStudent.save();
@@ -85,7 +93,7 @@ export const getSchoolStudents = async (req, res) => {
             school: req.user.school, 
             role: "student",
             isDeleted: false
-        }).populate("grade", "name").populate("level", "name");
+        }).populate("grade", "name");
 
         res.status(200).json(students);
     } catch (error) {
@@ -102,12 +110,20 @@ export const updateSchoolStudent = async (req, res) => {
 
         const { firstName, lastName, email, phoneNumber, grade, level, address } = req.body;
 
+        // [NEW] Enforce Grade Validation on Update
+        if (grade === null || grade === "") {
+            return res.status(400).json({ message: "Student must have a grade. You cannot remove it." });
+        }
+
         if (firstName) student.firstName = firstName;
         if (lastName) student.lastName = lastName;
         if (email) student.email = email.toLowerCase();
         if (phoneNumber) student.phoneNumber = phoneNumber;
+        
+        // Update grade if provided
         if (grade) student.grade = grade;
         if (level) student.level = level;
+        
         if (address) student.address = { ...student.address, ...address };
 
         await student.save();
@@ -136,6 +152,48 @@ export const deactivateStudent = async (req, res) => {
 // ==========================================
 // --- TEACHER MANAGEMENT ---
 // ==========================================
+
+export const createTeacherForSchool = async (req, res) => {
+    try {
+        const { firstName, lastName, email, phoneNumber, password, schoolId } = req.body;
+
+        const existingUser = await User.findOne({
+            $or: [{ email: email.toLowerCase() }, { phoneNumber }] 
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ message: "Email or phone number already in use." });
+        }
+
+        // Determine school ID: Use the one in body OR the logged-in admin's school
+        const targetSchoolId = schoolId || req.user.school;
+
+        const newTeacher = new User({
+            firstName,
+            lastName,
+            email: email.toLowerCase(),
+            phoneNumber,
+            password,
+            role: "teacher",
+            school: targetSchoolId, 
+            isSchoolVerified: true // Auto-verified since Admin created them
+        });
+
+        await newTeacher.save();
+
+        // Push to School's teachers array
+        if (targetSchoolId) {
+            await School.findByIdAndUpdate(targetSchoolId, { $push: { teachers: newTeacher._id } });
+        }
+
+        res.status(201).json({ 
+            message: 'Teacher registered successfully.',
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
 
 export const getVerifiedTeachers = async (req, res) => {
     try {

@@ -4,7 +4,8 @@ import {
     forgotPassword, 
     resetPassword, 
     logout, 
-    me 
+    me,
+    refresh
 } from "../controllers/AuthController.js"; // Ensure filename casing matches your system
 
 import { protect } from "../middlewares/AuthMiddleware.js";
@@ -23,6 +24,11 @@ router.post(
     "/login", 
     validate(loginSchema), 
     login
+);
+
+router.post(
+    "/refresh", 
+    refresh
 );
 
 router.post(

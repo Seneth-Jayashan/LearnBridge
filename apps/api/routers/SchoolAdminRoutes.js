@@ -3,6 +3,7 @@ import {
     getMySchoolDetails,
     updateSchoolProfile,
     createStudentForSchool, 
+    createTeacherForSchool,
     getSchoolStudents,
     updateSchoolStudent,
     deactivateStudent,
@@ -45,6 +46,8 @@ router.patch("/students/:studentId/deactivate", deactivateStudent);
 // ==========================================
 // --- TEACHER MANAGEMENT ---
 // ==========================================
+router.post("/teachers", createTeacherForSchool);
+
 router.get("/teachers", getVerifiedTeachers);
 router.get("/teachers/pending", getPendingTeachers);
 

@@ -12,6 +12,11 @@ const authService = {
     return response.data; // Expecting { user: ..., accessToken: ... }
   },
 
+  async refresh() {
+    const response = await api.post("/auth/refresh");
+    return response.data;
+  },
+
   async logout() {
     return await api.post("/auth/logout");
   },

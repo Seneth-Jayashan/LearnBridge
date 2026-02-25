@@ -9,9 +9,9 @@ const generateTokens = (userId, role) => {
 };
 
 const cookieOptions = {
-  httpOnly: true, 
+  httpOnly: process.env.NODE_ENV === "production" ? true : false, 
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict", 
+  sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
@@ -126,7 +126,6 @@ export const me = async (req, res) => {
         const user = await User.findById(req.user._id)
             .select("-password")
             .populate("grade", "name")
-            .populate("level", "name")
             .populate("school", "name logoUrl isVerified"); // New population
 
         if (!user) return res.status(404).json({ message: "User not found" });
@@ -195,5 +194,40 @@ export const logout = async (req, res) => {
         res.status(200).json({ message: "Logged out successfully." });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
+export const refresh = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        
+        if (!refreshToken) {
+            return res.status(401).json({ message: "No refresh token" });
+        }
+
+        // Verify the token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        
+        // Check if user exists and token is valid in DB
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(401).json({ message: "User not found" });
+
+        // specific check: ensure this specific token exists in the user's list
+        const isValidToken = user.refreshToken.some(rt => rt.token === refreshToken);
+        if (!isValidToken) return res.status(403).json({ message: "Invalid refresh token" });
+
+        // Generate NEW Access Token
+        const accessToken = jwt.sign(
+            { id: user._id, role: user.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: "15m" }
+        );
+
+        console.log(`Refresh successful for user ${user._id}. New Access Token issued.`);
+        console.log(`Old Refresh Token: ${refreshToken}`);
+        res.status(200).json({ accessToken });
+    } catch (error) {
+        return res.status(403).json({ message: "Token expired or invalid" });
     }
 };

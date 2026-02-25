@@ -31,8 +31,9 @@ const RegisterTeacher = () => {
     const fetchSchools = async () => {
       try {
         const data = await userService.getPublicSchools();
-        // Only show active schools
-        setSchools(data.filter(s => s.isActive));
+        // FIXED: Removed .filter(s => s.isActive) because the backend 
+        // already filters this, and the field might not be in the response.
+        setSchools(data); 
       } catch (err) {
         console.error("Failed to load schools");
       } finally {
@@ -108,15 +109,19 @@ const RegisterTeacher = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-slate-700 ml-1">First Name</label>
-                  <div className="relative">
-                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                      <FiUser className="w-5 h-5" />
+                    </div>
                     <input required name="firstName" value={formData.firstName} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="John" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-slate-700 ml-1">Last Name</label>
-                  <div className="relative">
-                    <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                      <FiUser className="w-5 h-5" />
+                    </div>
                     <input required name="lastName" value={formData.lastName} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="Doe" />
                   </div>
                 </div>
@@ -125,15 +130,19 @@ const RegisterTeacher = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-                  <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                      <FiMail className="w-5 h-5" />
+                    </div>
                     <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="teacher@example.com" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-slate-700 ml-1">Phone Number</label>
-                  <div className="relative">
-                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                      <FiPhone className="w-5 h-5" />
+                    </div>
                     <input required name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="94771234567" />
                   </div>
                 </div>
@@ -141,8 +150,10 @@ const RegisterTeacher = () => {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
-                <div className="relative">
-                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                    <FiLock className="w-5 h-5" />
+                  </div>
                   <input required type="password" name="password" value={formData.password} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="••••••••" />
                 </div>
               </div>
@@ -158,29 +169,41 @@ const RegisterTeacher = () => {
                     Search for your school below. If your school is not listed, leave it blank to register as a standalone teacher.
                   </p>
                   
-                  <div className="relative mb-3">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  {/* Search Input */}
+                  <div className="relative mb-3 group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                      <FiSearch className="w-5 h-5" />
+                    </div>
                     <input 
                       type="text" 
                       placeholder="Search school by name..." 
-                      className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-[#207D86]"
+                      className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-[#207D86] transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
 
+                  {/* Dropdown Select */}
                   <select 
                     name="schoolId"
                     value={formData.schoolId}
                     onChange={handleChange}
-                    className="w-full p-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none cursor-pointer focus:border-[#207D86]"
+                    disabled={schoolsLoading}
+                    className="w-full p-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none cursor-pointer focus:border-[#207D86] transition-all disabled:opacity-50"
                   >
                     <option value="">I am a Standalone Teacher</option>
-                    {filteredSchools.map(school => (
-                      <option key={school._id} value={school._id}>
-                        {school.name} - {school.address?.city}
-                      </option>
-                    ))}
+                    
+                    {schoolsLoading ? (
+                       <option disabled>Loading schools...</option>
+                    ) : filteredSchools.length > 0 ? (
+                      filteredSchools.map(school => (
+                        <option key={school._id} value={school._id}>
+                          {school.name} {school.address?.city ? `- ${school.address.city}` : ""}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No schools found matching "{searchTerm}"</option>
+                    )}
                   </select>
                 </div>
               </div>
@@ -192,7 +215,14 @@ const RegisterTeacher = () => {
                   disabled={loading}
                   className="w-full py-4 px-6 bg-[#0A1D32] hover:bg-[#207D86] text-white text-lg font-bold rounded-2xl shadow-xl shadow-[#0A1D32]/20 transition-all duration-300 flex justify-center items-center gap-3 disabled:opacity-70 group"
                 >
-                  {loading ? <FiLoader className="w-6 h-6 animate-spin" /> : <>Register as Teacher <FiArrowRight className="group-hover:translate-x-1 transition-transform" /></>}
+                  {loading ? (
+                    <FiLoader className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <>
+                      Register as Teacher 
+                      <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
                 </button>
               </div>
             </form>
