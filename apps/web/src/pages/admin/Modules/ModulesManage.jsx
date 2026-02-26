@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import moduleService from "../../../services/ModuleService";
+import gradeService from "../../../services/GradeService";
+import levelService from "../../../services/LevelService";
 
 const ModulesManage = () => {
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [levels, setLevels] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("");
 
   const loadModules = async () => {
     try {
@@ -21,8 +27,20 @@ const ModulesManage = () => {
     }
   };
 
+  const loadGradesAndLevels = async () => {
+    try {
+      const [g, l] = await Promise.all([gradeService.getAllGrades(), levelService.getAllLevels()]);
+      setGrades(Array.isArray(g) ? g : []);
+      setLevels(Array.isArray(l) ? l : []);
+    } catch (err) {
+      // non-fatal for module listing
+      console.error("Failed to load grades/levels", err);
+    }
+  };
+
   useEffect(() => {
     loadModules();
+    loadGradesAndLevels();
   }, []);
 
   const handleDelete = async (id) => {
@@ -48,13 +66,45 @@ const ModulesManage = () => {
           <p className="text-slate-600 mt-1">Edit and delete existing modules.</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate("/admin/modules/add")}
-          className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#207D86] text-white font-semibold hover:bg-[#14555B]"
-        >
-          Add New Module
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedLevel}
+            onChange={(e) => setSelectedLevel(e.target.value)}
+            className="px-3 py-1 rounded-lg border border-slate-300 text-sm bg-white"
+          >
+            <option value="">All Levels</option>
+            {levels.map((lv) => (
+              <option key={lv._id} value={lv._id}>{lv.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedGrade}
+            onChange={(e) => setSelectedGrade(e.target.value)}
+            className="px-3 py-1 rounded-lg border border-slate-300 text-sm bg-white"
+          >
+            <option value="">All Grades</option>
+            {grades.map((g) => (
+              <option key={g._id} value={g._id}>{g.name}</option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => { setSelectedGrade(""); setSelectedLevel(""); }}
+            className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            Clear Filters
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/admin/modules/add")}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#207D86] text-white font-semibold hover:bg-[#14555B]"
+          >
+            Add New Module
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -78,7 +128,13 @@ const ModulesManage = () => {
           <p className="text-slate-600">No modules found. Create your first module.</p>
         ) : (
           <div className="space-y-3">
-            {modules.map((item) => (
+            {modules
+              .filter((item) => {
+                if (selectedLevel && item.level?._id !== selectedLevel) return false;
+                if (selectedGrade && item.grade?._id !== selectedGrade) return false;
+                return true;
+              })
+              .map((item) => (
               <article key={item._id} className="border border-slate-200 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
