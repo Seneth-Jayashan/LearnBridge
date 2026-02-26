@@ -1,6 +1,6 @@
 // src/pages/donor/BrowseNeeds.jsx
 import { useEffect, useState } from "react";
-import { getAllNeeds, pledgeDonation, initiatePayment } from "../../services/DonorServices";
+import { getAllNeeds, pledgeDonation, initiatePayment } from "../../services/donorServices";
 import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 6;
@@ -74,35 +74,40 @@ export default function BrowseNeeds() {
   };
 
   // ── Pay (financial donation via PayHere) ───────────────────
-  const handlePay = async (id) => {
-    try {
-      setPaying(id);
-      const res = await initiatePayment(id);
-      const paymentData = res.data;
+const handlePay = async (id) => {
+  try {
+    setPaying(id);
 
-      // PayHere payment callbacks
-      window.payhere.onCompleted = function (orderId) {
-        toast.success("Payment successful! Thank you ❤️");
-        fetchNeeds();
-      };
-
-      window.payhere.onDismissed = function () {
-        toast.error("Payment cancelled.");
-        fetchNeeds();
-      };
-
-      window.payhere.onError = function (error) {
-        toast.error("Payment error: " + error);
-      };
-
-      window.payhere.startPayment(paymentData);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Payment initiation failed.");
-    } finally {
-      setPaying(null);
+    // ← safety check
+    if (!window.payhere) {
+      toast.error("Payment system not loaded. Please refresh the page.");
+      return;
     }
-  };
 
+    const res = await initiatePayment(id);
+    const paymentData = res.data; // ← must be res.data
+
+    window.payhere.onCompleted = function (orderId) {
+      toast.success("Payment successful! Thank you ❤️");
+      fetchNeeds();
+    };
+
+    window.payhere.onDismissed = function () {
+      toast.error("Payment cancelled.");
+      fetchNeeds();
+    };
+
+    window.payhere.onError = function (error) {
+      toast.error("Payment error: " + error);
+    };
+
+    window.payhere.startPayment(paymentData);
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message);
+  } finally {
+    setPaying(null);
+  }
+};
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,

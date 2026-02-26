@@ -5,9 +5,8 @@ import {
   getMyPostedNeeds,
   updateNeed,
   deleteNeed,
-} from "../../services/DonorServices";
+} from "../../services/donorServices";
 import { toast } from "react-toastify";
-
 
 const urgencyColor = {
   High: "bg-red-500/10 text-red-400 border border-red-500/30",
@@ -15,11 +14,10 @@ const urgencyColor = {
   Low: "bg-green-500/10 text-green-400 border border-green-500/30",
 };
 
-
 const emptyForm = {
   itemName: "",
   quantity: "",
-  amount: "",       
+  amount: "",
   description: "",
   urgency: "Medium",
 };
@@ -38,34 +36,34 @@ export default function NeedsRegistry() {
   }, []);
 
   const toastConfirm = (message, onConfirm) => {
-  const id = toast.info(
-    <div className="flex flex-col gap-2">
-      <span>{message}</span>
-      <div className="flex gap-2 justify-end mt-2">
-        <button
-          onClick={() => {
-            toast.dismiss(id);
-            onConfirm();
-          }}
-          className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-        >
-          Yes
-        </button>
-        <button
-          onClick={() => toast.dismiss(id)}
-          className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-        >
-          No
-        </button>
-      </div>
-    </div>,
-    {
-      autoClose: false,
-      closeOnClick: false,
-      closeButton: false,
-    }
-  );
-};
+    const id = toast.info(
+      <div className="flex flex-col gap-2">
+        <span>{message}</span>
+        <div className="flex gap-2 justify-end mt-2">
+          <button
+            onClick={() => {
+              toast.dismiss(id);
+              onConfirm();
+            }}
+            className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => toast.dismiss(id)}
+            className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+          >
+            No
+          </button>
+        </div>
+      </div>,
+      {
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+      }
+    );
+  };
 
   const fetchNeeds = async () => {
     try {
@@ -89,7 +87,7 @@ export default function NeedsRegistry() {
     setForm({
       itemName: need.itemName,
       quantity: need.quantity,
-      amount: need.amount || "", 
+      amount: need.amount || "",
       description: need.description || "",
       urgency: need.urgency,
     });
@@ -106,6 +104,7 @@ export default function NeedsRegistry() {
       toast.error("Quantity must be greater than 0.");
       return;
     }
+    // ← validate amount on both create AND edit
     if (!form.amount || Number(form.amount) <= 0) {
       toast.error("Please enter a valid amount.");
       return;
@@ -113,7 +112,13 @@ export default function NeedsRegistry() {
     try {
       setSaving(true);
       if (editingId) {
-        await updateNeed(editingId, form);
+        await updateNeed(editingId, {
+          itemName: form.itemName,
+          quantity: form.quantity,
+          amount: Number(form.amount), // ← add amount here
+          description: form.description,
+          urgency: form.urgency,
+        });
         toast.success("Need updated successfully ✅");
       } else {
         await createNeed(form);
@@ -128,20 +133,20 @@ export default function NeedsRegistry() {
     }
   };
 
-const handleDelete = (id) => {
-  toastConfirm("Are you sure you want to delete this need?", async () => {
-    try {
-      setDeleting(id);
-      await deleteNeed(id);
-      toast.success("Need deleted 🗑️");
-      fetchNeeds();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Could not delete.");
-    } finally {
-      setDeleting(null);
-    }
-  });
-};
+  const handleDelete = (id) => {
+    toastConfirm("Are you sure you want to delete this need?", async () => {
+      try {
+        setDeleting(id);
+        await deleteNeed(id);
+        toast.success("Need deleted 🗑️");
+        fetchNeeds();
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Could not delete.");
+      } finally {
+        setDeleting(null);
+      }
+    });
+  };
 
   const total = needs.length;
   const open = needs.filter((n) => n.status === "Open").length;
@@ -158,7 +163,6 @@ const handleDelete = (id) => {
 
   return (
     <div className="p-8 min-h-screen">
-
 
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
@@ -196,6 +200,7 @@ const handleDelete = (id) => {
               <tr className="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest">
                 <th className="text-left px-6 py-4 font-semibold">Item</th>
                 <th className="text-left px-6 py-4 font-semibold">Qty</th>
+                <th className="text-left px-6 py-4 font-semibold">Amount (LKR)</th>
                 <th className="text-left px-6 py-4 font-semibold">Urgency</th>
                 <th className="text-left px-6 py-4 font-semibold">Status</th>
                 <th className="text-left px-6 py-4 font-semibold">Posted</th>
@@ -226,24 +231,11 @@ const handleDelete = (id) => {
                   </td>
 
                   {/* Amount */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Estimated Amount (LKR) *
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
-                        Rs.
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={form.amount}
-                        onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                        placeholder="e.g. 2500"
-                        className="w-full rounded-xl pl-10 pr-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
-                      />
-                    </div>
-                  </div>
+                  <td className="px-6 py-4 text-slate-600 font-medium">
+                    {need.amount > 0
+                      ? `Rs. ${need.amount.toLocaleString()}`
+                      : "—"}
+                  </td>
 
                   {/* Urgency */}
                   <td className="px-6 py-4">
@@ -341,6 +333,26 @@ const handleDelete = (id) => {
               />
             </div>
 
+            {/* Amount — fully editable */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Estimated Amount (LKR) *
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  placeholder="e.g. 2500"
+                  className="w-full rounded-xl pl-10 pr-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
+                />
+              </div>
+            </div>
+
             {/* Description */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -384,11 +396,7 @@ const handleDelete = (id) => {
                 disabled={saving}
                 className="px-6 py-2 text-sm font-semibold rounded-xl bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-60"
               >
-                {saving
-                  ? "Saving..."
-                  : editingId
-                  ? "Update Need"
-                  : "Post Need 📢"}
+                {saving ? "Saving..." : editingId ? "Update Need" : "Post Need 📢"}
               </button>
             </div>
 

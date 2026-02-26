@@ -108,16 +108,22 @@ export const getMySchoolDetails = async (req, res) => {
 // POST /api/donations
 export const createNeed = async (req, res) => {
   try {
-    const { itemName, quantity, description, urgency } = req.body;
+    // ← add amount here
+    const { itemName, quantity, amount, description, urgency } = req.body;
 
     if (!itemName || !quantity) {
       return res.status(400).json({ message: "Item name and quantity are required." });
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Please enter a valid amount." });
     }
 
     const need = await ResourceRequest.create({
       schoolId: req.user._id,
       itemName,
       quantity,
+      amount: Number(amount), // ← add this
       description,
       urgency: urgency || "Medium",
       status: "Open",
@@ -159,14 +165,17 @@ export const updateNeed = async (req, res) => {
     }
 
     if (need.status !== "Open") {
-      return res.status(400).json({ message: "Cannot edit a need that is already pledged or fulfilled" });
+      return res.status(400).json({
+        message: "Cannot edit a need that is already pledged or fulfilled",
+      });
     }
 
-    const { itemName, quantity, description, urgency } = req.body;
+    const { itemName, quantity, amount, description, urgency } = req.body;
 
     if (itemName) need.itemName = itemName;
     if (quantity) need.quantity = quantity;
-    if (description) need.description = description;
+    if (amount && Number(amount) > 0) need.amount = Number(amount); // ← add this
+    if (description !== undefined) need.description = description;
     if (urgency) need.urgency = urgency;
 
     await need.save();
@@ -177,7 +186,6 @@ export const updateNeed = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 // ─── SCHOOL ADMIN: DELETE A NEED ─────────────────────────────────────────────
 // DELETE /api/donations/school/:id
 export const deleteNeed = async (req, res) => {

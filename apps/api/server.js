@@ -1,5 +1,5 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import "./config/env.js"; 
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -13,7 +13,6 @@ import connectDB from './config/Database.js';
 
 import routes from './routes.js';
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
