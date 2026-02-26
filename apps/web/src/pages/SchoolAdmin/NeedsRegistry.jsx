@@ -15,9 +15,11 @@ const urgencyColor = {
   Low: "bg-green-500/10 text-green-400 border border-green-500/30",
 };
 
+
 const emptyForm = {
   itemName: "",
   quantity: "",
+  amount: "",       
   description: "",
   urgency: "Medium",
 };
@@ -87,6 +89,7 @@ export default function NeedsRegistry() {
     setForm({
       itemName: need.itemName,
       quantity: need.quantity,
+      amount: need.amount || "", 
       description: need.description || "",
       urgency: need.urgency,
     });
@@ -101,6 +104,10 @@ export default function NeedsRegistry() {
     }
     if (Number(form.quantity) <= 0) {
       toast.error("Quantity must be greater than 0.");
+      return;
+    }
+    if (!form.amount || Number(form.amount) <= 0) {
+      toast.error("Please enter a valid amount.");
       return;
     }
     try {
@@ -217,6 +224,26 @@ const handleDelete = (id) => {
                   <td className="px-6 py-4 text-slate-600 font-medium">
                     {need.quantity}
                   </td>
+
+                  {/* Amount */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Estimated Amount (LKR) *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                        Rs.
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={form.amount}
+                        onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                        placeholder="e.g. 2500"
+                        className="w-full rounded-xl pl-10 pr-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
+                      />
+                    </div>
+                  </div>
 
                   {/* Urgency */}
                   <td className="px-6 py-4">

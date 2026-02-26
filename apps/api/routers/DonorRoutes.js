@@ -29,7 +29,7 @@ router.put("/profile/change-password", protect, restrictTo("donor"), updateUserP
 router.get("/my", protect, restrictTo("donor"), getMyDonations);
 router.get("/overview", protect,restrictTo("donor"), getOverviewStats);
 router.get("/impact", protect,restrictTo("donor"), getImpactReport);
-router.get("/", protect,restrictTo("donor"),  getAllNeeds);
+router.get("/", protect,restrictTo("donor"), getAllNeeds);
 router.put("/:id/pledge", protect, restrictTo("donor"), pledgeDonation);
 router.put("/:id/complete", protect, restrictTo("donor"), markFulfilled);
 

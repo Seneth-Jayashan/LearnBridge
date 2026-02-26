@@ -1,10 +1,11 @@
+// backend/models/ResourceRequest.js
 import mongoose from "mongoose";
 
 const resourceRequestSchema = new mongoose.Schema(
   {
     schoolId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",  // references the schoolAdmin user
+      ref: "User",
       required: true,
     },
     itemName: {
@@ -16,6 +17,12 @@ const resourceRequestSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
     description: {
       type: String,
@@ -34,7 +41,7 @@ const resourceRequestSchema = new mongoose.Schema(
     },
     donorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",  // references the donor user who pledged
+      ref: "User",
       default: null,
     },
     pledgedDate: {
@@ -45,8 +52,22 @@ const resourceRequestSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // PayHere payment fields
+    paymentOrderId: {
+      type: String,
+      default: null,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Completed", "Failed", "Cancelled"],
+      default: null,
+    },
+    paymentMethod: {
+      type: String,
+      default: null,
+    },
   },
-  { timestamps: true } // gives createdAt and updatedAt automatically
+  { timestamps: true }
 );
 
 const ResourceRequest = mongoose.model("ResourceRequest", resourceRequestSchema);
