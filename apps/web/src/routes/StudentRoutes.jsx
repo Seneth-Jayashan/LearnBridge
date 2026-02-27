@@ -4,7 +4,6 @@ import StudentSidebar from "../components/sidebar/StudentSidebar";
 import QuizList from "../pages/student/QuizList";
 import TakeQuiz from "../pages/student/TakeQuiz";
 import QuizResults from "../pages/student/QuizResult";
-import StudentSidebar from "../components/sidebar/StudentSidebar"; // Adjust path if needed
 import StudentModules from "../pages/student/StudentModules";
 
 const StudentRoutes = () => {
