@@ -1,6 +1,5 @@
 import User from "../models/User.js";
-import { sendVerificationSms } from "../utils/templates/SMS.js";
-import { sendVerificationEmail } from "../utils/templates/Email.js"; 
+import { sendVerificationSms } from "../utils/templates/SMS.js"; 
 import jwt from "jsonwebtoken";
 
 const generateTokens = (userId, role) => {
@@ -10,9 +9,9 @@ const generateTokens = (userId, role) => {
 };
 
 const cookieOptions = {
-  httpOnly: process.env.NODE_ENV === "production" ? true : false, 
+  httpOnly: true, 
   secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+  sameSite: "strict", 
   maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
@@ -29,6 +28,7 @@ export const login = async (req, res) => {
 
         let targetUser = null;
 
+        // --- SCENARIO 1: Student Login (Unique RegNumber) ---
         if (isRegNumFormat) {
             targetUser = await User.findOne({ regNumber: identifier });
             
@@ -47,6 +47,7 @@ export const login = async (req, res) => {
             }
         } 
         
+        // --- SCENARIO 2: Staff/Admin/Donor Login (Phone OR Email) ---
         else {
             const users = await User.find({ 
                 $or: [{ email: identifier.toLowerCase() }, { phoneNumber: identifier }] 
@@ -58,6 +59,7 @@ export const login = async (req, res) => {
             
             let matchCount = 0;
             for (const user of users) {
+                // Skip students (they MUST use RegNumber)
                 if (user.role === "student") continue; 
 
                 const isMatch = await user.comparePassword(password);
@@ -78,25 +80,12 @@ export const login = async (req, res) => {
             }
         }
 
+        // --- Common Final Checks ---
         if (!targetUser.isActive) return res.status(403).json({ message: "Account is inactive." });
         if (targetUser.isLocked) return res.status(403).json({ message: "Account is locked." });
 
-        // ==========================================
-        // --- NEW: FIRST LOGIN OTP INTERCEPTION ---
-        // ==========================================
-        if (targetUser.requiresPasswordChange) {
-            const otp = targetUser.generateOTP();
-            await targetUser.save();
-
-            await sendVerificationEmail(targetUser.email, otp);
-            await sendVerificationSms(targetUser.phoneNumber, otp);
-
-            return res.status(200).json({
-                message: "First login detected. OTP sent to your email and phone.",
-                requiresOtpVerification: true,
-                userId: targetUser._id
-            });
-        }
+        // NOTE: We don't block login if !isSchoolVerified. We pass it to the frontend 
+        // so the frontend can redirect them to an "Awaiting Verification" screen!
 
         targetUser.loginAttempts = 0;
         targetUser.lastLogin = Date.now();
@@ -110,6 +99,7 @@ export const login = async (req, res) => {
 
         res.cookie("refreshToken", refreshToken, cookieOptions);
         
+        // --- UPDATED RESPONSE PAYLOAD ---
         res.status(200).json({ 
             message: "Login successful", 
             accessToken, 
@@ -119,8 +109,8 @@ export const login = async (req, res) => {
                 lastName: targetUser.lastName,
                 role: targetUser.role,
                 regNumber: targetUser.regNumber || null,
-                school: targetUser.school || null,
-                isSchoolVerified: targetUser.isSchoolVerified
+                school: targetUser.school || null,             // Added multi-tenant school ID
+                isSchoolVerified: targetUser.isSchoolVerified  // Added verification status
             } 
         });
 
@@ -129,99 +119,15 @@ export const login = async (req, res) => {
     }
 };
 
-// ==========================================
-// --- NEW: VERIFY FIRST LOGIN OTP ---
-// ==========================================
-export const verifyFirstLoginOtp = async (req, res) => {
-    try {
-        const { userId, otp } = req.body;
-        const user = await User.findById(userId);
-        
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        const otpCheck = user.verifyOTP(otp);
-        
-        if (!otpCheck.success) {
-            await user.save(); 
-            return res.status(400).json({ message: otpCheck.message });
-        }
-
-        const resetToken = jwt.sign(
-            { id: user._id, intent: 'first_login_reset' }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: '15m' }
-        );
-
-        await user.save();
-
-        res.status(200).json({ 
-            message: "OTP verified successfully. Please enter your new password.", 
-            resetToken 
-        });
-
-    } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
-
-// ==========================================
-// --- NEW: SETUP NEW PASSWORD (FINAL STEP) ---
-// ==========================================
-export const setupNewPassword = async (req, res) => {
-    try {
-        const { resetToken, newPassword } = req.body;
-        
-        // Verify the secure token
-        const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
-        if (decoded.intent !== 'first_login_reset') {
-            return res.status(400).json({ message: "Invalid token intent." });
-        }
-
-        const user = await User.findById(decoded.id);
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        await user.updatePassword(newPassword);
-
-        user.loginAttempts = 0;
-        user.lastLogin = Date.now();
-
-        const { accessToken, refreshToken } = generateTokens(user._id, user.role);
-        
-        user.refreshToken.push({ token: refreshToken });
-        if (user.refreshToken.length > 5) user.refreshToken.shift();
-        
-        await user.save();
-
-        res.cookie("refreshToken", refreshToken, cookieOptions);
-
-        res.status(200).json({ 
-            message: "Password updated successfully. Welcome to your dashboard!",
-            accessToken,
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role,
-                regNumber: user.regNumber || null,
-                school: user.school || null,
-                isSchoolVerified: user.isSchoolVerified
-            }
-        });
-
-    } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(400).json({ message: "Reset session expired. Please log in again." });
-        }
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
-
 export const me = async (req, res) => {
     try {
+        // --- UPDATED POPULATION ---
+        // We now populate the 'school' field so the frontend gets the School Name and Logo
         const user = await User.findById(req.user._id)
             .select("-password")
             .populate("grade", "name")
-            .populate("school", "name logoUrl isVerified");
+            .populate("level", "name")
+            .populate("school", "name logoUrl isVerified"); // New population
 
         if (!user) return res.status(404).json({ message: "User not found" });
         
@@ -244,7 +150,6 @@ export const forgotPassword = async (req, res) => {
         await user.save();
         
         await sendVerificationSms(user.phoneNumber, otp);
-        await sendVerificationEmail(user.email, otp);
         res.status(200).json({ message: "OTP sent.", success: true });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
@@ -290,34 +195,5 @@ export const logout = async (req, res) => {
         res.status(200).json({ message: "Logged out successfully." });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
-
-export const refresh = async (req, res) => {
-    try {
-        const refreshToken = req.cookies.refreshToken;
-        
-        if (!refreshToken) {
-            return res.status(401).json({ message: "No refresh token" });
-        }
-
-        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-        
-        const user = await User.findById(decoded.id);
-        if (!user) return res.status(401).json({ message: "User not found" });
-
-        const isValidToken = user.refreshToken.some(rt => rt.token === refreshToken);
-        if (!isValidToken) return res.status(403).json({ message: "Invalid refresh token" });
-
-        const accessToken = jwt.sign(
-            { id: user._id, role: user.role }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: "15m" }
-        );
-
-        console.log(`Refresh successful for user ${user._id}. New Access Token issued.`);
-        res.status(200).json({ accessToken });
-    } catch (error) {
-        return res.status(403).json({ message: "Token expired or invalid" });
     }
 };

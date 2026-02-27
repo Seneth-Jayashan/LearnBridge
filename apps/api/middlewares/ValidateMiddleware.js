@@ -2,12 +2,14 @@ import { z } from "zod";
 
 export const validate = (schema) => (req, res, next) => {
   try {
-    schema.parse(req.body);
+    // Parse the request body against the schema
+    // strip() removes unknown keys to prevent pollution
+    req.body = schema.parse(req.body);
     next();
   } catch (error) {
-    console.error("Validation Error:", error);
     if (error instanceof z.ZodError) {
-      const errors = error.issues.map((err) => ({
+      // Format Zod errors into a readable array
+      const errors = error.errors.map((err) => ({
         field: err.path.join("."),
         message: err.message,
       }));

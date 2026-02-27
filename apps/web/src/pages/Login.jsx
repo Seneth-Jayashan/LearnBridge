@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { 
-  FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight, 
-  FiUser, FiHeart, FiBookOpen, FiShield 
-} from "react-icons/fi";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight, FiUser } from "react-icons/fi";
 import LogoImage from "../assets/Learn Bridge Logo 2.png"; 
 
 const Login = () => {
@@ -29,137 +26,128 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row font-sans text-slate-800 bg-white">
+    <div className="min-h-screen w-full flex flex-col md:flex-row font-sans text-slate-800">
       
-      {/* --- Left Side: Brand & Registration Section --- */}
-      <div className="relative flex flex-col justify-center items-center w-full md:w-5/12 p-8 md:p-12 overflow-hidden bg-[#0A1D32] text-white">
-        {/* Animated Background Mesh */}
-        <div className="absolute inset-0 opacity-40">
-           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#207D86] rounded-full blur-[120px] animate-pulse"></div>
-           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#4CAF50] rounded-full blur-[120px] animate-pulse"></div>
-        </div>
+      {/* --- Left Side: Brand Section (Gradient) --- */}
+      <div className="relative flex flex-col justify-center items-center w-full md:w-1/2 p-10 overflow-hidden bg-gradient-to-br from-[#0E2A47] via-[#207D86] to-[#4CAF50] text-white text-center">
+        
+        {/* Decorative Background Circles */}
+        <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-white/10 blur-3xl"></div>
 
-        <div className="relative z-10 max-w-sm w-full flex flex-col items-center text-center">
-          <img src={LogoImage} alt="Logo" className="w-20 h-20 mb-6 rounded-2xl shadow-2xl border border-white/10" />
-          <h1 className="text-3xl font-extrabold mb-4 leading-tight">New Here?</h1>
-          <p className="text-slate-400 mb-10 text-sm font-medium">Join our mission to transform rural education through community support.</p>
-
-          <div className="flex flex-col gap-4 w-full">
-            <Link to="/register-donor" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white hover:text-[#0A1D32] transition-all duration-300 group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#4CAF50]/20 flex items-center justify-center text-[#4CAF50] group-hover:bg-[#4CAF50] group-hover:text-white transition-colors">
-                  <FiHeart className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-bold uppercase tracking-wider opacity-60">Support</p>
-                  <p className="font-bold">As a Donor</p>
-                </div>
-              </div>
-              <FiArrowRight className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-            </Link>
-
-            <Link to="/register-teacher" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white hover:text-[#0A1D32] transition-all duration-300 group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#207D86]/20 flex items-center justify-center text-[#207D86] group-hover:bg-[#207D86] group-hover:text-white transition-colors">
-                  <FiBookOpen className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-bold uppercase tracking-wider opacity-60">Inspire</p>
-                  <p className="font-bold">As a Teacher</p>
-                </div>
-              </div>
-              <FiArrowRight className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-            </Link>
-          </div>
+        {/* Brand Content */}
+        <div className="relative z-10 max-w-md flex flex-col items-center">
+          <img 
+            src={LogoImage} 
+            alt="LearnBridge Logo" 
+            className="w-40 h-auto mb-8 rounded-2xl shadow-2xl border-4 border-white/20 backdrop-blur-sm"
+          />
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight tracking-tight">
+            Bridging the Gap to Knowledge.
+          </h1>
+          <p className="text-lg text-slate-100 font-light opacity-90">
+            Empowering rural education through technology and community support.
+          </p>
         </div>
       </div>
 
-      {/* --- Right Side: The "Attractive" Login Form --- */}
-      <div className="flex flex-col justify-center items-center w-full md:w-7/12 p-6 md:p-12 bg-slate-50 relative">
-        {/* Subtle background text for design depth */}
-        <div className="absolute top-10 right-10 text-[120px] font-black text-slate-200/50 select-none pointer-events-none hidden lg:block">
-          LOGIN
-        </div>
-
-        <div className="w-full max-w-md relative z-10">
-          <div className="mb-10 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#207D86]/10 text-[#207D86] rounded-full text-xs font-bold uppercase tracking-widest mb-4">
-              <FiShield className="w-3 h-3" /> Secure Access
-            </div>
-            <h2 className="text-4xl font-black text-[#0A1D32] tracking-tight mb-2">Welcome Back</h2>
-            <p className="text-slate-500 font-medium">Please enter your credentials to access your account.</p>
+      {/* --- Right Side: Login Form --- */}
+      <div className="flex flex-col justify-center items-center w-full md:w-1/2 bg-slate-50 p-6 md:p-12">
+        <div className="w-full max-w-md bg-white p-8 md:p-10 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100">
+          
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-[#0E2A47] mb-2">Welcome Back!</h2>
+            <p className="text-slate-500">Please enter your details to sign in.</p>
           </div>
 
           {authError && (
-            <div className="mb-6 p-4 rounded-2xl bg-red-50 border-l-4 border-red-500 text-red-700 text-sm font-bold animate-in fade-in slide-in-from-top-2">
+            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm text-center font-medium">
               {authError}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Input Wrapper with focus-within shadow effect */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Identity</label>
-              <div className="relative flex items-center group">
-                <FiUser className="absolute left-4 text-slate-400 group-focus-within:text-[#207D86] transition-colors" />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Identifier Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 ml-1">
+                Email, Phone, or Student ID
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                  <FiUser className="w-5 h-5" />
+                </div>
                 <input
                   type="text"
                   name="identifier"
-                  placeholder="Email, Phone or Student ID"
+                  placeholder="e.g., STU0001 or teacher@email.com"
                   value={formData.identifier}
                   onChange={handleChange}
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-[#207D86] focus:shadow-[0_0_20px_rgba(32,125,134,0.1)] transition-all font-semibold text-slate-700"
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#207D86] focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all duration-200 placeholder:text-slate-400 text-slate-700 font-medium"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            {/* Password Input */}
+            <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Security Key</label>
-                <Link to="/forgot-password" size="sm" className="text-xs font-bold text-[#207D86] hover:text-[#0A1D32] transition-colors">Forgot?</Link>
+                <label className="text-sm font-semibold text-slate-700">Password</label>
+                <button type="button" className="text-xs font-medium text-[#207D86] hover:text-[#0E2A47] transition-colors">
+                  Forgot Password?
+                </button>
               </div>
-              <div className="relative flex items-center group">
-                <FiLock className="absolute left-4 text-slate-400 group-focus-within:text-[#207D86] transition-colors" />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                  <FiLock className="w-5 h-5" />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full pl-12 pr-12 py-4 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-[#207D86] focus:shadow-[0_0_20px_rgba(32,125,134,0.1)] transition-all font-semibold text-slate-700"
+                  className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-[#207D86] focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all duration-200 placeholder:text-slate-400 text-slate-700 font-medium"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 text-slate-400 hover:text-[#207D86] transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#207D86] cursor-pointer transition-colors"
                 >
-                  {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                  {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 mt-4 bg-linear-to-r from-[#0A1D32] to-[#207D86] text-white font-bold rounded-2xl shadow-xl shadow-[#207D86]/20 hover:shadow-[#207D86]/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 flex justify-center items-center gap-3 overflow-hidden group"
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-[#0E2A47] to-[#207D86] hover:from-[#091E33] hover:to-[#18646C] text-white text-lg font-bold rounded-xl shadow-lg shadow-[#207D86]/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Signing in...</span>
               ) : (
                 <>
-                  <span className="tracking-wide">Authorize Account</span>
-                  <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
+                  Sign In <FiArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </form>
 
-          <p className="mt-10 text-center text-xs text-slate-400 font-bold uppercase tracking-tighter">
-            Platform Secured by OneX Universe <br />
-            <span className="text-[#207D86]">Terms of Service • Privacy Policy</span>
-          </p>
+          {/* Footer */}
+          <div className="mt-8 text-center">
+            <p className="text-slate-500 text-sm">
+              Don't have an account?{" "}
+              <Link 
+                to="/register-donor" 
+                className="text-[#207D86] font-bold hover:text-[#0E2A47] relative after:content-[''] after:absolute after:-bottom-0.5 after:left-0 after:w-0 after:h-0.5 after:bg-current after:transition-all hover:after:w-full"
+              >
+                Become a Donor
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

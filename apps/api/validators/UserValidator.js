@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Reusable Address Schema
 const addressSchema = z.object({
   street: z.string().optional(),
   city: z.string().optional(),
@@ -8,6 +9,7 @@ const addressSchema = z.object({
   country: z.string().optional(),
 });
 
+// --- NEW: Donor Registration Schema ---
 export const createDonorSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -17,15 +19,7 @@ export const createDonorSchema = z.object({
   address: addressSchema.optional(),
 });
 
-export const registerTeacherSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(9, "Phone number must be at least 9 digits"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  schoolId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid School ID").optional().or(z.literal("")),
-});
-
+// --- Existing Schemas ---
 export const updateUserProfileSchema = z.object({
   firstName: z.string().min(1, "First name cannot be empty").optional(),
   lastName: z.string().min(1, "Last name cannot be empty").optional(),

@@ -36,11 +36,6 @@ const authService = {
     return response.data; // Expecting { user: ..., accessToken: ... }
   },
 
-  async refresh() {
-    const response = await api.post("/auth/refresh");
-    return response.data;
-  },
-
   async logout() {
     const response = await api.post("/auth/logout", {}, { headers: getAuthHeaders() });
     localStorage.removeItem(ACCESS_TOKEN_KEY);

@@ -24,28 +24,33 @@ router.post(
 );
 
 router.route("/")
+    // Create: super_admin Only
     .post(
         protect, 
         restrictTo("super_admin"), 
         validate(createGradeSchema), 
         createGrade
     )
+    // Read All: Authenticated Users (super_admins, Teachers, etc.)
     .get(
         protect, 
         getAllGrades
     );
 
 router.route("/:id")
+    // Read One: Authenticated Users
     .get(
         protect, 
         getGradeById
     )
+    // Update: super_admin Only
     .put(
         protect, 
         restrictTo("super_admin"), 
         validate(updateGradeSchema), 
         updateGrade
     )
+    // Delete: super_admin Only
     .delete(
         protect, 
         restrictTo("super_admin"), 

@@ -11,10 +11,12 @@ export const createLevel = async (req, res) => {
     try {
         const { name, description } = req.body;
 
+        // 1. Validation: Prevent crash if name is missing
         if (!name) {
             return res.status(400).json({ message: "Level name is required" });
         }
 
+        // 2. Check for duplicates
         const existingLevel = await Level.findOne({ name: name.trim() });
         if (existingLevel) {
             return res.status(400).json({ message: "Level with this name already exists" });
@@ -58,14 +60,17 @@ export const updateLevel = async (req, res) => {
     try {
         const { name, description } = req.body;
         
+        // Find the level first
         const level = await Level.findById(req.params.id);
         if (!level) {
             return res.status(404).json({ message: "Level not found" });
         }
 
+        // 1. Handle Name Update
         if (name) {
             const newName = name.trim();
             
+            // Only check duplicates if the name is actually changing
             if (newName !== level.name) {
                 const existingLevel = await Level.findOne({ name: newName });
                 if (existingLevel) {
@@ -75,6 +80,7 @@ export const updateLevel = async (req, res) => {
             }
         }
 
+        // 2. Handle Description Update
         if (description !== undefined) {
             level.description = description;
         }
@@ -88,6 +94,8 @@ export const updateLevel = async (req, res) => {
 
 export const deleteLevel = async (req, res) => {
     try {
+        // Optimization: Find and Delete in one DB call
+        // 'level.remove()' is deprecated in Mongoose 6+
         const level = await Level.findByIdAndDelete(req.params.id);
 
         if (!level) {

@@ -17,8 +17,11 @@ import {
 
 const router = express.Router();
 
+// Apply authentication middleware to all routes
 router.use(protect);
 
+// --- Public Access (Read Only) for Authenticated Users ---
+// Students, Teachers, and Admins can all view modules
 router.get("/", getAllModules);
 router.get("/:id", getModuleById);
 

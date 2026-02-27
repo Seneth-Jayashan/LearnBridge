@@ -65,6 +65,7 @@ export const createModule = async (req, res) => {
     }
 };
 
+// --- Get All Modules ---
 export const getAllModules = async (req, res) => {
     try {
         // Build base match conditions
@@ -123,6 +124,7 @@ export const getAllModules = async (req, res) => {
     }
 };
 
+// --- Get Single Module by ID ---
 export const getModuleById = async (req, res) => {
     try {
         const module = await Module.findById(req.params.id)
@@ -139,6 +141,7 @@ export const getModuleById = async (req, res) => {
     }
 };
 
+// --- Update Module ---
 export const updateModule = async (req, res) => {
     try {
         const { name, description, thumbnailUrl, level, grade, subjectStream } = req.body;
@@ -196,6 +199,7 @@ export const updateModule = async (req, res) => {
     }
 };
 
+// --- Delete Module ---
 export const deleteModule = async (req, res) => {
     try {
         const module = await Module.findById(req.params.id);

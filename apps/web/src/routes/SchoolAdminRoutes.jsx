@@ -1,19 +1,16 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
-import SchoolSidebar from "../components/sidebar/SchoolSidebar"; // Ensure path is correct
+import SchoolSidebar from "../components/sidebar/SchoolSidebar";
 
-// --- Import Pages ---
-import Students from "../pages/school/students/Students";
-import CreateStudent from "../pages/school/students/Create";
-import Teachers from "../pages/school/teachers/Teachers";
-import CreateTeacher from "../pages/school/teachers/Create";
-
-const SchoolAdminRoutes = () => {
+const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
+  
+  // 1. Move the expand/shrink state HERE
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <>
+      {/* 2. Pass the state and setter as props to the sidebar */}
       <SchoolSidebar 
         isOpen={isMobileMenuOpen} 
         close={() => setIsMobileMenuOpen(false)} 
@@ -21,23 +18,15 @@ const SchoolAdminRoutes = () => {
         setIsExpanded={setIsExpanded}
       />
       
+      {/* 3. Make the padding dynamic! */}
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
-          <Route path="dashboard" element={<div className="p-6">School Admin Dashboard</div>} />
-          
-          {/* Student Routes */}
-          <Route path="students" element={<Students />} />
-          <Route path="students/create" element={<CreateStudent />} />
-          {/* <Route path="students/edit/:id" element={<EditStudent />} /> */}
-          
-          {/* Teacher Routes (Placeholders for next steps) */}
-          <Route path="teachers" element={<Teachers />} />
-          <Route path="teachers/create" element={<CreateTeacher />} />
-          
+          <Route path="dashboard" element={<div>School Dashboard Content</div>} />
+          {/* ... Add your other admin routes here ... */}
         </Routes>
       </div>
     </>
   );
 };
 
-export default SchoolAdminRoutes;
+export default adminRoutes;
