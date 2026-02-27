@@ -40,3 +40,6 @@ export const deleteNeed = (id) =>
 
 export const initiatePayment = (needId) =>
   api.post(`/payments/initiate/${needId}`);
+
+export const confirmPayment = (data) =>
+  api.post("/payments/confirm", data);

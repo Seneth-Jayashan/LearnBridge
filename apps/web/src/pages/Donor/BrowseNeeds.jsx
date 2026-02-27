@@ -1,6 +1,6 @@
 // src/pages/donor/BrowseNeeds.jsx
 import { useEffect, useState } from "react";
-import { getAllNeeds, pledgeDonation, initiatePayment } from "../../services/donorServices";
+import { getAllNeeds, pledgeDonation, initiatePayment, confirmPayment } from "../../services/donorServices";
 import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 6;
@@ -78,18 +78,28 @@ const handlePay = async (id) => {
   try {
     setPaying(id);
 
-    // ← safety check
     if (!window.payhere) {
-      toast.error("Payment system not loaded. Please refresh the page.");
+      toast.error("Payment system not available. Try refreshing.");
       return;
     }
 
     const res = await initiatePayment(id);
-    const paymentData = res.data; // ← must be res.data
+    const paymentData = res.data;
 
-    window.payhere.onCompleted = function (orderId) {
-      toast.success("Payment successful! Thank you ❤️");
-      fetchNeeds();
+    // ── onCompleted: fires when payment approved ──────────────
+    window.payhere.onCompleted = async function (orderId) {
+      try {
+        console.log("Payment completed, orderId:", orderId);
+        await confirmPayment({
+          orderId: orderId,
+          needId: id,
+        });
+        toast.success("Payment successful! Thank you ❤️");
+        fetchNeeds(); // ← refreshes cards → shows Pledged
+      } catch (err) {
+        console.error("Confirm error:", err);
+        toast.error("Payment done but confirmation failed.");
+      }
     };
 
     window.payhere.onDismissed = function () {

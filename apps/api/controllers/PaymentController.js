@@ -164,6 +164,41 @@ export const paymentNotify = async (req, res) => {
   }
 };
 
+// ─── CONFIRM PAYMENT FROM FRONTEND ────────────────────────────
+// POST /api/v1/payments/confirm
+export const confirmPayment = async (req, res) => {
+  try {
+    const { orderId, needId } = req.body;
+
+    const need = await ResourceRequest.findById(needId);
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.paymentOrderId !== orderId) {
+      return res.status(400).json({ message: "Order ID mismatch" });
+    }
+
+    // Already pledged — idempotent
+    if (need.status === "Pledged") {
+      return res.status(200).json({ message: "Already confirmed", need });
+    }
+
+    need.status = "Pledged";
+    need.donorId = req.user._id;
+    need.pledgedDate = new Date();
+    need.paymentStatus = "Completed";
+    need.paymentMethod = "PayHere";
+    await need.save();
+
+    res.status(200).json({ message: "Payment confirmed successfully", need });
+  } catch (err) {
+    console.error("confirmPayment error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ─── RESET PAYMENT STATUS (testing only) ─────────────────────
 export const resetPaymentStatus = async (req, res) => {
   try {
@@ -179,3 +214,4 @@ export const resetPaymentStatus = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
