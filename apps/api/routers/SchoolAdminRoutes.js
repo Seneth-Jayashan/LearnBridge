@@ -1,35 +1,56 @@
 import express from "express";
 import { 
+    getMySchoolDetails,
+    updateSchoolProfile,
     createStudentForSchool, 
-    verifySchoolTeacher,
+    createTeacherForSchool,
+    getSchoolStudents,
+    updateSchoolStudent,
+    deactivateStudent,
     getPendingTeachers,
-    getMySchoolDetails
+    getVerifiedTeachers,
+    verifySchoolTeacher,
+    removeTeacherFromSchool
 } from "../controllers/SchoolAdminController.js"; 
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
-import { validate } from "../middlewares/ValidateMiddleware.js"; // Import Validate Middleware
-import { createStudentSchema } from "../validators/SchoolAdminValidator.js"; // Import Schema
+import { validate } from "../middlewares/ValidateMiddleware.js";
+import { createStudentSchema } from "../validators/SchoolAdminValidator.js";
 
 const router = express.Router();
 
-// Apply protection to ALL routes in this file
 router.use(protect);
 router.use(restrictTo("school_admin")); 
 
-// --- School Management Routes ---
-
-// Get Dashboard Data
+// ==========================================
+// --- SCHOOL PROFILE ---
+// ==========================================
 router.get("/my-school", getMySchoolDetails);
+router.put("/my-school", updateSchoolProfile);
 
-// Student Management - NOW VALIDATED
+// ==========================================
+// --- STUDENT MANAGEMENT ---
+// ==========================================
+router.get("/students", getSchoolStudents);
+
 router.post(
-    "/create-student", 
+    "/students", 
     validate(createStudentSchema), 
     createStudentForSchool
 );
 
-// Teacher Verification Flow
-router.get("/teachers/pending", getPendingTeachers); // View list
-router.patch("/teachers/verify/:teacherId", verifySchoolTeacher); // Approve specific teacher
+router.put("/students/:studentId", updateSchoolStudent);
+router.patch("/students/:studentId/deactivate", deactivateStudent);
+
+// ==========================================
+// --- TEACHER MANAGEMENT ---
+// ==========================================
+router.post("/teachers", createTeacherForSchool);
+
+router.get("/teachers", getVerifiedTeachers);
+router.get("/teachers/pending", getPendingTeachers);
+
+router.patch("/teachers/:teacherId/verify", verifySchoolTeacher);
+router.delete("/teachers/:teacherId/remove", removeTeacherFromSchool);
 
 export default router;

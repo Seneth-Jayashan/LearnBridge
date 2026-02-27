@@ -11,10 +11,14 @@ import GradeManage from "../pages/admin/Grades/GradeManage";
 import AddGrade from "../pages/admin/Grades/AddGrade";
 import EditGrade from "../pages/admin/Grades/EditGrade";
 
-const adminRoutes = () => {
+import Users from "../pages/admin/users/Users";
+import CreateUser from "../pages/admin/users/Create";
+import Schools from "../pages/admin/schools/Schools";
+import CreateSchool from "../pages/admin/schools/Create";
+
+const AdminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
   
-  // 1. Move the expand/shrink state HERE
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -50,4 +54,4 @@ const adminRoutes = () => {
   );
 };
 
-export default adminRoutes;
+export default AdminRoutes;
