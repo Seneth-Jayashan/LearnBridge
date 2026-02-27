@@ -42,7 +42,8 @@ export const generateQuestionsFromPDF = async (req, res) => {
 
     if (!extractedText || extractedText.trim().length < 50) {
       return res.status(400).json({
-        message: "Could not extract text from PDF. The PDF may be scanned (image-based).",
+        message:
+          "Could not extract text from PDF. The PDF may be scanned (image-based).",
       });
     }
 
@@ -53,8 +54,8 @@ export const generateQuestionsFromPDF = async (req, res) => {
       difficulty === "easy"
         ? "simple and straightforward"
         : difficulty === "medium"
-        ? "moderately challenging"
-        : "challenging and detailed";
+          ? "moderately challenging"
+          : "challenging and detailed";
 
     // ── Send to Groq AI ──────────────────────────────────
     const completion = await groq.chat.completions.create({
@@ -93,7 +94,6 @@ ${extractedText.trim().slice(0, 8000)}`,
     const questions = JSON.parse(clean);
 
     return res.status(200).json({ questions });
-
   } catch (error) {
     console.error("❌ ERROR:", error.message);
 
