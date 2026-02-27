@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import lessonService from "../../../services/LessonService";
 import moduleService from "../../../services/ModuleService";
@@ -25,6 +25,10 @@ const LessonsAdd = () => {
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
   const [formData, setFormData] = useState(initialForm);
+  const selectedModule = useMemo(() => {
+    if (!formData.module) return null;
+    return modules.find((m) => String(m._id) === String(formData.module)) || null;
+  }, [modules, formData.module]);
   const [mediaFiles, setMediaFiles] = useState({ material: null, video: null });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,9 +153,28 @@ const LessonsAdd = () => {
               <select id="module" name="module" value={formData.module} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]">
                 <option value="">Select module</option>
                 {modules.map((item) => (
-                  <option key={item._id} value={item._id}>{item.name}</option>
+                  <option key={item._id} value={item._id}>
+                    {item.name}{" "}
+                    {item?.grade?.name ? (
+                      <>— {/grade/i.test(item.grade.name) ? item.grade.name : `${/\d/.test(item.grade.name) ? `Grade - ${item.grade.name}` : item.grade.name}`}</>
+                    ) : item?.grade ? (
+                      <>— {/grade/i.test(String(item.grade)) ? item.grade : `${/\d/.test(String(item.grade)) ? `Grade - ${item.grade}` : item.grade}`}</>
+                    ) : null}
+                  </option>
                 ))}
               </select>
+              {selectedModule ? (
+                <div className="mt-2 text-xs text-slate-600">
+                  <div>
+                    <span className="font-medium">Grade:</span>{" "}
+                    {selectedModule?.grade?.name || selectedModule?.grade || "N/A"}
+                  </div>
+                  <div>
+                    <span className="font-medium">Level:</span>{" "}
+                    {selectedModule?.level?.name || selectedModule?.level || "N/A"}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div>

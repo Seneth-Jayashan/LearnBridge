@@ -47,10 +47,15 @@ const buildRequestConfig = (payload) => {
 };
 
 const lessonService = {
-  async getAllLessons(moduleId = "") {
-    const endpoint = moduleId
-      ? `${lessonPath()}?module=${encodeURIComponent(moduleId)}`
-      : lessonPath();
+  /**
+   * params: { moduleId?, q?, grade? }
+   */
+  async getAllLessons(params = {}) {
+    const query = new URLSearchParams();
+    if (params.moduleId) query.set("module", params.moduleId);
+    if (params.q) query.set("q", params.q);
+    if (params.grade) query.set("grade", params.grade);
+    const endpoint = query.toString() ? `${lessonPath()}?${query.toString()}` : lessonPath();
     const response = await api.get(endpoint, { headers: getAuthHeaders() });
     return response.data;
   },

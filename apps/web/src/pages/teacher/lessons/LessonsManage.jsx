@@ -78,12 +78,18 @@ const LessonsManage = () => {
   const [error, setError] = useState("");
   const [openModules, setOpenModules] = useState({});
   const [gradeFilter, setGradeFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [visibleVideos, setVisibleVideos] = useState({});
 
-  const loadLessons = async () => {
+  const loadLessons = async (opts = {}) => {
     try {
       setError("");
-      const lessonData = await lessonService.getAllLessons();
+      setIsLoading(true);
+      const params = {
+        q: opts.q !== undefined ? opts.q : searchQuery,
+        grade: opts.grade !== undefined ? opts.grade : gradeFilter,
+      };
+      const lessonData = await lessonService.getAllLessons(params);
       setLessons(Array.isArray(lessonData) ? lessonData : []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load lessons");
@@ -93,8 +99,19 @@ const LessonsManage = () => {
   };
 
   useEffect(() => {
+    // initial load
     loadLessons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Debounced search/grade filter
+  useEffect(() => {
+    const t = setTimeout(() => {
+      loadLessons();
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, gradeFilter]);
 
   const handleDelete = async (lessonId) => {
     const shouldDelete = window.confirm(
@@ -151,6 +168,13 @@ const LessonsManage = () => {
           <label className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
             Filter by Grade
           </label>
+          <input
+            type="search"
+            placeholder="Search module or lesson"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-64 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#207D86] focus:border-transparent outline-none transition-all shadow-sm"
+          />
           <select
             value={gradeFilter}
             onChange={(e) => setGradeFilter(e.target.value)}

@@ -5,6 +5,7 @@ import lessonService from "../../services/LessonService";
 const StudentModules = () => {
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -17,7 +18,7 @@ const StudentModules = () => {
         setError("");
         const [moduleData, lessonData] = await Promise.all([
           moduleService.getAllModules(),
-          lessonService.getAllLessons(),
+          lessonService.getAllLessons({ q: searchQuery }),
         ]);
         if (isMounted) {
           setModules(Array.isArray(moduleData) ? moduleData : []);
@@ -41,6 +42,24 @@ const StudentModules = () => {
     };
   }, []);
 
+  // Debounced lesson search
+  useEffect(() => {
+    let isMounted = true;
+    const t = setTimeout(async () => {
+      try {
+        const lessonData = await lessonService.getAllLessons({ q: searchQuery });
+        if (isMounted) setLessons(Array.isArray(lessonData) ? lessonData : []);
+      } catch (err) {
+        if (isMounted) setError(err?.response?.data?.message || "Failed to load lessons");
+      }
+    }, 300);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(t);
+    };
+  }, [searchQuery]);
+
   const hasModules = useMemo(() => modules.length > 0, [modules]);
   const lessonsByModule = useMemo(() => {
     return lessons.reduce((acc, lesson) => {
@@ -56,6 +75,25 @@ const StudentModules = () => {
     }, {});
   }, [lessons]);
 
+  const displayedModules = useMemo(() => {
+    if (!searchQuery || String(searchQuery).trim() === "") return modules;
+    const q = String(searchQuery).trim();
+    const re = new RegExp(q, "i");
+
+    // modules that have matching lessons
+    const moduleIdsFromLessons = new Set(
+      lessons.map((l) => String(l?.module?._id || l?.module)).filter(Boolean),
+    );
+
+    return modules.filter((m) => {
+      if (!m) return false;
+      if (moduleIdsFromLessons.has(String(m._id))) return true;
+      if (re.test(m.name || "")) return true;
+      if (m.grade && (m.grade.name && re.test(m.grade.name))) return true;
+      return false;
+    });
+  }, [modules, lessons, searchQuery]);
+
   return (
     <section className="space-y-6">
       <div>
@@ -63,6 +101,16 @@ const StudentModules = () => {
         <p className="text-sm text-slate-600 mt-1">
           Modules available for your assigned grade.
         </p>
+      </div>
+
+      <div>
+        <input
+          type="search"
+          placeholder="Search modules or lessons"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full sm:w-96 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#207D86] focus:border-transparent outline-none"
+        />
       </div>
 
       {isLoading && (
@@ -85,7 +133,7 @@ const StudentModules = () => {
 
       {!isLoading && !error && hasModules && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module) => (
+          {displayedModules.map((module) => (
             <article
               key={module._id}
               className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"

@@ -64,18 +64,54 @@ export const createModule = async (req, res) => {
 // --- Get All Modules ---
 export const getAllModules = async (req, res) => {
     try {
-        const query = {};
+        // Build base match conditions
+        const match = {};
 
+        // If student, restrict to student's grade
         if (req.user?.role === "student") {
             if (!req.user.grade) {
                 return res.status(200).json([]);
             }
-            query.grade = req.user.grade;
+            match.grade = mongoose.Types.ObjectId(req.user.grade);
         }
 
-        const modules = await Module.find(query)
-            .populate("level", "name description")
-            .populate("grade", "name description")
+        // Optional filters from query params (admin/others can use)
+        const { q, grade, level } = req.query || {};
+        if (grade) {
+            if (grade === "__unassigned") {
+                match.grade = { $exists: false };
+            } else if (mongoose.Types.ObjectId.isValid(grade)) {
+                match.grade = mongoose.Types.ObjectId(grade);
+            }
+        }
+        if (level && mongoose.Types.ObjectId.isValid(level)) {
+            match.level = mongoose.Types.ObjectId(level);
+        }
+
+        // If a text query is provided, use aggregation to search module.name, grade.name, level.name
+        if (q && String(q).trim()) {
+            const re = new RegExp(String(q).trim(), 'i');
+            const pipeline = [];
+            if (Object.keys(match).length) pipeline.push({ $match: match });
+
+            // lookup grade and level
+            pipeline.push(
+                { $lookup: { from: 'grades', localField: 'grade', foreignField: '_id', as: 'grade' } },
+                { $unwind: { path: '$grade', preserveNullAndEmptyArrays: true } },
+                { $lookup: { from: 'levels', localField: 'level', foreignField: '_id', as: 'level' } },
+                { $unwind: { path: '$level', preserveNullAndEmptyArrays: true } },
+                { $match: { $or: [ { name: re }, { 'grade.name': re }, { 'level.name': re } ] } },
+                { $sort: { createdAt: -1 } },
+            );
+
+            const modules = await Module.aggregate(pipeline);
+            return res.status(200).json(modules);
+        }
+
+        // Fallback: simple find with optional match
+        const modules = await Module.find(match)
+            .populate('level', 'name description')
+            .populate('grade', 'name description')
             .sort({ createdAt: -1 });
         res.status(200).json(modules);
     } catch (error) {

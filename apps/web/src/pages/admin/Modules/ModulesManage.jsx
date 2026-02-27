@@ -14,11 +14,18 @@ const ModulesManage = () => {
   const [success, setSuccess] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const loadModules = async () => {
+  const loadModules = async (opts = {}) => {
     try {
       setError("");
-      const data = await moduleService.getAllModules();
+      setIsLoading(true);
+      const params = {
+        q: opts.q !== undefined ? opts.q : searchQuery,
+        grade: opts.grade !== undefined ? opts.grade : selectedGrade,
+        level: opts.level !== undefined ? opts.level : selectedLevel,
+      };
+      const data = await moduleService.getAllModules(params);
       setModules(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load modules");
@@ -42,6 +49,12 @@ const ModulesManage = () => {
     loadModules();
     loadGradesAndLevels();
   }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => loadModules(), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedGrade, selectedLevel]);
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm("Delete this module?");
@@ -67,6 +80,13 @@ const ModulesManage = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <input
+            type="search"
+            placeholder="Search modules, grade or level"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-3 py-1 rounded-lg border border-slate-300 text-sm bg-white w-64"
+          />
           <select
             value={selectedLevel}
             onChange={(e) => setSelectedLevel(e.target.value)}

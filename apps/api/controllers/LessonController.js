@@ -230,7 +230,33 @@ export const getAllLessons = async (req, res) => {
 
     const validLessons = lessons.filter((lesson) => Boolean(lesson.module));
 
-    res.status(200).json(validLessons);
+    // Apply optional server-side filtering by query params:
+    // - q: text search matches lesson.title, module.name, or module.grade.name
+    // - grade: module.grade._id or special '__unassigned'
+    const { q, grade } = req.query || {};
+    let filtered = validLessons;
+
+    if (grade) {
+      if (grade === "__unassigned") {
+        filtered = filtered.filter((l) => !l.module.grade);
+      } else {
+        filtered = filtered.filter(
+          (l) => l.module?.grade?._id?.toString() === String(grade),
+        );
+      }
+    }
+
+    if (q && String(q).trim()) {
+      const re = new RegExp(String(q).trim(), "i");
+      filtered = filtered.filter((l) => {
+        if (re.test(l.title || "")) return true;
+        if (l.module && re.test(l.module.name || "")) return true;
+        if (l.module && l.module.grade && re.test(l.module.grade.name || "")) return true;
+        return false;
+      });
+    }
+
+    res.status(200).json(filtered);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

@@ -47,8 +47,16 @@ const buildRequestConfig = (payload) => {
 };
 
 const moduleService = {
-  async getAllModules() {
-    const response = await api.get(modulePath(), { headers: getAuthHeaders() });
+  /**
+   * params: { q?, grade?, level? }
+   */
+  async getAllModules(params = {}) {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.grade) query.set('grade', params.grade);
+    if (params.level) query.set('level', params.level);
+    const endpoint = query.toString() ? `${modulePath()}?${query.toString()}` : modulePath();
+    const response = await api.get(endpoint, { headers: getAuthHeaders() });
     return response.data;
   },
 
