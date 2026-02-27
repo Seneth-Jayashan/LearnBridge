@@ -24,6 +24,8 @@ import RegisterDonor from "./pages/RegisterDonor";
 import RegisterTeacher from "./pages/RegisterTeacher"; // Added
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
+import KnowledgeBasePublic from "./pages/KnowledgeBase/KnowledgeBasePublic";
+import KnowledgeBaseDetail from "./pages/KnowledgeBase/KnowledgeBaseDetail";
 
 // --- Role Routes ---
 import AdminRoutes from "./routes/AdminRoutes";
@@ -72,6 +74,8 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register-donor" element={<RegisterDonor />} />
         <Route path="/register-teacher" element={<RegisterTeacher />} />
+        <Route path="/knowledge-base" element={<KnowledgeBasePublic />} />
+        <Route path="/knowledge-base/:id" element={<KnowledgeBaseDetail />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         <Route element={<ProtectedRoutes />}>

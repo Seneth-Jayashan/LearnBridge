@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import StudentSidebar from "../components/sidebar/StudentSidebar"; // Adjust path if needed
+import StudentModules from "../pages/student/StudentModules";
+import StudentAssignments from "../pages/student/StudentAssignments";
 
 const StudentRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -24,6 +26,8 @@ const StudentRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-72" : "md:pl-32"}`}>
         <Routes>
           <Route path="dashboard" element={<div>Dashboard Content</div>} />
+          <Route path="modules" element={<StudentModules />} />
+          <Route path="assignments" element={<StudentAssignments />} />
           {/* ... Add other student routes here ... */}
         </Routes>
       </div>

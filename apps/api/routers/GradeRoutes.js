@@ -4,8 +4,9 @@ import {
     getAllGrades, 
     getGradeById, 
     updateGrade, 
-    deleteGrade 
-} from "../controllers/GradeController.js"; 
+    deleteGrade,
+    seedDefaultGrades,
+} from "../controllers/GradeController.js"; // Ensure filename casing matches your system
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
@@ -14,6 +15,13 @@ import { createGradeSchema, updateGradeSchema } from "../validators/GradeValidat
 const router = express.Router();
 
 // --- Grade Management Routes ---
+
+router.post(
+    "/seed-defaults",
+    protect,
+    restrictTo("super_admin"),
+    seedDefaultGrades
+);
 
 router.route("/")
     .post(
