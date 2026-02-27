@@ -1,16 +1,20 @@
 import express from "express";
 import { 
-    createDonorProfile, // Import the new function
+    createDonorProfile, 
+    registerTeacher,
     updateUserProfile, 
     updateUserPassword, 
     deleteUserProfile, 
     restoreUserProfile 
 } from "../controllers/UserController.js"; 
 
+import { getPublicSchools } from "../controllers/SchoolController.js";
+
 import { protect } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
 import { 
-    createDonorSchema, // Import the new schema
+    createDonorSchema, 
+    registerTeacherSchema,
     updateUserProfileSchema, 
     updateUserPasswordSchema, 
     restoreUserSchema 
@@ -18,16 +22,24 @@ import {
 
 const router = express.Router();
 
-// --- Public Routes ---
+// ==========================================
+// --- PUBLIC ROUTES ---
+// ==========================================
 
-// Register Donor (No protection needed, anyone can sign up)
+router.get("/schools", getPublicSchools);
+
 router.post(
     "/register-donor",
     validate(createDonorSchema),
     createDonorProfile
 );
 
-// Restore Account (Public)
+router.post(
+    "/register-teacher",
+    validate(registerTeacherSchema),
+    registerTeacher
+);
+
 router.post(
     "/restore", 
     validate(restoreUserSchema), 
@@ -35,9 +47,10 @@ router.post(
 );
 
 
-// --- Protected Routes (Logged In Users) ---
+// ==========================================
+// --- PROTECTED ROUTES (Logged In Users) ---
+// ==========================================
 
-// Update Profile Details
 router.put(
     "/profile", 
     protect, 
@@ -45,7 +58,6 @@ router.put(
     updateUserProfile
 );
 
-// Update Password
 router.put(
     "/update-password", 
     protect, 
@@ -53,7 +65,6 @@ router.put(
     updateUserPassword
 );
 
-// Soft Delete Account
 router.delete(
     "/profile", 
     protect, 

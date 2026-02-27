@@ -5,7 +5,6 @@ export const createModule = async (req, res) => {
     try {
         const { name, description, contentUrl } = req.body;
 
-        // Check if module name already exists
         const existingModule = await Module.findOne({ name });
         if (existingModule) {
             return res.status(400).json({ message: "Module with this name already exists." });
@@ -29,17 +28,15 @@ export const createModule = async (req, res) => {
     }
 };
 
-// --- Get All Modules ---
 export const getAllModules = async (req, res) => {
     try {
-        const modules = await Module.find().sort({ createdAt: -1 }); // Newest first
+        const modules = await Module.find().sort({ createdAt: -1 });
         res.status(200).json(modules);
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
-// --- Get Single Module by ID ---
 export const getModuleById = async (req, res) => {
     try {
         const module = await Module.findById(req.params.id);
@@ -54,7 +51,6 @@ export const getModuleById = async (req, res) => {
     }
 };
 
-// --- Update Module ---
 export const updateModule = async (req, res) => {
     try {
         const { name, description, contentUrl } = req.body;
@@ -64,7 +60,6 @@ export const updateModule = async (req, res) => {
             return res.status(404).json({ message: "Module not found" });
         }
 
-        // If updating name, check for duplicates
         if (name && name !== module.name) {
             const duplicate = await Module.findOne({ name });
             if (duplicate) {
@@ -88,7 +83,6 @@ export const updateModule = async (req, res) => {
     }
 };
 
-// --- Delete Module ---
 export const deleteModule = async (req, res) => {
     try {
         const module = await Module.findByIdAndDelete(req.params.id);
