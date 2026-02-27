@@ -156,6 +156,16 @@ const StudentModules = () => {
                             </a>
                           ) : null}
                         </div>
+                        {/* Teacher & Zoom meta */}
+                        <div className="mt-2 text-xs text-slate-500">
+                          {lesson.createdBy ? (
+                            <span className="block">By: {lesson.createdBy.firstName} {lesson.createdBy.lastName}</span>
+                          ) : null}
+
+                          {lesson.school === null ? (
+                            <span className="block">Independent Teacher</span>
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                   </div>

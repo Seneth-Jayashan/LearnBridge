@@ -200,7 +200,11 @@ export const getAllLessons = async (req, res) => {
         return res.status(200).json([]);
       }
 
+      // Include lessons belonging to matching modules. Also include lessons
+      // created by non-school teachers (lesson.school === null) so global
+      // lessons are visible to students.
       query.module = { $in: moduleIds };
+      query.$or = [{ school: req.user.school }, { school: null }];
     }
 
     if (requestedModuleId && req.user.role !== "student") {
