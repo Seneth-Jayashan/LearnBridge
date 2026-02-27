@@ -1,5 +1,12 @@
 import Level from "../models/Level.js";
 
+const defaultLevels = [
+    { name: "Primary Education", description: "Grade 1 – 5" },
+    { name: "Junior Secondary", description: "Grade 6 – 9" },
+    { name: "Senior Secondary – G.C.E. O/L", description: "Grade 10 – 11" },
+    { name: "Advanced Level – G.C.E. A/L", description: "Grade 12 – 13" },
+];
+
 export const createLevel = async (req, res) => {
     try {
         const { name, description } = req.body;
@@ -96,6 +103,35 @@ export const deleteLevel = async (req, res) => {
         }
         
         res.status(200).json({ message: "Level deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+export const seedDefaultLevels = async (req, res) => {
+    try {
+        let created = 0;
+        let updated = 0;
+
+        for (const level of defaultLevels) {
+            const result = await Level.updateOne(
+                { name: level.name },
+                { $set: { description: level.description } },
+                { upsert: true },
+            );
+
+            if (result.upsertedCount > 0) {
+                created += 1;
+            } else if (result.modifiedCount > 0) {
+                updated += 1;
+            }
+        }
+
+        res.status(200).json({
+            message: "Default levels synced successfully",
+            created,
+            updated,
+        });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }

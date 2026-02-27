@@ -4,6 +4,8 @@ import StudentSidebar from "../components/sidebar/StudentSidebar";
 import QuizList from "../pages/student/QuizList";
 import TakeQuiz from "../pages/student/TakeQuiz";
 import QuizResults from "../pages/student/QuizResult";
+import StudentSidebar from "../components/sidebar/StudentSidebar"; // Adjust path if needed
+import StudentModules from "../pages/student/StudentModules";
 
 const StudentRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -26,6 +28,8 @@ const StudentRoutes = () => {
           <Route path="quizzes/:courseId" element={<QuizList />} />
           <Route path="quiz/:id" element={<TakeQuiz />} />
           <Route path="results" element={<QuizResults />} />
+          <Route path="modules" element={<StudentModules />} />
+          {/* ... Add other student routes here ... */}
         </Routes>
       </div>
     </>

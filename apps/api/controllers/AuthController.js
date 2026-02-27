@@ -3,7 +3,7 @@ import { sendVerificationSms } from "../utils/templates/SMS.js";
 import jwt from "jsonwebtoken";
 
 const generateTokens = (userId, role) => {
-  const accessToken = jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: "15m" });
+  const accessToken = jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: "3h" });
   const refreshToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
   return { accessToken, refreshToken };
 };

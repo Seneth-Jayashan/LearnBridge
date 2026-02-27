@@ -1,6 +1,15 @@
 import { useState } from "react";
-import { useOutletContext, Routes, Route } from "react-router-dom";
+import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import AdminSidebar from "../components/sidebar/AdminSidebar";
+import ModulesManage from "../pages/admin/Modules/ModulesManage";
+import AddModules from "../pages/admin/Modules/AddModules";
+import EditModules from "../pages/admin/Modules/EditModules";
+import LevelManage from "../pages/admin/Levels/LevelManage";
+import AddLevels from "../pages/admin/Levels/AddLevels";
+import EditLevels from "../pages/admin/Levels/EditLevels";
+import GradeManage from "../pages/admin/Grades/GradeManage";
+import AddGrade from "../pages/admin/Grades/AddGrade";
+import EditGrade from "../pages/admin/Grades/EditGrade";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -22,6 +31,18 @@ const adminRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          <Route path="modules" element={<Navigate to="manage" replace />} />
+          <Route path="modules/manage" element={<ModulesManage />} />
+          <Route path="modules/add" element={<AddModules />} />
+          <Route path="modules/edit/:id" element={<EditModules />} />
+          <Route path="levels" element={<Navigate to="levels/manage" replace />} />
+          <Route path="levels/manage" element={<LevelManage />} />
+          <Route path="levels/add" element={<AddLevels />} />
+          <Route path="levels/edit/:id" element={<EditLevels />} />
+          <Route path="grades" element={<Navigate to="grades/manage" replace />} />
+          <Route path="grades/manage" element={<GradeManage />} />
+          <Route path="grades/add" element={<AddGrade />} />
+          <Route path="grades/edit/:id" element={<EditGrade />} />
           {/* ... Add your other admin routes here ... */}
         </Routes>
       </div>

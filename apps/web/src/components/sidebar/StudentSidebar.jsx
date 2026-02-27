@@ -27,6 +27,10 @@ const StudentSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
     { name: "Quiz List",   path: "/student/quizzes",  icon: FiList },
     { name: "Take Quiz",   path: "/student/quiz",     icon: FiPlay },
     { name: "My Results",  path: "/student/results",  icon: FiBarChart2 },
+    { name: "My Hub", path: "/student/dashboard", icon: FiHome },
+    { name: "Modules", path: "/student/modules", icon: FiPlayCircle },
+    { name: "Assignments", path: "/student/assignments", icon: FiCheckSquare },
+    { name: "Achievements", path: "/student/achievements", icon: FiAward },
   ];
 
   const handleLogout = async () => {

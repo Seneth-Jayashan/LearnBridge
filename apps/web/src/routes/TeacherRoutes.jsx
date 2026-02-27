@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { useOutletContext, Routes, Route } from "react-router-dom";
+import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import TeacherSidebar from "../components/sidebar/TeacherSidebar";
 import CreateQuiz from "../pages/teacher/CreateQuiz";
 import MyQuizzes from "../pages/teacher/MyQuizzes";
+import TeacherDashboard from "../pages/teacher/Dashboard";
+import LessonsAdd from "../pages/teacher/lessons/LessonsAdd";
+import LessonsManage from "../pages/teacher/lessons/LessonsManage";
+import LessonsEdit from "../pages/teacher/lessons/LessonsEdit";
 
 const TeacherRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -24,6 +28,11 @@ const TeacherRoutes = () => {
           {/* ── Quiz Routes ── */}
           <Route path="quizzes" element={<MyQuizzes />} />
           <Route path="quiz/create" element={<CreateQuiz />} />
+          <Route path="dashboard" element={<TeacherDashboard />} />
+          <Route path="lessons" element={<Navigate to="manage" replace />} />
+          <Route path="lessons/add" element={<LessonsAdd />} />
+          <Route path="lessons/manage" element={<LessonsManage />} />
+          <Route path="lessons/edit/:id" element={<LessonsEdit />} />
         </Routes>
       </div>
     </>
