@@ -115,46 +115,61 @@ export const initiatePayment = async (req, res) => {
 };
 
 // ─── CONFIRM PAYMENT FROM FRONTEND ────────────────────────────
-export const confirmPayment = async (req, res) => {
-  try {
-    const { orderId, needId } = req.body;
+    export const confirmPayment = async (req, res) => {
+      try {
+        const { orderId, needId } = req.body;
 
-    const need = await ResourceRequest.findById(needId);
-    if (!need) {
-      return res.status(404).json({ message: "Need not found" });
-    }
+        const need = await ResourceRequest.findById(needId);
+        if (!need) {
+          return res.status(404).json({ message: "Need not found" });
+        }
 
-    if (need.paymentOrderId !== orderId) {
-      return res.status(400).json({ message: "Order ID mismatch" });
-    }
+        if (need.paymentOrderId !== orderId) {
+          return res.status(400).json({ message: "Order ID mismatch" });
+        }
 
-    if (need.status === "Fulfilled") {
-      return res.status(200).json({ message: "Already fulfilled", need });
-    }
+        // ── Webhook already handled it ─────────────────────────
+        if (need.status === "Fulfilled") {
+          return res.status(200).json({ message: "Already fulfilled by webhook", need });
+        }
 
-    need.status = "Fulfilled";        
-    need.donorId = req.user._id;
-    need.pledgedDate = new Date();
-    need.fulfilledDate = new Date();  
-    need.paymentStatus = "Completed";
-    need.paymentMethod = "PayHere";
-    await need.save();
+        // ── Check Payment record ───────────────────────────────
+        const payment = await Payment.findOne({ orderId });
 
-    // ── Update Payment record ──────────────────────────────
-    await Payment.findOneAndUpdate(
-      { orderId },
-      {
-        status: "Completed",
-        paidAt: new Date(),
+        if (!payment) {
+          return res.status(404).json({ message: "Payment record not found" });
+        }
+
+        // ── Webhook confirmed → just return success ────────────
+        if (payment.status === "Completed") {
+          return res.status(200).json({ message: "Confirmed by webhook", need });
+        }
+
+        // ── Webhook not yet fired → handle as backup ───────────
+        console.log("Webhook not received yet — using frontend as backup");
+
+        need.status = "Fulfilled";
+        need.donorId = req.user._id;
+        need.pledgedDate = new Date();
+        need.fulfilledDate = new Date();
+        need.paymentStatus = "Completed";
+        need.paymentMethod = "PayHere";
+        await need.save();
+
+        await Payment.findOneAndUpdate(
+          { orderId },
+          {
+            status: "Completed",
+            paidAt: new Date(),
+          }
+        );
+
+        res.status(200).json({ message: "Payment confirmed, need fulfilled!", need });
+      } catch (err) {
+        console.error("confirmPayment error:", err.message);
+        res.status(500).json({ message: "Server error" });
       }
-    );
-
-    res.status(200).json({ message: "Payment confirmed successfully", need });
-  } catch (err) {
-    console.error("confirmPayment error:", err.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+    };
 
 // ─── PAYHERE NOTIFY CALLBACK ──────────────────────────────────
 export const paymentNotify = async (req, res) => {
