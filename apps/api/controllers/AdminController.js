@@ -11,7 +11,6 @@ export const createUser = async (req, res) => {
         const { firstName, lastName, email, phoneNumber, password, role, address, grade, level } = req.body;
         const targetRole = role || "student";
 
-        // 1. Check for duplicates (Staff/Donors only)
         if (targetRole !== "student") {
             const existingUser = await User.findOne({ 
                 $or: [{ email: email.toLowerCase() }, { phoneNumber }] 
@@ -21,7 +20,6 @@ export const createUser = async (req, res) => {
             }
         }
 
-        // 2. [NEW] Enforce Grade for Students
         if (targetRole === "student" && !grade) {
             return res.status(400).json({ message: "Grade is required when creating a Student account." });
         }
@@ -81,13 +79,9 @@ export const updateUser = async (req, res) => {
         
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // 1. Determine the final role after this update
         const finalRole = role || user.role;
 
-        // 2. [NEW] Enforce Grade Validation Logic
-        // If the user IS or BECOMES a student, they must have a grade.
         if (finalRole === "student") {
-            // "willHaveGrade" is true if we are sending a new grade OR if the user already has one
             const willHaveGrade = grade || user.grade; 
             
             if (!willHaveGrade) {
@@ -97,7 +91,6 @@ export const updateUser = async (req, res) => {
             }
         }
 
-        // 3. Check for duplicates if updating email/phone for non-student roles
         if (finalRole !== "student" && (email || phoneNumber)) {
             const duplicateQuery = [];
             if (email && email.toLowerCase() !== user.email) duplicateQuery.push({ email: email.toLowerCase() });
@@ -114,11 +107,8 @@ export const updateUser = async (req, res) => {
         if (email) user.email = email.toLowerCase();
         if (phoneNumber) user.phoneNumber = phoneNumber;
         
-        // Handle Role Updates
         if (role) {
             user.role = role;
-            // If switching AWAY from student, potentially clear student fields? 
-            // Optional: if (role !== 'student') { user.grade = undefined; user.level = undefined; }
         }
 
         if (grade) user.grade = grade;

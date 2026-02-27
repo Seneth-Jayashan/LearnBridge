@@ -1,10 +1,8 @@
 import sendEmail from "../../services/Email.js";
 
-const BRAND_NAME = "Learn Bridge"; // Used in all messages for consistent branding
+const BRAND_NAME = "Learn Bridge"; 
 
-// Create Email Template for Account Creation
 export const accountCreationEmail = async (name, email, password) => {
-    // 1. Store the HTML in a variable
     const htmlContent = `
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
@@ -31,7 +29,6 @@ export const accountCreationEmail = async (name, email, password) => {
     </html>
     `;
 
-    // 2. Pass the variable to the sendEmail service
     await sendEmail({
         to: email,
         subject: `${BRAND_NAME} Account Created`,
@@ -39,9 +36,7 @@ export const accountCreationEmail = async (name, email, password) => {
     });
 };
 
-// Create Email Template for OTP Verification
 export const sendVerificationEmail = async (email, otp) => {
-    // 1. Store the HTML in a variable
     const htmlContent = `
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">

@@ -1,11 +1,9 @@
 import User from "../models/User.js";
 
-// --- Create Donor Profile (Public Registration) ---
 export const createDonorProfile = async (req, res) => {
   try {
     const { firstName, lastName, email, phoneNumber, password, address } = req.body;
 
-    // Check for duplicates (email and phone should be unique for donors)
     const existingUser = await User.findOne({
       $or: [{ email: email.toLowerCase() }, { phoneNumber }] 
     });
@@ -36,7 +34,6 @@ export const createDonorProfile = async (req, res) => {
   }
 };
 
-// --- PUBLIC / TEACHER: Register Teacher ---
 export const registerTeacher = async (req, res) => {
     try {
         const { firstName, lastName, email, phoneNumber, password, schoolId } = req.body;
@@ -74,7 +71,6 @@ export const registerTeacher = async (req, res) => {
     }
 };
 
-// --- Existing Functions ---
 
 export const updateUserProfile = async (req, res) => {
   try {
@@ -87,7 +83,6 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if the NEW email/phone is already taken by someone else
     if (email || phoneNumber) {
       const duplicateQuery = [];
       

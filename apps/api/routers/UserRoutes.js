@@ -1,7 +1,7 @@
 import express from "express";
 import { 
     createDonorProfile, 
-    registerTeacher, // --- NEW IMPORT ---
+    registerTeacher,
     updateUserProfile, 
     updateUserPassword, 
     deleteUserProfile, 
@@ -14,7 +14,7 @@ import { protect } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
 import { 
     createDonorSchema, 
-    registerTeacherSchema, // --- NEW IMPORT (Make sure you add this to UserValidator.js!) ---
+    registerTeacherSchema,
     updateUserProfileSchema, 
     updateUserPasswordSchema, 
     restoreUserSchema 
@@ -28,21 +28,18 @@ const router = express.Router();
 
 router.get("/schools", getPublicSchools);
 
-// Register Donor (Anyone can sign up to donate)
 router.post(
     "/register-donor",
     validate(createDonorSchema),
     createDonorProfile
 );
 
-// Register Teacher (Teachers sign up, then await School Admin verification if affiliated)
 router.post(
     "/register-teacher",
     validate(registerTeacherSchema),
     registerTeacher
 );
 
-// Restore Account 
 router.post(
     "/restore", 
     validate(restoreUserSchema), 
@@ -54,7 +51,6 @@ router.post(
 // --- PROTECTED ROUTES (Logged In Users) ---
 // ==========================================
 
-// Update Profile Details
 router.put(
     "/profile", 
     protect, 
@@ -62,7 +58,6 @@ router.put(
     updateUserProfile
 );
 
-// Update Password
 router.put(
     "/update-password", 
     protect, 
@@ -70,7 +65,6 @@ router.put(
     updateUserPassword
 );
 
-// Soft Delete Account
 router.delete(
     "/profile", 
     protect, 

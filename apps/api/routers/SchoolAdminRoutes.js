@@ -19,7 +19,6 @@ import { createStudentSchema } from "../validators/SchoolAdminValidator.js";
 
 const router = express.Router();
 
-// Apply protection to ALL routes in this file
 router.use(protect);
 router.use(restrictTo("school_admin")); 
 

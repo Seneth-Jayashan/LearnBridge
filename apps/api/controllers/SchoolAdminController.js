@@ -58,19 +58,16 @@ export const createStudentForSchool = async (req, res) => {
 
         const studentData = req.body;
 
-        // [NEW] Enforce Grade Validation
         if (!studentData.grade) {
             return res.status(400).json({ message: "Grade is required when creating a Student." });
         }
 
-        // NOTE: No duplicate check here! Students can share parent emails/phones.
         const newStudent = new User({
             ...studentData,
             email: studentData.email ? studentData.email.toLowerCase() : undefined,
             role: "student",
             school: schoolId, 
             isSchoolVerified: true,
-            // Ensure grade is passed explicitly
             grade: studentData.grade,
             requiresPasswordChange: true
         });
@@ -114,7 +111,6 @@ export const updateSchoolStudent = async (req, res) => {
 
         const { firstName, lastName, email, phoneNumber, grade, level, address } = req.body;
 
-        // [NEW] Enforce Grade Validation on Update
         if (grade === null || grade === "") {
             return res.status(400).json({ message: "Student must have a grade. You cannot remove it." });
         }
@@ -124,7 +120,6 @@ export const updateSchoolStudent = async (req, res) => {
         if (email) student.email = email.toLowerCase();
         if (phoneNumber) student.phoneNumber = phoneNumber;
         
-        // Update grade if provided
         if (grade) student.grade = grade;
         if (level) student.level = level;
         
@@ -180,7 +175,7 @@ export const createTeacherForSchool = async (req, res) => {
             password,
             role: "teacher",
             school: targetSchoolId, 
-            isSchoolVerified: true, // Auto-verified since Admin created them
+            isSchoolVerified: true, 
             requiresPasswordChange: true
         });
 
@@ -188,7 +183,6 @@ export const createTeacherForSchool = async (req, res) => {
         await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
         await accountCreationEmail(`${firstName} ${lastName}`,email, password);
 
-        // Push to School's teachers array
         if (targetSchoolId) {
             await School.findByIdAndUpdate(targetSchoolId, { $push: { teachers: newTeacher._id } });
         }
@@ -257,12 +251,10 @@ export const removeTeacherFromSchool = async (req, res) => {
 
         if (!teacher) return res.status(404).json({ message: "Teacher not found in your school." });
 
-        // Make them a standalone teacher again instead of deleting their account
         teacher.school = null;
-        teacher.isSchoolVerified = true; // Standalone teachers are "verified" by default
+        teacher.isSchoolVerified = true; 
         await teacher.save();
 
-        // Remove from School document array
         await School.findByIdAndUpdate(req.user.school, { $pull: { teachers: teacher._id } });
 
         res.status(200).json({ message: "Teacher removed from school successfully. They are now a standalone teacher." });

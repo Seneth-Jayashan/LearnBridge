@@ -10,11 +10,10 @@ export const setAccessToken = (token) => {
 
 const api = axios.create({
     baseURL: BASE_URL,
-    withCredentials: true, // Crucial
+    withCredentials: true,
     headers: { 'Content-Type': 'application/json' },
 });
 
-// Request Interceptor
 api.interceptors.request.use(
     (config) => {
         if (memoryAccessToken) {
@@ -25,15 +24,11 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response Interceptor
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // THE FIX: Circuit Breaker
-        // If the request that failed with 401 WAS the refresh route, reject immediately!
-        // This stops the infinite loop and passes the error back to checkSession()
         if (error.response?.status === 401 && originalRequest.url.includes('/auth/refresh')) {
             return Promise.reject(error);
         }
@@ -41,7 +36,6 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {
-                // CALL API DIRECTLY (No authService import)
                 const { data } = await api.post("/auth/refresh");
                 console.log("Token refreshed successfully. New Access Token:", data.accessToken);
                 

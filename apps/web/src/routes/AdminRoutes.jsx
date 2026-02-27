@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
-import AdminSidebar from "../components/sidebar/AdminSidebar"; // Ensure path is correct
+import AdminSidebar from "../components/sidebar/AdminSidebar"; 
 
-// --- Import Admin Pages ---
 import Users from "../pages/admin/users/Users";
 import CreateUser from "../pages/admin/users/Create";
 import Schools from "../pages/admin/schools/Schools";
@@ -11,7 +10,6 @@ import CreateSchool from "../pages/admin/schools/Create";
 const AdminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
   
-  // 1. Move the expand/shrink state HERE
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (

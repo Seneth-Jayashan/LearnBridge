@@ -11,7 +11,6 @@ import {
     toggleUserStatus,
     toggleUserLock,
     restoreUser,
-    // --- New School Controller Imports ---
     getAllSchools,
     getSchoolById,
     updateSchool,
@@ -33,7 +32,6 @@ const router = express.Router();
 // SUPER ADMIN: SCHOOL MANAGEMENT
 // ==========================================
 
-// Create a new School along with its School Admin
 router.post(
     "/create-school",
     protect,
@@ -41,7 +39,6 @@ router.post(
     createSchoolWithAdmin
 );
 
-// Get All Schools
 router.get(
     "/schools", 
     protect, 
@@ -49,7 +46,6 @@ router.get(
     getAllSchools
 );
 
-// Get Single School by ID
 router.get(
     "/schools/:id", 
     protect, 
@@ -57,7 +53,6 @@ router.get(
     getSchoolById
 );
 
-// Update School
 router.put(
     "/schools/:id", 
     protect, 
@@ -65,7 +60,6 @@ router.put(
     updateSchool
 );
 
-// Delete School
 router.delete(
     "/schools/:id", 
     protect, 
@@ -77,7 +71,6 @@ router.delete(
 // SUPER ADMIN: USER MANAGEMENT
 // ==========================================
 
-// Create User
 router.post(
     "/create-user", 
     protect, 
@@ -86,7 +79,6 @@ router.post(
     createUser
 );
 
-// Get All Users
 router.get(
     "/users", 
     protect, 
@@ -94,7 +86,6 @@ router.get(
     getAllUsers
 );
 
-// Get Single User by ID
 router.get(
     "/users/:id", 
     protect, 
@@ -102,7 +93,6 @@ router.get(
     getUserById
 );
 
-// Update User
 router.put(
     "/users/:id", 
     protect, 
@@ -111,7 +101,6 @@ router.put(
     updateUser
 );
 
-// Delete User (Soft delete based on controller)
 router.delete(
     "/users/:id", 
     protect, 
@@ -121,7 +110,6 @@ router.delete(
 
 // --- User Status & Security Actions ---
 
-// Toggle Active/Inactive Status
 router.patch(
     "/users/:id/toggle-status",
     protect,
@@ -129,7 +117,6 @@ router.patch(
     toggleUserStatus
 );
 
-// Toggle Locked/Unlocked Status
 router.patch(
     "/users/:id/toggle-lock",
     protect,
@@ -137,7 +124,6 @@ router.patch(
     toggleUserLock
 );
 
-// Restore a previously deleted user
 router.patch(
     "/users/:id/restore",
     protect,

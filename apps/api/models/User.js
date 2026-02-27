@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
     
-    // --- NEW: Flag for First Login Password Reset ---
     requiresPasswordChange: { type: Boolean, default: false },
   },
   { timestamps: true }
@@ -46,12 +45,9 @@ const userSchema = new mongoose.Schema(
 
 const SALT_WORK_FACTOR = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
-// --- FIX 1: Hash Password Hook ---
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 
-  // NEW: If this is an existing user updating their password, 
-  // automatically clear the requirement to change it.
   if (!this.isNew) {
     this.requiresPasswordChange = false;
   }
@@ -60,10 +56,8 @@ userSchema.pre("save", async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// --- FIX 2: RegNumber Generation Hook ---
 userSchema.pre("save", async function () {
   if (this.role === "student" && !this.regNumber) {
-    // Note: this.constructor is correct here, but ensure no concurrency issues in heavy traffic
     const lastStudent = await this.constructor
       .findOne({ role: "student" })
       .sort({ regNumber: -1 });
@@ -76,17 +70,13 @@ userSchema.pre("save", async function () {
   }
 });
 
-// --- METHODS ---
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// NEW: Helper method to specifically handle first-login password updates
 userSchema.methods.updatePassword = async function (newPassword) {
   this.password = newPassword;
-  // Saving will trigger the pre('save') hook, which hashes the new password
-  // and sets this.requiresPasswordChange = false automatically.
   await this.save(); 
   return true;
 };

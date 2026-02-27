@@ -29,7 +29,6 @@ export const login = async (req, res) => {
 
         let targetUser = null;
 
-        // --- SCENARIO 1: Student Login (Unique RegNumber) ---
         if (isRegNumFormat) {
             targetUser = await User.findOne({ regNumber: identifier });
             
@@ -48,7 +47,6 @@ export const login = async (req, res) => {
             }
         } 
         
-        // --- SCENARIO 2: Staff/Admin/Donor Login (Phone OR Email) ---
         else {
             const users = await User.find({ 
                 $or: [{ email: identifier.toLowerCase() }, { phoneNumber: identifier }] 
@@ -80,7 +78,6 @@ export const login = async (req, res) => {
             }
         }
 
-        // --- Common Final Checks ---
         if (!targetUser.isActive) return res.status(403).json({ message: "Account is inactive." });
         if (targetUser.isLocked) return res.status(403).json({ message: "Account is locked." });
 
@@ -91,11 +88,9 @@ export const login = async (req, res) => {
             const otp = targetUser.generateOTP();
             await targetUser.save();
 
-            // Send OTP to both Email and Phone
             await sendVerificationEmail(targetUser.email, otp);
             await sendVerificationSms(targetUser.phoneNumber, otp);
 
-            // STOP the login process here and return the flag
             return res.status(200).json({
                 message: "First login detected. OTP sent to your email and phone.",
                 requiresOtpVerification: true,
@@ -103,7 +98,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // --- NORMAL LOGIN PROCEEDS HERE ---
         targetUser.loginAttempts = 0;
         targetUser.lastLogin = Date.now();
         
@@ -152,14 +146,13 @@ export const verifyFirstLoginOtp = async (req, res) => {
             return res.status(400).json({ message: otpCheck.message });
         }
 
-        // OTP is valid! Generate a secure token just for resetting the password
         const resetToken = jwt.sign(
             { id: user._id, intent: 'first_login_reset' }, 
             process.env.JWT_SECRET, 
             { expiresIn: '15m' }
         );
 
-        await user.save(); // OTP is cleared out inside verifyOTP()
+        await user.save();
 
         res.status(200).json({ 
             message: "OTP verified successfully. Please enter your new password.", 
@@ -187,10 +180,8 @@ export const setupNewPassword = async (req, res) => {
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Update password using the schema helper method
         await user.updatePassword(newPassword);
 
-        // --- Automatically Log the User In ---
         user.loginAttempts = 0;
         user.lastLogin = Date.now();
 

@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Reusable Address Schema
 const addressSchema = z.object({
   street: z.string().optional(),
   city: z.string().optional(),
@@ -32,7 +31,6 @@ export const updateUserSchema = createUserSchema.partial().omit({ password: true
 // --- SCHOOL VALIDATION ---
 // ==========================================
 
-// --- NEW: Create School + Admin Schema ---
 export const createSchoolWithAdminSchema = z.object({
   schoolData: z.object({
     name: z.string().min(1, "School name is required"),
@@ -49,7 +47,6 @@ export const createSchoolWithAdminSchema = z.object({
   })
 });
 
-// --- NEW: Update School Schema ---
 export const updateSchoolSchema = z.object({
   name: z.string().min(1, "School name cannot be empty").optional(),
   contactEmail: z.string().email("Invalid email").optional().or(z.literal("")),

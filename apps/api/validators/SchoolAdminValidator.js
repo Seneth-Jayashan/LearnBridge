@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Reusable Address Schema
 const addressSchema = z.object({
   street: z.string().optional(),
   city: z.string().optional(),
@@ -9,7 +8,6 @@ const addressSchema = z.object({
   country: z.string().optional(),
 });
 
-// --- Create Student Schema ---
 export const createStudentSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -22,10 +20,8 @@ export const createStudentSchema = z.object({
   address: addressSchema.optional(),
 });
 
-// --- NEW: Update Student Schema ---
 export const updateSchoolStudentSchema = createStudentSchema.partial().omit({ password: true });
 
-// --- NEW: Update School Profile Schema ---
 export const updateSchoolProfileSchema = z.object({
   contactEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
   contactPhone: z.string().min(9, "Phone number must be at least 9 digits").optional().or(z.literal("")),
