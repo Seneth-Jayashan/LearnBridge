@@ -8,8 +8,8 @@ export const validate = (schema) => (req, res, next) => {
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
-      // Format Zod errors into a readable array
-      const errors = error.errors.map((err) => ({
+      // Format Zod errors into a readable array (Zod exposes errors via `issues`)
+      const errors = error.issues.map((err) => ({
         field: err.path.join("."),
         message: err.message,
       }));
