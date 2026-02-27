@@ -95,7 +95,7 @@ const handlePay = async (id) => {
           needId: id,
         });
         toast.success("Payment successful! Thank you ❤️");
-        fetchNeeds(); // ← refreshes cards → shows Pledged
+        fetchNeeds();
       } catch (err) {
         console.error("Confirm error:", err);
         toast.error("Payment done but confirmation failed.");

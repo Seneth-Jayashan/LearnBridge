@@ -5,6 +5,7 @@ import {
   paymentNotify,
   confirmPayment,
   resetPaymentStatus,
+  getMyPaymentHistory,
 } from "../controllers/PaymentController.js";
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 
@@ -16,7 +17,8 @@ router.post("/initiate/:needId", protect, restrictTo("donor"), initiatePayment);
 // PayHere server callback — must be public (no auth)
 router.post("/notify", paymentNotify);
 
-router.post("/confirm", protect, restrictTo("donor"), confirmPayment); // ← add
+router.post("/confirm", protect, restrictTo("donor"), confirmPayment);
+router.get("/my-history", protect, restrictTo("donor"), getMyPaymentHistory); 
 router.put("/reset/:needId", protect, resetPaymentStatus);
 
 export default router;

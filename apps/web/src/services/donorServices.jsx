@@ -43,3 +43,6 @@ export const initiatePayment = (needId) =>
 
 export const confirmPayment = (data) =>
   api.post("/payments/confirm", data);
+
+export const getMyPaymentHistory = () =>
+  api.get("/payments/my-history");

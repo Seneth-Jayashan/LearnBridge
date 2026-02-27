@@ -8,6 +8,11 @@ const resourceRequestSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    schoolObjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "School",      
+      default: null,
+    },
     itemName: {
       type: String,
       required: true,

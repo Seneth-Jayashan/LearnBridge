@@ -1,8 +1,8 @@
 // backend/controllers/paymentController.js
 import crypto from "crypto";
 import ResourceRequest from "../models/ResourceRequest.js";
+import Payment from "../models/Payment.js";
 
-// ── Generate Hash ──────────────────────────────────────────────
 const generateHash = (merchantId, orderId, amount, currency, secret) => {
   const hashedSecret = crypto
     .createHash("md5")
@@ -22,22 +22,19 @@ const generateHash = (merchantId, orderId, amount, currency, secret) => {
 // ─── INITIATE PAYMENT ─────────────────────────────────────────
 export const initiatePayment = async (req, res) => {
   try {
-    // ← read directly inside function every time
     const MERCHANT_ID = process.env.PAYHERE_MERCHANT_ID;
     const MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
     const FRONTEND_URL = process.env.FRONTEND_URL;
     const BACKEND_URL = process.env.BACKEND_URL;
 
-
     if (!MERCHANT_ID || !MERCHANT_SECRET) {
-      return res.status(500).json({
-        message: "Payment configuration missing. Check .env file.",
-      });
+      return res.status(500).json({ message: "Payment configuration missing." });
     }
 
-    const need = await ResourceRequest.findById(req.params.needId).populate(
-      "schoolId", "firstName lastName email"
-    );
+    const need = await ResourceRequest.findById(req.params.needId)
+    .populate( "schoolId", "firstName lastName email" )
+    .populate({ path: "schoolObjectId", model: "School", select: "name" });
+
     if (!need) {
       return res.status(404).json({ message: "Need not found" });
     }
@@ -57,14 +54,33 @@ export const initiatePayment = async (req, res) => {
     const amount = parseFloat(need.amount).toFixed(2);
     const currency = process.env.PAYHERE_CURRENCY || "LKR";
 
-    const hash = generateHash(
-      MERCHANT_ID,
-      orderId,
-      amount,
-      currency,
-      MERCHANT_SECRET
-    );
+    const hash = generateHash(MERCHANT_ID, orderId, amount, currency, MERCHANT_SECRET);
 
+    // ── Create pending Payment record ──────────────────────
+    await Payment.create({
+      donorId: donor._id,
+      needId: need._id,
+      orderId,
+      itemName: need.itemName,
+      quantity: need.quantity,
+      amount: need.amount,
+      currency,
+      status: "Pending",
+      donorSnapshot: {
+        firstName: donor.firstName || "",
+        lastName: donor.lastName || "",
+        email: donor.email || "",
+        phone: donor.phoneNumber || "",
+        address: donor.address?.street || "",
+        city: donor.address?.city || "",
+      },
+      schoolSnapshot: {
+        firstName: need.schoolObjectId?.name || "",
+        email: need.schoolId?.email || "",
+      },
+    });
+
+    // Update need
     need.paymentOrderId = orderId;
     need.paymentStatus = "Pending";
     await need.save();
@@ -98,10 +114,52 @@ export const initiatePayment = async (req, res) => {
   }
 };
 
-// ─── PAYHERE NOTIFY ───────────────────────────────────────────
+// ─── CONFIRM PAYMENT FROM FRONTEND ────────────────────────────
+export const confirmPayment = async (req, res) => {
+  try {
+    const { orderId, needId } = req.body;
+
+    const need = await ResourceRequest.findById(needId);
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.paymentOrderId !== orderId) {
+      return res.status(400).json({ message: "Order ID mismatch" });
+    }
+
+    if (need.status === "Pledged") {
+      return res.status(200).json({ message: "Already confirmed", need });
+    }
+
+    // ── Update ResourceRequest ─────────────────────────────
+    need.status = "Pledged";
+    need.donorId = req.user._id;
+    need.pledgedDate = new Date();
+    need.paymentStatus = "Completed";
+    need.paymentMethod = "PayHere";
+    await need.save();
+
+    // ── Update Payment record ──────────────────────────────
+    await Payment.findOneAndUpdate(
+      { orderId },
+      {
+        status: "Completed",
+        paidAt: new Date(),
+      }
+    );
+
+    res.status(200).json({ message: "Payment confirmed successfully", need });
+  } catch (err) {
+    console.error("confirmPayment error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─── PAYHERE NOTIFY CALLBACK ──────────────────────────────────
 export const paymentNotify = async (req, res) => {
   try {
-    const MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET; // ← read here too
+    const MERCHANT_SECRET = process.env.PAYHERE_MERCHANT_SECRET;
 
     const {
       merchant_id,
@@ -113,6 +171,7 @@ export const paymentNotify = async (req, res) => {
       custom_1: needId,
       custom_2: donorId,
       method,
+      payment_id,
     } = req.body;
 
     const hashedSecret = crypto
@@ -144,17 +203,31 @@ export const paymentNotify = async (req, res) => {
       need.paymentStatus = "Completed";
       need.paymentMethod = method;
       await need.save();
+
+      // ── Update Payment record ────────────────────────────
+      await Payment.findOneAndUpdate(
+        { orderId: order_id },
+        {
+          status: "Completed",
+          paymentId: payment_id,
+          paymentMethod: method,
+          paidAt: new Date(),
+        }
+      );
     } else if (status_code === "0") {
       need.paymentStatus = "Pending";
       await need.save();
+      await Payment.findOneAndUpdate({ orderId: order_id }, { status: "Pending" });
     } else if (status_code === "-1") {
       need.paymentStatus = "Cancelled";
       need.paymentOrderId = null;
       await need.save();
+      await Payment.findOneAndUpdate({ orderId: order_id }, { status: "Cancelled" });
     } else if (status_code === "-2") {
       need.paymentStatus = "Failed";
       need.paymentOrderId = null;
       await need.save();
+      await Payment.findOneAndUpdate({ orderId: order_id }, { status: "Failed" });
     }
 
     res.status(200).send("OK");
@@ -164,42 +237,21 @@ export const paymentNotify = async (req, res) => {
   }
 };
 
-// ─── CONFIRM PAYMENT FROM FRONTEND ────────────────────────────
-// POST /api/v1/payments/confirm
-export const confirmPayment = async (req, res) => {
+// ─── GET MY PAYMENT HISTORY — Donor ───────────────────────────
+// GET /api/v1/payments/my-history
+export const getMyPaymentHistory = async (req, res) => {
   try {
-    const { orderId, needId } = req.body;
+    const payments = await Payment.find({ donorId: req.user._id })
+      .sort({ createdAt: -1 });
 
-    const need = await ResourceRequest.findById(needId);
-
-    if (!need) {
-      return res.status(404).json({ message: "Need not found" });
-    }
-
-    if (need.paymentOrderId !== orderId) {
-      return res.status(400).json({ message: "Order ID mismatch" });
-    }
-
-    // Already pledged — idempotent
-    if (need.status === "Pledged") {
-      return res.status(200).json({ message: "Already confirmed", need });
-    }
-
-    need.status = "Pledged";
-    need.donorId = req.user._id;
-    need.pledgedDate = new Date();
-    need.paymentStatus = "Completed";
-    need.paymentMethod = "PayHere";
-    await need.save();
-
-    res.status(200).json({ message: "Payment confirmed successfully", need });
+    res.status(200).json(payments);
   } catch (err) {
-    console.error("confirmPayment error:", err.message);
+    console.error("getMyPaymentHistory error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// ─── RESET PAYMENT STATUS (testing only) ─────────────────────
+// ─── RESET PAYMENT STATUS (testing) ──────────────────────────
 export const resetPaymentStatus = async (req, res) => {
   try {
     const need = await ResourceRequest.findById(req.params.needId);
@@ -209,9 +261,14 @@ export const resetPaymentStatus = async (req, res) => {
     need.paymentStatus = null;
     await need.save();
 
+    // also delete pending payment record
+    await Payment.deleteOne({
+      needId: req.params.needId,
+      status: "Pending",
+    });
+
     res.status(200).json({ message: "Reset successful" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
-

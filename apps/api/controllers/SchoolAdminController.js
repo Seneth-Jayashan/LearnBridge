@@ -108,7 +108,6 @@ export const getMySchoolDetails = async (req, res) => {
 // POST /api/donations
 export const createNeed = async (req, res) => {
   try {
-    // ← add amount here
     const { itemName, quantity, amount, description, urgency } = req.body;
 
     if (!itemName || !quantity) {
@@ -120,10 +119,11 @@ export const createNeed = async (req, res) => {
     }
 
     const need = await ResourceRequest.create({
-      schoolId: req.user._id,
+      schoolId: req.user._id,                    // ← school_admin user _id
+      schoolObjectId: req.user.school || null,   // ← actual school ObjectId
       itemName,
       quantity,
-      amount: Number(amount), // ← add this
+      amount: Number(amount),
       description,
       urgency: urgency || "Medium",
       status: "Open",
