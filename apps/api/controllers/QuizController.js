@@ -4,11 +4,11 @@ import QuizResult from "../models/QuizResult.js";
 // --- 1. Create Quiz (Teacher) ---
 export const createQuiz = async (req, res) => {
     try {
-        const { title, courseId, questions, timeLimit } = req.body;
+        const { title, moduleId, questions, timeLimit } = req.body;
 
         const newQuiz = new Quiz({
             title,
-            courseId,
+            moduleId,
             questions,
             timeLimit,
             createdBy: req.user._id,
@@ -44,7 +44,6 @@ export const updateQuiz = async (req, res) => {
             return res.status(404).json({ message: "Quiz not found." });
         }
 
-        // Security Check: Ensure quiz belongs to THIS teacher
         if (quiz.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: "You are not authorized to update this quiz." });
         }
@@ -67,7 +66,6 @@ export const deleteQuiz = async (req, res) => {
             return res.status(404).json({ message: "Quiz not found." });
         }
 
-        // Security Check: Ensure quiz belongs to THIS teacher
         if (quiz.createdBy.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: "You are not authorized to delete this quiz." });
         }
@@ -82,14 +80,14 @@ export const deleteQuiz = async (req, res) => {
     }
 };
 
-// --- 5. Get Published Quizzes for a Course (Student) ---
-export const getQuizzesByCourse = async (req, res) => {
+// --- 5. Get Published Quizzes for a Module (Student) ---
+export const getQuizzesByModule = async (req, res) => {
     try {
         const quizzes = await Quiz.find({
-            courseId: req.params.courseId,
+            moduleId: req.params.moduleId,
             isPublished: true,
             isDeleted: false,
-        }).select("-questions.correctAnswer"); // Hide correct answers from students
+        }).select("-questions.correctAnswer");
 
         res.status(200).json(quizzes);
 
@@ -102,7 +100,7 @@ export const getQuizzesByCourse = async (req, res) => {
 export const getQuizById = async (req, res) => {
     try {
         const quiz = await Quiz.findOne({ _id: req.params.id, isDeleted: false })
-            .select("-questions.correctAnswer"); // Hide correct answers from students
+            .select("-questions.correctAnswer");
 
         if (!quiz) return res.status(404).json({ message: "Quiz not found." });
 
@@ -118,12 +116,10 @@ export const submitQuiz = async (req, res) => {
     try {
         const { answers, flaggedQuestions } = req.body;
 
-        // Fetch full quiz WITH correct answers for grading
         const quiz = await Quiz.findOne({ _id: req.params.id, isDeleted: false });
 
         if (!quiz) return res.status(404).json({ message: "Quiz not found." });
 
-        // Auto-grade: compare student answers against correct answers
         let score = 0;
         quiz.questions.forEach((question, index) => {
             if (answers[index] === question.correctAnswer) score++;

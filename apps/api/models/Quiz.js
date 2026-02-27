@@ -12,7 +12,7 @@ const questionSchema = new mongoose.Schema(
 const quizSchema = new mongoose.Schema(
   {
     title:     { type: String,  required: true, trim: true },
-    courseId:  { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true },
+    moduleId:  { type: mongoose.Schema.Types.ObjectId, ref: "Module", required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User",   required: true },
 
     questions:   [questionSchema],

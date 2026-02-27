@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTeacherQuizzes, deleteQuiz, publishQuiz } from "../../services/QuizService.jsx";
+import quizService from "../../services/QuizService.jsx";
 
 // ── Toast Component ───────────────────────────────────────────────────
 const Toast = ({ message, type }) => {
@@ -34,9 +34,8 @@ export default function MyQuizzes() {
 
   const fetchQuizzes = async () => {
     try {
-      const res = await getTeacherQuizzes();
-      // Backend returns array directly (no .quizzes wrapper) after our controller fix
-      setQuizzes(Array.isArray(res.data) ? res.data : res.data.quizzes || []);
+      const data = await quizService.getTeacherQuizzes();
+      setQuizzes(Array.isArray(data) ? data : data.quizzes || []);
     } catch {
       setError("Failed to load quizzes.");
     } finally {
@@ -51,7 +50,7 @@ export default function MyQuizzes() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this quiz? This cannot be undone.")) return;
     try {
-      await deleteQuiz(id);
+      await quizService.deleteQuiz(id);
       setQuizzes((prev) => prev.filter((q) => q._id !== id));
       showToast("Quiz deleted successfully.", "success");
     } catch {
@@ -61,7 +60,7 @@ export default function MyQuizzes() {
 
   const handlePublish = async (id) => {
     try {
-      await publishQuiz(id);
+      await quizService.publishQuiz(id);
       setQuizzes((prev) =>
         prev.map((q) => (q._id === id ? { ...q, isPublished: true } : q))
       );

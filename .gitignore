@@ -28,4 +28,8 @@ dist-ssr
 .env.development
 .env.test
 .env.production
+ 
+# Ignore uploaded media files
+apps/api/uploads/
+uploads/
 

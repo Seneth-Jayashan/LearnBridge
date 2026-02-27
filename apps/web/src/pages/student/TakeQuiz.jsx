@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getQuizById, submitQuiz } from "../../services/QuizService.jsx";
+import quizService from "../../services/QuizService.jsx";
 
 export default function TakeQuiz() {
   const { id } = useParams();
@@ -21,9 +21,8 @@ export default function TakeQuiz() {
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const res = await getQuizById(id);
-        // Handle both wrapped and unwrapped response
-        const quizData = res.data.quiz || res.data;
+        const data = await quizService.getQuizById(id);
+        const quizData = data.quiz || data;
         setQuiz(quizData);
         setAnswers(new Array(quizData.questions.length).fill(null));
         setTimeLeft(quizData.timeLimit * 60);
@@ -41,8 +40,8 @@ export default function TakeQuiz() {
     if (submitted || submitting) return;
     setSubmitting(true);
     try {
-      const res = await submitQuiz(id, { answers, flaggedQuestions: flagged });
-      setResult(res.data);
+      const data = await quizService.submitQuiz(id, { answers, flaggedQuestions: flagged });
+      setResult(data);
       setSubmitted(true);
     } catch {
       setError("Submission failed. Please try again.");
@@ -224,7 +223,7 @@ export default function TakeQuiz() {
               onClick={() => navigate(-1)}
               className="flex-1 py-3 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 hover:text-white transition font-medium text-sm"
             >
-              ← Back to Course
+              ← Back to Module
             </button>
             <button
               onClick={() => navigate("/student/results")}
