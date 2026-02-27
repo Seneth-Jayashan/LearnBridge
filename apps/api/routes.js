@@ -7,6 +7,7 @@ import GradeRoutes from "./routers/GradeRoutes.js";
 import SchoolAdminRoutes from "./routers/SchoolAdminRoutes.js";
 import ModuleRoutes from "./routers/ModuleRoutes.js";
 import QuizRoutes from "./routers/QuizRoutes.js";
+import PdfRoutes from "./routers/PdfRoutes.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use("/levels", LevelRoutes);
 router.use("/grades", GradeRoutes);
 router.use("/modules", ModuleRoutes);
 router.use("/quizzes", QuizRoutes);
+router.use("/pdf", PdfRoutes);
 
 export default router;
