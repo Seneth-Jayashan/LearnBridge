@@ -1,79 +1,193 @@
-# LearnBridge: LMS & Resource Bridge
+# 🚀 LearnBridge: LMS & Resource Bridge
 
-## 🚀 Project Overview
-[cite_start]**LearnBridge** is a dual-purpose MERN stack web application built to address **SDG Goal 4: Quality Education**[cite: 1, 3]. [cite_start]It bridges the gap in under-resourced schools by providing a unified platform for **digital learning** and **physical resource procurement**[cite: 6]. 
+## 🌍 Overview
 
-[cite_start]Unlike standard Learning Management Systems, LearnBridge includes a unique **"Resource Bridge"** that allows schools to list specific needs which can be fulfilled by registered donors[cite: 7].
+**LearnBridge** is a dual-purpose MERN stack web application built to support **SDG Goal 4: Quality Education**.
 
----
+It combines:
 
-## 🛠 Tech Stack & Third-Party Services
-[cite_start]The application is built using the **MERN Stack** (MongoDB, Express, React, Node.js) [cite: 2] and integrates several professional services:
+- 📚 A Learning Management System (LMS)
+- 🤝 A Resource Bridge for school donations
 
-* **Communication:** **Zoho Mail** (Transitional emails) and **Text.lk** (SMS/OTP notifications).
-* [cite_start]**Media & Storage:** **Cloudinary** (Lesson materials and profile images)[cite: 26, 53].
-* **Integrations:** **Zoom** (Live classes), **Groq** (AI capabilities), **Trivia** (Quiz data), and **PayHere** (Payment processing).
-* [cite_start]**Deployment:** **Render** (Backend) and **Vercel** (Frontend)[cite: 50, 51].
+Unlike traditional LMS platforms, LearnBridge enables schools to post specific physical resource needs that verified donors can fulfill.
 
 ---
 
-## 👥 User Roles & Responsibilities
-[cite_start]The system implements Role-Based Access Control (RBAC) across five distinct actors[cite: 9]:
+## 🛠 Tech Stack
 
+### 💻 Core Stack (MERN)
+- MongoDB
+- Express.js
+- React.js
+- Node.js
 
+### 🔌 Third-Party Services
 
-### **Super Admin**
-* Add and manage any user type within the system.
-* Onboard School Admins and link them to specific schools.
-* Manage core system modules, Grades (6-13), and academic Levels.
+**Communication**
+- Zoho Mail (Transactional Emails)
+- Text.lk (SMS / OTP Notifications)
 
-### **School Admin**
-* Enroll Students and Teachers specifically belonging to their school.
-* [cite_start]Manage and verify the credentials of school staff[cite: 13, 20].
-* [cite_start]Identify and post "School Resource Needs" to the donation feed[cite: 11, 37].
+**Media & Storage**
+- Cloudinary (Lesson materials & profile images)
 
-### **Teacher**
-* [cite_start]Register as a standalone educator or as part of a verified school[cite: 19].
-* [cite_start]Create lessons, upload materials (PDFs/Images), and schedule **Zoom** classes[cite: 11, 24, 25].
-* [cite_start]Design assessments and MCQs using the Quiz Engine[cite: 31].
+**Live & AI Integrations**
+- Zoom (Live classes)
+- Groq (AI capabilities)
+- Trivia API (Quiz data)
 
-### **Student**
-* [cite_start]Access educational materials and join live Zoom sessions[cite: 10].
-* [cite_start]Participate in quizzes with instant auto-grading feedback[cite: 10, 32].
-* [cite_start]Track personal learning progress and earn virtual badges[cite: 33, 34].
+**Payments**
+- PayHere (Secure payment processing)
 
-### **Donor**
-* [cite_start]Browse verified school needs (books, stationery, devices)[cite: 7, 38].
-* [cite_start]Pledge material or financial support to specific schools[cite: 12, 39].
-
----
-
-## 📦 Key Features
-
-* [cite_start]**Security Hub:** Secure JWT authentication with a **First-Login OTP flow** (Email/SMS) and mandatory password resets for admin-created accounts[cite: 17].
-* [cite_start]**Low-Bandwidth Mode:** A specialized toggle that strips high-res media to serve text-only content for students with limited data[cite: 27].
-* [cite_start]**Resource Bridge:** A transparent registry of school needs where donors can "Pledge" items to prevent duplicate donations[cite: 37, 39, 40].
-* [cite_start]**Assessment Engine:** Teachers create MCQs that the system automatically grades, providing instant outcomes[cite: 31, 32].
+**Deployment**
+- Render (Backend)
+- Vercel (Frontend)
 
 ---
 
-## 🔧 Installation & Setup
+## 👥 User Roles
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone [https://github.com/Seneth-Jayashan/LearnBridge](https://github.com/Seneth-Jayashan/LearnBridge)
-    ```
-2.  **Navigate to the Apps folder:**
-    ```bash
-    cd LearnBridge/apps
-    ```
-3.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-4.  **Environment Variables:**
-    Configure your `.env` files in both the `api` and `web` directories with your credentials for MongoDB, Zoho, Text.lk, and Cloudinary.
-5.  **Run Development Mode:**
-    ```bash
-    npm run dev
-    ```
+### 👑 Super Admin
+- Manage all users
+- Onboard School Admins
+- Manage grades (6–13) and academic levels
+
+### 🏫 School Admin
+- Enroll teachers and students
+- Verify staff credentials
+- Post school resource needs
+
+### 👨‍🏫 Teacher
+- Create lessons
+- Upload materials (PDF/Image)
+- Schedule Zoom classes
+- Create MCQ assessments
+
+### 🎓 Student
+- Access materials
+- Join live classes
+- Attempt quizzes with auto-grading
+- Track progress and earn badges
+
+### 🤝 Donor
+- Browse verified school needs
+- Pledge material or financial support
+- Prevent duplicate donations via pledge tracking
+
+---
+
+## 🔐 Key Features
+
+### Security Hub
+- JWT Authentication
+- First-login OTP verification (Email/SMS)
+- Mandatory password reset for admin-created accounts
+
+### Low-Bandwidth Mode
+- Text-only mode for limited data users
+- Optimized for rural connectivity
+
+### Resource Bridge
+- Transparent donation registry
+- School need verification
+- Real-time pledge tracking
+
+### Assessment Engine
+- MCQ-based quizzes
+- Automatic grading
+- Instant feedback
+
+---
+
+## ⚙️ Installation
+
+### 1️⃣ Clone Repository
+
+```bash
+git clone https://github.com/Seneth-Jayashan/LearnBridge
+
+### 2️⃣ Navigate to Apps Directory
+
+```bash
+cd LearnBridge/apps
+
+### 3️⃣ Install Dependencies
+
+```bash
+npm install
+
+### 4️⃣ Configure Environment Variables
+
+
+# Create .env files inside:
+
+ - apps/api
+
+ - apps/web
+
+Example:
+
+#server configuration
+NODE_ENV=development
+PORT=5000
+
+#database configuration
+MONGO_URI=mongodb+srv://LearnBridge_DB:
+DB_NAME=test
+
+#cors configuration
+CORS_ORIGIN=http://localhost:3000
+
+#jwt configuration
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=1d
+JWT_REFRESH_EXPIRES_IN=7d
+
+#bcrypt configuration
+BCRYPT_SALT_ROUNDS=10
+
+#zoho email configuration
+ZOHO_EMAIL=your_zoho_email_address
+ZOHO_ACCOUNT_ID=your_zoho_account_id
+ZOHO_CLIENT_ID=your_zoho_client_id
+ZOHO_CLIENT_SECRET=your_zoho_client_secret
+ZOHO_REFRESH_TOKEN=your_zoho_refresh_token
+
+#payhere configuration
+PAYHERE_ENV=sandbox
+PAYHERE_MERCHANT_ID=1234567
+PAYHERE_MERCHANT_SECRET=your_payhere_merchant_secret
+PAYHERE_RETURN_URL=http://localhost:3000/payment-success
+PAYHERE_CANCEL_URL=http://localhost:3000/payment-cancel
+PAYHERE_NOTIFY_URL=http://localhost:5000/api/payments/notify
+PAYHERE_CURRENCY=LKR
+PAYHERE_API_URL=https://sandbox.payhere.lk/pay/checkout
+
+#sms configuration
+SMS_DRIVER=textlk
+TEXTLK_API_KEY=your_textlk_api_key
+TEXTLK_SENDER_ID="Your Sender ID"
+TEXTLK_URL=https://app.text.lk/api/v3/sms/send
+
+### 5️⃣ Run Development Server
+```bash
+npm run dev
+
+## 🚀 Project Structure
+LearnBridge/
+│
+├── apps/
+│   ├── api/        # Express Backend
+│   └── web/        # React Frontend
+│
+├── .github/
+│   └── workflows/     # Shared utilities (if applicable)
+│
+└── README.md
+
+## 🎯 Mission
+
+ - LearnBridge aims to digitally empower schools while enabling transparent, community-driven resource support — ensuring equitable access to quality education.
+
+## 📄 License
+
+- This project is developed for educational and social impact purposes.
