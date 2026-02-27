@@ -7,6 +7,7 @@ import LessonsManage from "../pages/teacher/lessons/LessonsManage";
 import LessonsEdit from "../pages/teacher/lessons/LessonsEdit";
 import KnowledgeBaseAdd from "../pages/teacher/knowledge-base/KnowledgeBaseAdd";
 import KnowledgeBaseManage from "../pages/teacher/knowledge-base/KnowledgeBaseManage";
+import KnowledgeBaseEdit from "../pages/teacher/knowledge-base/KnowledgeBaseEdit";
 
 const TeacherRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
@@ -35,6 +36,7 @@ const TeacherRoutes = () => {
           <Route path="knowledge-base" element={<Navigate to="manage" replace />} />
           <Route path="knowledge-base/add" element={<KnowledgeBaseAdd />} />
           <Route path="knowledge-base/manage" element={<KnowledgeBaseManage />} />
+          <Route path="knowledge-base/edit/:id" element={<KnowledgeBaseEdit />} />
         </Routes>
       </div>
     </>

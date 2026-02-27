@@ -45,6 +45,8 @@ const downloadFile = async (url, fileName = "") => {
   }
 };
 
+import { Link } from "react-router-dom";
+
 const KnowledgeBaseList = ({ entries, emptyMessage = "No articles available yet." }) => {
   if (!entries.length) {
     return (
@@ -64,36 +66,14 @@ const KnowledgeBaseList = ({ entries, emptyMessage = "No articles available yet.
             </span>
             <span className="text-xs text-slate-500">Updated {new Date(entry.updatedAt).toLocaleDateString()}</span>
           </div>
-          <h3 className="text-xl font-bold text-[#0E2A47]">{entry.title}</h3>
-          {entry.summary && <p className="mt-2 text-slate-600">{entry.summary}</p>}
-          <p className="mt-3 whitespace-pre-line text-slate-700 leading-relaxed">{entry.content}</p>
-          <div className="mt-4 flex flex-wrap gap-3 items-center text-sm">
-            <span className="text-slate-500">By {entry.authorName || "Teacher"}</span>
-            {entry.attachmentUrl ? (
-              <button
-                onClick={async () => {
-                  try {
-                    // try to get a signed download URL for public KB entries
-                    const kbService = await import("../../services/KnowledgeBaseService");
-                    const { downloadUrl, fileName } = await kbService.default.getAttachmentDownloadUrl(entry.id, true);
-                    if (downloadUrl) {
-                      await downloadFile(downloadUrl, fileName || inferFileNameFromUrl(downloadUrl));
-                      return;
-                    }
 
-                    // fallback: direct public URL
-                    const url = toPublicMediaUrl(entry.attachmentUrl);
-                    await downloadFile(url, inferFileNameFromUrl(url));
-                  } catch (err) {
-                    // final fallback: open in new tab
-                    window.open(entry.attachmentUrl, "_blank", "noopener,noreferrer");
-                  }
-                }}
-                className="font-semibold text-[#207D86] hover:text-[#14555B]"
-              >
-                Open attachment
-              </button>
-            ) : null}
+          <h3 className="text-xl font-bold text-[#0E2A47]">{entry.title}</h3>
+          <div className="mt-3 text-slate-700">
+            <span className="text-slate-500">By {entry.authorName || "Teacher"}</span>
+          </div>
+
+          <div className="mt-4">
+            <Link to={`/knowledge-base/${entry.id}`} className="font-semibold text-[#207D86] hover:text-[#14555B]">Read more</Link>
           </div>
         </article>
       ))}

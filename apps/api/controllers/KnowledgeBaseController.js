@@ -36,7 +36,7 @@ const buildQueryFilter = (q) => {
   if (!q || !String(q).trim()) return {};
   const regex = new RegExp(escapeRegExp(String(q).trim()), "i");
   return {
-    $or: [{ title: regex }, { summary: regex }, { content: regex }, { category: regex }],
+    $or: [{ title: regex }, { content: regex }, { category: regex }],
   };
 };
 
@@ -76,15 +76,19 @@ export const getKnowledgeBaseEntries = async (req, res) => {
 
 export const createKnowledgeBaseEntry = async (req, res) => {
   try {
-    let attachmentUrl = "";
-    const attachmentFile = req.files?.attachment?.[0];
-    if (attachmentFile) {
+    let attachmentUrl = [];
+    const attachmentFiles = Array.isArray(req.files?.attachment) ? req.files.attachment : [];
+    if (attachmentFiles.length) {
       try {
-        const upload = await uploadFileToCloudinary(attachmentFile, {
-          folder: "learnbridge/knowledge-base/attachments",
-          resourceType: "auto",
-        });
-        attachmentUrl = upload?.secure_url || "";
+        const uploads = [];
+        for (const f of attachmentFiles) {
+          const up = await uploadFileToCloudinary(f, {
+            folder: "learnbridge/knowledge-base/attachments",
+            resourceType: "auto",
+          });
+          if (up?.secure_url) uploads.push(up.secure_url);
+        }
+        attachmentUrl = uploads;
       } catch (uploadErr) {
         return res.status(400).json({ message: `Failed to upload attachment: ${uploadErr.message}` });
       }
@@ -92,7 +96,6 @@ export const createKnowledgeBaseEntry = async (req, res) => {
 
     const entry = await KnowledgeBase.create({
       title: req.body.title,
-      summary: req.body.summary ?? "",
       content: req.body.content,
       category: req.body.category?.trim() || "General",
       attachmentUrl,
@@ -119,29 +122,38 @@ export const updateKnowledgeBaseEntry = async (req, res) => {
     }
 
     if (req.body.title !== undefined) entry.title = req.body.title;
-    if (req.body.summary !== undefined) entry.summary = req.body.summary;
     if (req.body.content !== undefined) entry.content = req.body.content;
     if (req.body.category !== undefined) entry.category = req.body.category || "General";
     if (req.body.isPublished !== undefined) entry.isPublished = req.body.isPublished;
 
-    // Handle attachment replacement
-    const attachmentFile = req.files?.attachment?.[0];
-    if (attachmentFile) {
-      // delete previous cloudinary asset if present (best-effort)
-      if (entry.attachmentUrl) {
+    // Handle attachment replacement (allow multiple)
+    const attachmentFiles = Array.isArray(req.files?.attachment) ? req.files.attachment : [];
+    if (attachmentFiles.length) {
+      // delete previous cloudinary assets if present (best-effort)
+      if (Array.isArray(entry.attachmentUrl) && entry.attachmentUrl.length) {
+        for (const prev of entry.attachmentUrl) {
+          try {
+            await deleteCloudinaryAssetFromUrl(prev);
+          } catch {
+            // ignore
+          }
+        }
+      } else if (entry.attachmentUrl) {
         try {
           await deleteCloudinaryAssetFromUrl(entry.attachmentUrl);
-        } catch {
-          // ignore deletion errors
-        }
+        } catch {}
       }
 
       try {
-        const upload = await uploadFileToCloudinary(attachmentFile, {
-          folder: "learnbridge/knowledge-base/attachments",
-          resourceType: "auto",
-        });
-        entry.attachmentUrl = upload?.secure_url || entry.attachmentUrl;
+        const uploads = [];
+        for (const f of attachmentFiles) {
+          const up = await uploadFileToCloudinary(f, {
+            folder: "learnbridge/knowledge-base/attachments",
+            resourceType: "auto",
+          });
+          if (up?.secure_url) uploads.push(up.secure_url);
+        }
+        entry.attachmentUrl = uploads;
       } catch (uploadErr) {
         return res.status(400).json({ message: `Failed to upload attachment: ${uploadErr.message}` });
       }
@@ -186,17 +198,21 @@ export const getKnowledgeBaseAttachmentDownloadUrlPublic = async (req, res) => {
       return res.status(403).json({ message: "Article is not public" });
     }
 
-    if (!entry.attachmentUrl) {
+    const index = Number(req.query?.index || 0) || 0;
+    const attachments = Array.isArray(entry.attachmentUrl) ? entry.attachmentUrl : (entry.attachmentUrl ? [entry.attachmentUrl] : []);
+
+    if (!attachments.length || !attachments[index]) {
       return res.status(404).json({ message: "Attachment not found" });
     }
 
-    const fileName = getCloudinaryFileNameFromUrl(entry.attachmentUrl) || "attachment";
-    const downloadUrl = createSignedDownloadUrlFromCloudinaryUrl(entry.attachmentUrl, {
+    const selected = attachments[index];
+    const fileName = getCloudinaryFileNameFromUrl(selected) || `attachment_${index + 1}`;
+    const downloadUrl = createSignedDownloadUrlFromCloudinaryUrl(selected, {
       expiresInSeconds: 300,
       fileName,
     });
 
-    return res.status(200).json({ downloadUrl, fileName });
+    return res.status(200).json({ downloadUrl, fileName, index });
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
   }

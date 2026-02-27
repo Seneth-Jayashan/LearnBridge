@@ -1,18 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import knowledgeBaseService from "../../../services/KnowledgeBaseService";
 
 const blankForm = {
   title: "",
-  summary: "",
   content: "",
   category: "",
+  customCategory: "",
   isPublished: false,
 };
 
+const KB_CATEGORIES = [
+  "Teaching Materials",
+  "Community Resources",
+  "Student Support",
+  "Parent Guidance",
+  "Agriculture & Environment",
+  "Health & Hygiene",
+  "Local Curriculum",
+  "Assessment & Exams",
+  "Administration",
+  "Technical Guides",
+];
+
 const KnowledgeBaseManage = () => {
   const [entries, setEntries] = useState([]);
+  const [editFiles, setEditFiles] = useState(null);
+  const [editPreviews, setEditPreviews] = useState([]);
+  const editFileRef = useRef(null);
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState("");
@@ -44,11 +62,15 @@ const KnowledgeBaseManage = () => {
     setEditingId(entry.id);
     setEditForm({
       title: entry.title || "",
-      summary: entry.summary || "",
       content: entry.content || "",
-      category: entry.category || "",
+      category: KB_CATEGORIES.includes(entry.category) ? entry.category : "Other",
+      customCategory: KB_CATEGORIES.includes(entry.category) ? "" : (entry.category || ""),
       isPublished: Boolean(entry.isPublished),
     });
+    setEditFiles(null);
+    const urls = Array.isArray(entry.attachmentUrls) ? entry.attachmentUrls : (entry.attachmentUrl ? [entry.attachmentUrl] : []);
+    const p = urls.map((u) => ({ url: u, name: (u || "").split('/').pop() }));
+    setEditPreviews(p);
   };
 
   const handleEditChange = (event) => {
@@ -60,15 +82,97 @@ const KnowledgeBaseManage = () => {
     if (!editForm.title.trim() || !editForm.content.trim()) return;
     try {
       setError("");
-      await knowledgeBaseService.updateEntry(id, editForm);
+      const payload = {
+        ...editForm,
+        category: editForm.category === "Other" ? (editForm.customCategory?.trim() || "") : editForm.category,
+      };
+      if (editFiles && Array.isArray(editFiles) && editFiles.length) {
+        payload.attachment = editFiles;
+      }
+      await knowledgeBaseService.updateEntry(id, payload);
       setEditingId("");
       setEditForm(blankForm);
+      setEditFiles(null);
+      setEditPreviews([]);
       await loadEntries(query);
     } catch (err) {
       const firstValidationMessage = err.response?.data?.errors?.[0]?.message;
       setError(firstValidationMessage || err.response?.data?.message || "Failed to update entry");
     }
   };
+
+  const toPublicMediaUrl = (value) => {
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value) || /^blob:/i.test(value)) return value;
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+    const origin = apiBase.replace(/\/api\/v1\/?$/i, "");
+    return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
+  };
+
+  const inferFileNameFromUrl = (url) => {
+    if (!url) return "";
+    try {
+      const parsedUrl = new URL(url);
+      const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+      const lastSegment = pathSegments[pathSegments.length - 1] || "";
+      return decodeURIComponent(lastSegment).trim();
+    } catch {
+      return "";
+    }
+  };
+
+  const downloadFile = async (url, fileName = "") => {
+    if (!url) return;
+    if (/^blob:/i.test(url)) {
+      const blobLink = document.createElement("a");
+      blobLink.href = url;
+      blobLink.download = fileName || "attachment";
+      document.body.appendChild(blobLink);
+      blobLink.click();
+      document.body.removeChild(blobLink);
+      return;
+    }
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to download file");
+    const fileBlob = await response.blob();
+    const objectUrl = URL.createObjectURL(fileBlob);
+    try {
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName || inferFileNameFromUrl(url) || "attachment";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const handleEditFileChange = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (!files.length) return;
+    const maxFiles = 5;
+    const selected = files.slice(0, maxFiles);
+    setEditFiles(selected);
+    const p = selected.map((f) => ({ url: URL.createObjectURL(f), name: f.name, type: f.type }));
+    setEditPreviews(p);
+    if (editFileRef.current) editFileRef.current.value = "";
+  };
+
+  const removeEditFileAt = (idx) => {
+    if (!editFiles) return;
+    const next = editFiles.slice(0, idx).concat(editFiles.slice(idx + 1));
+    setEditFiles(next.length ? next : null);
+    try { URL.revokeObjectURL(editPreviews[idx]?.url); } catch {}
+    setEditPreviews(editPreviews.slice(0, idx).concat(editPreviews.slice(idx + 1)));
+  };
+
+  // cleanup created object URLs for edit previews
+  useEffect(() => {
+    return () => {
+      editPreviews.forEach((p) => { try { URL.revokeObjectURL(p.url); } catch {} });
+    };
+  }, [editPreviews]);
 
   const handleDelete = async (id) => {
     const shouldDelete = window.confirm("Delete this article?");
@@ -143,19 +247,27 @@ const KnowledgeBaseManage = () => {
                     onChange={handleEditChange}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2"
                   />
-                  <input
+                  <select
                     name="category"
                     value={editForm.category}
                     onChange={handleEditChange}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                  />
-                  <textarea
-                    name="summary"
-                    rows={2}
-                    value={editForm.summary}
-                    onChange={handleEditChange}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                  />
+                  >
+                    {KB_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+
+                  {editForm.category === "Other" && (
+                    <input
+                      name="customCategory"
+                      value={editForm.customCategory}
+                      onChange={handleEditChange}
+                      placeholder="Specify category"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 mt-2"
+                    />
+                  )}
                   <textarea
                     name="content"
                     rows={5}
@@ -163,6 +275,33 @@ const KnowledgeBaseManage = () => {
                     onChange={handleEditChange}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2"
                   />
+                  <div className="mt-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Replace Attachments (optional - up to 5)</label>
+                    <input
+                      ref={editFileRef}
+                      type="file"
+                      accept="image/*,video/*,.pdf,.doc,.docx"
+                      multiple
+                      onChange={handleEditFileChange}
+                      className="w-full"
+                    />
+                    {editPreviews && editPreviews.length ? (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {editPreviews.map((p, idx) => (
+                          <div key={idx} className="flex items-center gap-3 border rounded p-2 bg-slate-50">
+                            {p.type && p.type.startsWith("image/") ? (
+                              <img src={p.url} alt={p.name} className="w-16 h-16 object-cover rounded" />
+                            ) : (
+                              <div className="w-16 h-16 flex items-center justify-center bg-white border rounded text-xs px-2">{(p.name || "").split('.').pop()?.toUpperCase() || "FILE"}</div>
+                            )}
+                            <div className="text-sm text-slate-700 max-w-[220px] truncate">{p.name}</div>
+                            <button type="button" onClick={() => removeEditFileAt(idx)} className="ml-2 text-red-500 text-sm">Remove</button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                    <div className="text-xs text-slate-500 mt-2">Note: uploading new files replaces existing attachments.</div>
+                  </div>
                   
                   <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                     <input
@@ -196,13 +335,38 @@ const KnowledgeBaseManage = () => {
                       {entry.isPublished ? "Published" : "Draft"}
                     </span>
                   </div>
-                  {entry.summary && <p className="mt-2 text-slate-600">{entry.summary}</p>}
+                  
                   <p className="mt-2 text-slate-700 whitespace-pre-line">{entry.content}</p>
+                  {Array.isArray(entry.attachmentUrls) && entry.attachmentUrls.length ? (
+                    <div className="mt-3 flex flex-wrap gap-3 items-center">
+                      {entry.attachmentUrls.map((a, i) => (
+                        <button
+                          key={i}
+                          onClick={async () => {
+                            try {
+                              const { downloadUrl, fileName } = await knowledgeBaseService.getAttachmentDownloadUrl(entry.id, true, i);
+                              if (downloadUrl) {
+                                await downloadFile(downloadUrl, fileName || inferFileNameFromUrl(downloadUrl));
+                                return;
+                              }
+                              const url = toPublicMediaUrl(a);
+                              await downloadFile(url, inferFileNameFromUrl(url));
+                            } catch (err) {
+                              window.open(a, "_blank", "noopener,noreferrer");
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-semibold text-[#207D86]"
+                        >
+                          Attachment {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="mt-3 text-xs text-slate-500">
                     Updated {new Date(entry.updatedAt).toLocaleString()}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button onClick={() => startEditing(entry)} className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-semibold">
+                    <button onClick={() => navigate(`/teacher/knowledge-base/edit/${entry.id}`)} className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-semibold">
                       Edit
                     </button>
                     <button onClick={() => togglePublished(entry)} className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-semibold">

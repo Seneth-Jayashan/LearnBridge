@@ -18,10 +18,11 @@ const getAuthHeaders = () => {
 const mapEntry = (entry) => ({
   id: entry?._id || "",
   title: entry?.title || "",
-  summary: entry?.summary || "",
   content: entry?.content || "",
   category: entry?.category || "General",
-  attachmentUrl: entry?.attachmentUrl || "",
+  // attachmentUrl kept for backward compatibility (first attachment)
+  attachmentUrls: Array.isArray(entry?.attachmentUrl) ? entry.attachmentUrl : (entry?.attachmentUrl ? [entry.attachmentUrl] : []),
+  attachmentUrl: Array.isArray(entry?.attachmentUrl) ? (entry.attachmentUrl[0] || "") : (entry?.attachmentUrl || ""),
   isPublished: Boolean(entry?.isPublished),
   authorName: entry?.createdBy
     ? `${entry.createdBy.firstName || ""} ${entry.createdBy.lastName || ""}`.trim() || "Teacher"
@@ -32,7 +33,6 @@ const mapEntry = (entry) => ({
 
 const buildPayload = (payload) => ({
   title: payload.title?.trim() || "",
-  summary: payload.summary?.trim() || "",
   content: payload.content?.trim() || "",
   category: payload.category?.trim() || "General",
   isPublished: Boolean(payload.isPublished),
@@ -75,9 +75,10 @@ const knowledgeBaseService = {
     return rows.map(mapEntry);
   },
 
-  async getAttachmentDownloadUrl(id, isPublic = false) {
+  async getAttachmentDownloadUrl(id, isPublic = false, index = 0) {
     if (!id) return { downloadUrl: "", fileName: "" };
-    const endpoint = isPublic ? `${kbPath(`/public/${id}/attachment-download`)}` : `${kbPath(`/${id}/attachment-download`)}`;
+    const query = `?index=${Number(index || 0)}`;
+    const endpoint = isPublic ? `${kbPath(`/public/${id}/attachment-download`)}${query}` : `${kbPath(`/${id}/attachment-download`)}${query}`;
     const response = await api.get(endpoint, { headers: getAuthHeaders() });
     return {
       downloadUrl: response.data?.downloadUrl || "",
@@ -85,13 +86,34 @@ const knowledgeBaseService = {
     };
   },
 
+  async getPublicEntry(id) {
+    if (!id) return null;
+    // Try direct single-entry endpoint first (may not exist on server)
+    try {
+      const response = await api.get(`${kbPath(`/public/${id}`)}`);
+      return mapEntry(response.data || {});
+    } catch (err) {
+      // fallback: fetch list and find
+      try {
+        const rows = await this.getPublicEntries();
+        return rows.find((r) => r.id === id) || null;
+      } catch {
+        return null;
+      }
+    }
+  },
+
   async createEntry(payload) {
-    // If payload contains an attachment file, send FormData
-    if (payload && payload.attachment instanceof File) {
+    // If payload contains attachment file(s), send FormData
+    if (payload && (payload.attachment instanceof File || Array.isArray(payload.attachment))) {
       const form = new FormData();
       const data = buildPayload(payload);
       Object.keys(data).forEach((k) => form.append(k, data[k]));
-      form.append("attachment", payload.attachment);
+      if (Array.isArray(payload.attachment)) {
+        payload.attachment.forEach((f) => form.append("attachment", f));
+      } else {
+        form.append("attachment", payload.attachment);
+      }
       const response = await api.post(kbPath(), form, buildRequestConfig(form));
       return mapEntry(response.data?.entry || {});
     }
@@ -103,11 +125,15 @@ const knowledgeBaseService = {
   },
 
   async updateEntry(id, payload) {
-    if (payload && payload.attachment instanceof File) {
+    if (payload && (payload.attachment instanceof File || Array.isArray(payload.attachment))) {
       const form = new FormData();
       const data = buildPayload(payload);
       Object.keys(data).forEach((k) => form.append(k, data[k]));
-      form.append("attachment", payload.attachment);
+      if (Array.isArray(payload.attachment)) {
+        payload.attachment.forEach((f) => form.append("attachment", f));
+      } else {
+        form.append("attachment", payload.attachment);
+      }
       const response = await api.put(`${kbPath()}/${id}`, form, buildRequestConfig(form));
       return mapEntry(response.data?.entry || {});
     }

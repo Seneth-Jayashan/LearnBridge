@@ -111,7 +111,7 @@ const kbUploader = multer({
 	limits: { fileSize: 150 * 1024 * 1024 },
 });
 
-const uploadKBAttachmentFields = kbUploader.fields([{ name: "attachment", maxCount: 1 }]);
+const uploadKBAttachmentFields = kbUploader.fields([{ name: "attachment", maxCount: 5 }]);
 
 export const uploadKBAttachment = (req, res, next) => {
 	uploadKBAttachmentFields(req, res, (err) => {

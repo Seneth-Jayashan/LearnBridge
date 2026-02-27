@@ -1,12 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import knowledgeBaseService from "../../../services/KnowledgeBaseService";
 
+const KB_CATEGORIES = [
+  "Teaching Materials",
+  "Community Resources",
+  "Student Support",
+  "Parent Guidance",
+  "Agriculture & Environment",
+  "Health & Hygiene",
+  "Local Curriculum",
+  "Assessment & Exams",
+  "Administration",
+  "Technical Guides",
+];
+
 const initialForm = {
   title: "",
-  summary: "",
   content: "",
-  category: "",
+  category: KB_CATEGORIES[0],
+  customCategory: "",
   isPublished: true,
 };
 
@@ -14,6 +27,7 @@ const KnowledgeBaseAdd = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(initialForm);
   const [attachment, setAttachment] = useState(null);
+  const [previews, setPreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,10 +37,43 @@ const KnowledgeBaseAdd = () => {
   };
 
   const handleFileChange = (event) => {
-    const file = event.target.files && event.target.files[0];
-    setAttachment(file || null);
-    // no-op: just set attachment
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    if (!files.length) return;
+
+    const maxFiles = 5;
+    const existing = Array.isArray(attachment) ? attachment : [];
+    // combine existing + newly selected, then cap to maxFiles
+    const combined = existing.concat(files).slice(0, maxFiles);
+
+    // revoke previous preview URLs
+    previews.forEach((p) => { try { URL.revokeObjectURL(p.url); } catch {} });
+
+    const newPreviews = combined.map((f) => ({ url: URL.createObjectURL(f), type: f.type, name: f.name }));
+    setPreviews(newPreviews);
+    setAttachment(combined.length ? combined : null);
+
+    // clear native input so same file can be re-selected later
+    try { if (fileInputRef.current) fileInputRef.current.value = ""; } catch {}
   };
+
+  const removeAttachmentAt = (index) => {
+    if (!attachment || !Array.isArray(attachment)) return;
+    const nextFiles = attachment.slice(0, index).concat(attachment.slice(index + 1));
+    // revoke this preview
+    try { URL.revokeObjectURL(previews[index]?.url); } catch {}
+    const nextPreviews = previews.slice(0, index).concat(previews.slice(index + 1));
+    setAttachment(nextFiles.length ? nextFiles : null);
+    setPreviews(nextPreviews);
+  };
+
+  const fileInputRef = useRef(null);
+
+  // revoke object URLs when previews change or on unmount
+  useEffect(() => {
+    return () => {
+      previews.forEach((p) => { try { URL.revokeObjectURL(p.url); } catch {} });
+    };
+  }, [previews]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -36,7 +83,8 @@ const KnowledgeBaseAdd = () => {
     try {
       setIsSubmitting(true);
       setError("");
-      await knowledgeBaseService.createEntry({ ...formData, attachment });
+      const categoryToSend = formData.category === "Other" ? (formData.customCategory?.trim() || "") : formData.category;
+      await knowledgeBaseService.createEntry({ ...formData, category: categoryToSend, attachment });
       navigate("/teacher/knowledge-base/manage");
     } catch (err) {
       const firstValidationMessage = err.response?.data?.errors?.[0]?.message;
@@ -71,26 +119,33 @@ const KnowledgeBaseAdd = () => {
           </div>
           <div>
             <label htmlFor="category" className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
-            <input
+            <select
               id="category"
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              placeholder="Example: Student Guide"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-            />
+            >
+              {KB_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+              <option value="Other">Other</option>
+            </select>
           </div>
-          <div className="md:col-span-2">
-            <label htmlFor="summary" className="block text-sm font-semibold text-slate-700 mb-1">Summary</label>
-            <textarea
-              id="summary"
-              name="summary"
-              rows={2}
-              value={formData.summary}
-              onChange={handleInputChange}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-            />
-          </div>
+
+          {formData.category === "Other" && (
+            <div className="md:col-span-2">
+              <label htmlFor="customCategory" className="block text-sm font-semibold text-slate-700 mb-1">Specify Category</label>
+              <input
+                id="customCategory"
+                name="customCategory"
+                value={formData.customCategory}
+                onChange={handleInputChange}
+                placeholder="Enter custom category"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
+              />
+            </div>
+          )}
           <div className="md:col-span-2">
             <label htmlFor="content" className="block text-sm font-semibold text-slate-700 mb-1">Content</label>
             <textarea
@@ -106,14 +161,33 @@ const KnowledgeBaseAdd = () => {
           <div className="md:col-span-2">
             <label htmlFor="attachment" className="block text-sm font-semibold text-slate-700 mb-1">Upload Attachment (Image / Video / PDF / Word)</label>
             <input
+              ref={fileInputRef}
               id="attachment"
               name="attachment"
               type="file"
               accept="image/*,video/*,.pdf,.doc,.docx"
               onChange={handleFileChange}
+              multiple
               className="w-full"
             />
-            {attachment && <p className="text-sm text-slate-500 mt-2">Selected: {attachment.name}</p>}
+            {attachment && (
+              <div className="mt-2">
+                <div className="text-sm text-slate-500">Selected ({attachment.length}/5):</div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {previews.map((p, idx) => (
+                    <div key={idx} className="flex items-center gap-3 border rounded p-2 bg-slate-50">
+                      {p.type && p.type.startsWith("image/") ? (
+                        <img src={p.url} alt={p.name} className="w-16 h-16 object-cover rounded" />
+                      ) : (
+                        <div className="w-16 h-16 flex items-center justify-center bg-white border rounded text-xs px-2">{(p.name || "").split('.').pop()?.toUpperCase() || "FILE"}</div>
+                      )}
+                      <div className="text-sm text-slate-700 max-w-[220px] truncate">{p.name}</div>
+                      <button type="button" onClick={() => removeAttachmentAt(idx)} className="ml-2 text-red-500 text-sm">Remove</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div className="md:col-span-2 flex items-center gap-2">
             <input
