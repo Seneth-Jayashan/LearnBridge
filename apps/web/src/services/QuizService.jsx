@@ -1,32 +1,54 @@
 import api from "../api/Axios";
 
-// ─── TEACHER SERVICES ───────────────────────────────────────────────
+const quizService = {
+  // ─── TEACHER SERVICES ───────────────────────────────────────────────
 
-export const createQuiz = (quizData) =>
-  api.post("/quizzes", quizData);
+  async createQuiz(quizData) {
+    const response = await api.post("/quizzes", quizData);
+    return response.data;
+  },
 
-export const getTeacherQuizzes = () =>
-  api.get("/quizzes/my-quizzes");
+  async getTeacherQuizzes() {
+    const response = await api.get("/quizzes/my-quizzes");
+    return response.data;
+  },
 
-export const updateQuiz = (id, quizData) =>
-  api.put(`/quizzes/${id}`, quizData);
+  async updateQuiz(id, quizData) {
+    const response = await api.put(`/quizzes/${id}`, quizData);
+    return response.data;
+  },
 
-export const deleteQuiz = (id) =>
-  api.delete(`/quizzes/${id}`);
+  async deleteQuiz(id) {
+    const response = await api.delete(`/quizzes/${id}`);
+    return response.data;
+  },
 
-export const publishQuiz = (id) =>
-  api.put(`/quizzes/${id}`, { isPublished: true });
+  async publishQuiz(id) {
+    const response = await api.put(`/quizzes/${id}`, { isPublished: true });
+    return response.data;
+  },
 
-// ─── STUDENT SERVICES ───────────────────────────────────────────────
+  // ─── STUDENT SERVICES ───────────────────────────────────────────────
 
-export const getQuizzesByCourse = (courseId) =>
-  api.get(`/quizzes/course/${courseId}`);
+  async getQuizzesByModule(moduleId) {
+    const response = await api.get(`/quizzes/module/${moduleId}`);
+    return response.data;
+  },
 
-export const getQuizById = (id) =>
-  api.get(`/quizzes/${id}`);
+  async getQuizById(id) {
+    const response = await api.get(`/quizzes/${id}`);
+    return response.data;
+  },
 
-export const submitQuiz = (id, payload) =>
-  api.post(`/quizzes/${id}/submit`, payload);
+  async submitQuiz(id, payload) {
+    const response = await api.post(`/quizzes/${id}/submit`, payload);
+    return response.data;
+  },
 
-export const getStudentResults = () =>
-  api.get("/quizzes/results/my");
+  async getStudentResults() {
+    const response = await api.get("/quizzes/results/my");
+    return response.data;
+  },
+};
+
+export default quizService;

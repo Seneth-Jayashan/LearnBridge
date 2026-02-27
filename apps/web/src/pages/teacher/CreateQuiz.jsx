@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createQuiz } from "../../services/QuizService.jsx";
+import quizService from "../../services/QuizService.jsx";
+import triviaService from "../../services/Triviaservice.jsx";
 
 const emptyQuestion = () => ({
   questionText: "",
@@ -26,15 +27,197 @@ const Toast = ({ message, type }) => {
   );
 };
 
+// ── Trivia Import Modal ───────────────────────────────────────────────
+const TriviaImportModal = ({ onClose, onImport }) => {
+  const [categories, setCategories] = useState([]);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const [error, setError] = useState("");
+  const [mode, setMode] = useState("import"); // "import" | "generate"
+  const [config, setConfig] = useState({ amount: 10, category: "", difficulty: "" });
+
+  useEffect(() => {
+    triviaService.fetchCategories()
+      .then(setCategories)
+      .catch(() => setError("Failed to load categories."))
+      .finally(() => setLoadingCats(false));
+  }, []);
+
+  const handleImport = async () => {
+    setError("");
+    setImporting(true);
+    try {
+      const questions = await triviaService.fetchQuestions(config);
+      const categoryName = categories.find((c) => c.id === Number(config.category))?.name || "";
+      onImport({ questions, mode, category: categoryName });
+      onClose();
+    } catch (err) {
+      setError(err.message || "Import failed.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-[#0A1D32] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md">
+
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌐</span>
+            <h2 className="text-sm font-bold text-white">Import from Open Trivia DB</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition text-lg leading-none">
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+
+          {/* Mode Toggle */}
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Import Mode</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setMode("import")}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition text-left
+                  ${mode === "import"
+                    ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
+                    : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"
+                  }`}
+              >
+                <div className="text-base mb-0.5">➕</div>
+                Add to existing quiz
+                <div className="text-slate-500 font-normal mt-0.5">Appends questions</div>
+              </button>
+              <button
+                onClick={() => setMode("generate")}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition text-left
+                  ${mode === "generate"
+                    ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
+                    : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"
+                  }`}
+              >
+                <div className="text-base mb-0.5">⚡</div>
+                Auto-generate quiz
+                <div className="text-slate-500 font-normal mt-0.5">Replaces everything</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Number of Questions */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+              Number of Questions: <span className="text-[#4CAF50]">{config.amount}</span>
+            </label>
+            <input
+              type="range" min={1} max={50}
+              value={config.amount}
+              onChange={(e) => setConfig((p) => ({ ...p, amount: Number(e.target.value) }))}
+              className="w-full accent-[#4CAF50]"
+            />
+            <div className="flex justify-between text-xs text-slate-600 mt-1">
+              <span>1</span><span>50</span>
+            </div>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Category</label>
+            {loadingCats ? (
+              <div className="text-xs text-slate-500 animate-pulse">Loading categories...</div>
+            ) : (
+              <select
+                value={config.category}
+                onChange={(e) => setConfig((p) => ({ ...p, category: e.target.value }))}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#207D86] transition"
+              >
+                <option value="">Any Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id} className="bg-[#0A1D32]">{cat.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Difficulty */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Difficulty</label>
+            <div className="grid grid-cols-4 gap-2">
+              {["", "easy", "medium", "hard"].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setConfig((p) => ({ ...p, difficulty: d }))}
+                  className={`py-2 rounded-xl text-xs font-semibold border transition capitalize
+                    ${config.difficulty === d
+                      ? d === ""       ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
+                        : d === "easy"   ? "bg-green-400/15 border-green-400/30 text-green-400"
+                        : d === "medium" ? "bg-yellow-400/15 border-yellow-400/30 text-yellow-400"
+                        :                  "bg-red-400/15 border-red-400/30 text-red-400"
+                      : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"
+                    }`}
+                >
+                  {d === "" ? "Any" : d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          {/* Mode hint */}
+          <p className="text-xs text-slate-500">
+            {mode === "import"
+              ? "✅ Imported questions will be appended to your current quiz questions."
+              : "⚠️ Auto-generate will replace your current questions and pre-fill the quiz title with the selected category."
+            }
+          </p>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={importing || loadingCats}
+              className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40"
+            >
+              {importing
+                ? "Fetching..."
+                : mode === "import" ? `Import ${config.amount} Questions` : "Generate Quiz"
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════
 export default function CreateQuiz() {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  const [courseId, setCourseId] = useState("");
+  const [moduleId, setModuleId] = useState("");
   const [timeLimit, setTimeLimit] = useState(10);
   const [questions, setQuestions] = useState([emptyQuestion()]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState({ message: "", type: "" });
+  const [showTriviaModal, setShowTriviaModal] = useState(false);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -43,10 +226,27 @@ export default function CreateQuiz() {
 
   const resetForm = () => {
     setTitle("");
-    setCourseId("");
+    setModuleId("");
     setTimeLimit(10);
     setQuestions([emptyQuestion()]);
     setError("");
+  };
+
+  // ── Trivia Import Handler ──────────────────────────────────────────
+  const handleTriviaImport = ({ questions: imported, mode, category }) => {
+    if (mode === "import") {
+      setQuestions((prev) => {
+        const isStarterBlank =
+          prev.length === 1 && !prev[0].questionText && prev[0].options.every((o) => !o);
+        return isStarterBlank ? imported : [...prev, ...imported];
+      });
+      showToast(`${imported.length} questions imported successfully!`, "success");
+    } else {
+      setQuestions(imported);
+      if (category) setTitle(`${category} Quiz`);
+      setTimeLimit(Math.min(Math.max(Math.round(imported.length * 1.5), 5), 120));
+      showToast(`Quiz auto-generated with ${imported.length} questions!`, "success");
+    }
   };
 
   // ── Question helpers ──────────────────────────────────────────────
@@ -85,9 +285,9 @@ export default function CreateQuiz() {
   const handleSubmit = async (isPublished = false) => {
     setError("");
     if (!title.trim()) return setError("Quiz title is required.");
-    if (!courseId.trim()) return setError("Course ID is required.");
-    if (!/^[a-fA-F0-9]{24}$/.test(courseId.trim()))
-      return setError("Course ID is not valid. Please paste a correct MongoDB ObjectId.");
+    if (!moduleId.trim()) return setError("Module ID is required.");
+    if (!/^[a-fA-F0-9]{24}$/.test(moduleId.trim()))
+      return setError("Module ID is not valid. Please paste a correct MongoDB ObjectId.");
 
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
@@ -98,19 +298,16 @@ export default function CreateQuiz() {
 
     try {
       setLoading(true);
-      await createQuiz({
+      await quizService.createQuiz({
         title,
-        courseId: courseId.trim(),
+        moduleId: moduleId.trim(),
         timeLimit: Number(timeLimit),
         questions,
         isPublished,
       });
 
-      // Show toast, reset form, stay on same page
       showToast(
-        isPublished
-          ? "Quiz created & published successfully!"
-          : "Quiz saved as draft successfully!",
+        isPublished ? "Quiz created & published successfully!" : "Quiz saved as draft successfully!",
         "success"
       );
       resetForm();
@@ -128,6 +325,14 @@ export default function CreateQuiz() {
 
       {/* Toast */}
       <Toast message={toast.message} type={toast.type} />
+
+      {/* Trivia Modal */}
+      {showTriviaModal && (
+        <TriviaImportModal
+          onClose={() => setShowTriviaModal(false)}
+          onImport={handleTriviaImport}
+        />
+      )}
 
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-lg">
@@ -171,9 +376,19 @@ export default function CreateQuiz() {
 
         {/* ── Quiz Settings Card ───────────────────────────────── */}
         <div className="bg-[#0A1D32] rounded-2xl border border-white/5 p-6 space-y-5 shadow-xl">
-          <h2 className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest border-b border-white/5 pb-3">
-            Quiz Settings
-          </h2>
+
+          {/* Settings header with Trivia button */}
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <h2 className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">
+              Quiz Settings
+            </h2>
+            <button
+              onClick={() => setShowTriviaModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#207D86]/15 border border-[#207D86]/30 text-[#4CAF50] rounded-lg hover:bg-[#207D86]/25 transition text-xs font-semibold"
+            >
+              🌐 Import from Trivia DB
+            </button>
+          </div>
 
           {/* Title */}
           <div>
@@ -186,34 +401,34 @@ export default function CreateQuiz() {
             />
           </div>
 
-          {/* Course ID */}
+          {/* Module ID */}
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1.5">
-              Course ID
+              Module ID
               <span className="ml-2 text-xs text-slate-600 font-normal">
-                (MongoDB ObjectId of the course)
+                (MongoDB ObjectId of the module)
               </span>
             </label>
             <input
-              value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
+              value={moduleId}
+              onChange={(e) => setModuleId(e.target.value)}
               placeholder="e.g. 6998a9b741f544ca50307646"
               className={`w-full bg-white/5 border rounded-xl px-4 py-2.5 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:border-transparent transition
-                ${courseId && !/^[a-fA-F0-9]{24}$/.test(courseId)
+                ${moduleId && !/^[a-fA-F0-9]{24}$/.test(moduleId)
                   ? "border-red-400/40 focus:ring-red-400"
                   : "border-white/10 focus:ring-[#207D86]"
                 }`}
             />
-            {courseId && !/^[a-fA-F0-9]{24}$/.test(courseId) && (
+            {moduleId && !/^[a-fA-F0-9]{24}$/.test(moduleId) && (
               <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
                 Must be a 24-character MongoDB ObjectId
               </p>
             )}
-            {courseId && /^[a-fA-F0-9]{24}$/.test(courseId) && (
+            {moduleId && /^[a-fA-F0-9]{24}$/.test(moduleId) && (
               <p className="text-xs text-[#4CAF50] mt-1.5 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-[#4CAF50] rounded-full" />
-                Valid Course ID
+                Valid Module ID
               </p>
             )}
           </div>
@@ -225,10 +440,7 @@ export default function CreateQuiz() {
               <span className="text-[#4CAF50] font-semibold">{timeLimit} minutes</span>
             </label>
             <input
-              type="range"
-              min={5}
-              max={120}
-              step={5}
+              type="range" min={5} max={120} step={5}
               value={timeLimit}
               onChange={(e) => setTimeLimit(e.target.value)}
               className="w-full accent-[#4CAF50]"
@@ -239,6 +451,21 @@ export default function CreateQuiz() {
             </div>
           </div>
         </div>
+
+        {/* ── Questions Count Banner ────────────────────────────── */}
+        {questions.length > 1 && (
+          <div className="flex items-center justify-between px-4 py-2.5 bg-[#207D86]/10 border border-[#207D86]/20 rounded-xl">
+            <span className="text-xs text-[#4CAF50] font-semibold">
+              📋 {questions.length} questions in this quiz
+            </span>
+            <button
+              onClick={() => setQuestions([emptyQuestion()])}
+              className="text-xs text-red-400/50 hover:text-red-400 transition"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
         {/* ── Questions ────────────────────────────────────────── */}
         {questions.map((q, qIndex) => (
@@ -314,13 +541,21 @@ export default function CreateQuiz() {
           </div>
         ))}
 
-        {/* ── Add Question ─────────────────────────────────────── */}
-        <button
-          onClick={addQuestion}
-          className="w-full py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm"
-        >
-          + Add Another Question
-        </button>
+        {/* ── Bottom Action Bar ─────────────────────────────────── */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={addQuestion}
+            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm"
+          >
+            + Add Question Manually
+          </button>
+          <button
+            onClick={() => setShowTriviaModal(true)}
+            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm flex items-center justify-center gap-2"
+          >
+            🌐 Import from Trivia DB
+          </button>
+        </div>
 
         <div className="h-6" />
       </div>

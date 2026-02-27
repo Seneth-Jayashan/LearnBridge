@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStudentResults } from "../../services/QuizService.jsx";
+import quizService from "../../services/QuizService.jsx";
 
 export default function QuizResults() {
   const navigate = useNavigate();
@@ -11,9 +11,8 @@ export default function QuizResults() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const res = await getStudentResults();
-        // Handle both array and wrapped response
-        setResults(Array.isArray(res.data) ? res.data : res.data.results || []);
+        const data = await quizService.getStudentResults();
+        setResults(Array.isArray(data) ? data : data.results || []);
       } catch {
         setError("Failed to load your results.");
       } finally {

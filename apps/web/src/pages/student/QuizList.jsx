@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getQuizzesByCourse } from "../../services/QuizService";
+import quizService from "../../services/QuizService";
 
 export default function QuizList() {
-  const { courseId } = useParams();
+  const { moduleId } = useParams();
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,9 +12,8 @@ export default function QuizList() {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await getQuizzesByCourse(courseId);
-        // Handle both array and wrapped response
-        setQuizzes(Array.isArray(res.data) ? res.data : res.data.quizzes || []);
+        const data = await quizService.getQuizzesByModule(moduleId);
+        setQuizzes(Array.isArray(data) ? data : data.quizzes || []);
       } catch {
         setError("Failed to load quizzes.");
       } finally {
@@ -22,7 +21,7 @@ export default function QuizList() {
       }
     };
     fetchQuizzes();
-  }, [courseId]);
+  }, [moduleId]);
 
   // ── Loading ───────────────────────────────────────────────────────
   if (loading) return (
@@ -43,7 +42,7 @@ export default function QuizList() {
           onClick={() => navigate(-1)}
           className="text-sm text-slate-400 hover:text-white transition mb-1 block"
         >
-          ← Back to Course
+          ← Back to Module
         </button>
         <h1 className="text-lg font-bold text-white tracking-wide">Available Quizzes</h1>
       </div>
