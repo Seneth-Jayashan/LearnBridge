@@ -50,7 +50,7 @@ const authService = {
 
   // --- Registration & Account Management ---
   async registerDonor(userData) {
-    return await api.post("/user/register-donor", userData);
+    return await api.post("/users/register-donor", userData);
   },
 
   async restoreAccount(identifier) {

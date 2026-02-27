@@ -8,6 +8,11 @@ import {
     updateSchoolStudent,
     deactivateStudent,
     getPendingTeachers,
+    getMySchoolDetails,
+    createNeed,
+    getMyPostedNeeds,
+    updateNeed,
+    deleteNeed
     getVerifiedTeachers,
     verifySchoolTeacher,
     removeTeacherFromSchool
@@ -52,5 +57,11 @@ router.get("/teachers/pending", getPendingTeachers);
 
 router.patch("/teachers/:teacherId/verify", verifySchoolTeacher);
 router.delete("/teachers/:teacherId/remove", removeTeacherFromSchool);
+
+// ── School Admin Routes (Needs Registry CRUD) ──────────────────
+router.post("/needs", protect, restrictTo("school_admin"), createNeed);
+router.get("/school/my-needs", protect, restrictTo("school_admin"), getMyPostedNeeds);
+router.put("/school/:id", protect, restrictTo("school_admin"), updateNeed);
+router.delete("/school/:id", protect, restrictTo("school_admin"), deleteNeed);
 
 export default router;

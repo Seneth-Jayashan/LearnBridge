@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
+import ResourceRequest from "../models/ResourceRequest.js";
 import { sendAccountCreationSms } from "../utils/templates/SMS.js";
 import { accountCreationEmail } from "../utils/templates/Email.js";
 
@@ -261,4 +262,113 @@ export const removeTeacherFromSchool = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
+};
+
+// ─── SCHOOL ADMIN: CREATE A NEED ─────────────────────────────────────────────
+// POST /api/donations
+export const createNeed = async (req, res) => {
+  try {
+    const { itemName, quantity, amount, description, urgency } = req.body;
+
+    if (!itemName || !quantity) {
+      return res.status(400).json({ message: "Item name and quantity are required." });
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Please enter a valid amount." });
+    }
+
+    const need = await ResourceRequest.create({
+      schoolId: req.user._id,                    // ← school_admin user _id
+      schoolObjectId: req.user.school || null,   // ← actual school ObjectId
+      itemName,
+      quantity,
+      amount: Number(amount),
+      description,
+      urgency: urgency || "Medium",
+      status: "Open",
+    });
+
+    res.status(201).json({ message: "Need posted successfully", need });
+  } catch (err) {
+    console.error("createNeed error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─── SCHOOL ADMIN: GET MY POSTED NEEDS ───────────────────────────────────────
+// GET /api/donations/school/my-needs
+export const getMyPostedNeeds = async (req, res) => {
+  try {
+    const needs = await ResourceRequest.find({ schoolId: req.user._id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(needs);
+  } catch (err) {
+    console.error("getMyPostedNeeds error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─── SCHOOL ADMIN: UPDATE A NEED ─────────────────────────────────────────────
+// PUT /api/donations/school/:id
+export const updateNeed = async (req, res) => {
+  try {
+    const need = await ResourceRequest.findById(req.params.id);
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.schoolId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to edit this need" });
+    }
+
+    if (need.status !== "Open") {
+      return res.status(400).json({
+        message: "Cannot edit a need that is already pledged or fulfilled",
+      });
+    }
+
+    const { itemName, quantity, amount, description, urgency } = req.body;
+
+    if (itemName) need.itemName = itemName;
+    if (quantity) need.quantity = quantity;
+    if (amount && Number(amount) > 0) need.amount = Number(amount); // ← add this
+    if (description !== undefined) need.description = description;
+    if (urgency) need.urgency = urgency;
+
+    await need.save();
+
+    res.status(200).json({ message: "Need updated successfully", need });
+  } catch (err) {
+    console.error("updateNeed error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+// ─── SCHOOL ADMIN: DELETE A NEED ─────────────────────────────────────────────
+// DELETE /api/donations/school/:id
+export const deleteNeed = async (req, res) => {
+  try {
+    const need = await ResourceRequest.findById(req.params.id);
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.schoolId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this need" });
+    }
+
+    if (need.status !== "Open") {
+      return res.status(400).json({ message: "Cannot delete a need that is already pledged or fulfilled" });
+    }
+
+    await need.deleteOne();
+
+    res.status(200).json({ message: "Need deleted successfully" });
+  } catch (err) {
+    console.error("deleteNeed error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };

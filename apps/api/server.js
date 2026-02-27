@@ -1,5 +1,5 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import "./config/env.js"; 
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -12,7 +12,6 @@ import { fileURLToPath } from 'url';
 import connectDB from './config/Database.js'; 
 import routes from './routes.js';
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -54,6 +53,10 @@ const limiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
 });
+// Only enable rate limiting in production
+if (process.env.NODE_ENV === "production") {
+   app.use(limiter);
+}
 
 // Relaxed limiter specifically for PDF generation (large payloads + slow AI processing)
 const pdfLimiter = rateLimit({
@@ -63,8 +66,6 @@ const pdfLimiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Too many PDF generation requests. Please wait before trying again." }
 });
-
-app.use(limiter);
 
 // ── Body Parsers ──────────────────────────────────────────────────────
 

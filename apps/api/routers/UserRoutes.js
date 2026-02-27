@@ -5,8 +5,8 @@ import {
     updateUserProfile, 
     updateUserPassword, 
     deleteUserProfile, 
-    restoreUserProfile 
-} from "../controllers/UserController.js"; 
+    restoreUserProfile,
+} from "../controllers/UserController.js";
 
 import { getPublicSchools } from "../controllers/SchoolController.js";
 
