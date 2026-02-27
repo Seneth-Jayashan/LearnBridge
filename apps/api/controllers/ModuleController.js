@@ -64,7 +64,16 @@ export const createModule = async (req, res) => {
 // --- Get All Modules ---
 export const getAllModules = async (req, res) => {
     try {
-        const modules = await Module.find()
+        const query = {};
+
+        if (req.user?.role === "student") {
+            if (!req.user.grade) {
+                return res.status(200).json([]);
+            }
+            query.grade = req.user.grade;
+        }
+
+        const modules = await Module.find(query)
             .populate("level", "name description")
             .populate("grade", "name description")
             .sort({ createdAt: -1 });

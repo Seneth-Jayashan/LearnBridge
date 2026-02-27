@@ -27,6 +27,20 @@ const canManageLesson = (user, lesson) => {
   return false;
 };
 
+const canViewLesson = (user, lesson) => {
+  if (canManageLesson(user, lesson)) return true;
+
+  if (user.role === "student") {
+    return (
+      Boolean(user.grade) &&
+      Boolean(lesson?.module?.grade) &&
+      user.grade.toString() === lesson.module.grade.toString()
+    );
+  }
+
+  return false;
+};
+
 const toNullableObjectId = (value) => {
   if (!value) return null;
   return mongoose.Types.ObjectId.isValid(value) ? value : null;
@@ -160,15 +174,37 @@ export const createLesson = async (req, res) => {
 export const getAllLessons = async (req, res) => {
   try {
     const query = {};
+    const requestedModuleId =
+      req.query.module && mongoose.Types.ObjectId.isValid(req.query.module)
+        ? req.query.module
+        : null;
 
     if (req.user.role === "teacher") {
       query.createdBy = req.user._id;
     } else if (req.user.role === "school_admin" && req.user.school) {
       query.school = req.user.school;
+    } else if (req.user.role === "student") {
+      if (!req.user.grade) {
+        return res.status(200).json([]);
+      }
+
+      const moduleQuery = { grade: req.user.grade };
+      if (requestedModuleId) {
+        moduleQuery._id = requestedModuleId;
+      }
+
+      const modules = await Module.find(moduleQuery).select("_id");
+      const moduleIds = modules.map((moduleItem) => moduleItem._id);
+
+      if (moduleIds.length === 0) {
+        return res.status(200).json([]);
+      }
+
+      query.module = { $in: moduleIds };
     }
 
-    if (req.query.module && mongoose.Types.ObjectId.isValid(req.query.module)) {
-      query.module = req.query.module;
+    if (requestedModuleId && req.user.role !== "student") {
+      query.module = requestedModuleId;
     }
 
     const lessons = await Lesson.find(query)
@@ -215,7 +251,7 @@ export const getLessonById = async (req, res) => {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    if (!canManageLesson(req.user, lesson)) {
+    if (!canViewLesson(req.user, lesson)) {
       return res
         .status(403)
         .json({ message: "You do not have permission to view this lesson" });
@@ -229,13 +265,13 @@ export const getLessonById = async (req, res) => {
 
 export const getLessonMaterialDownloadUrl = async (req, res) => {
   try {
-    const lesson = await Lesson.findById(req.params.id);
+    const lesson = await Lesson.findById(req.params.id).populate("module", "grade");
 
     if (!lesson) {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    if (!canManageLesson(req.user, lesson)) {
+    if (!canViewLesson(req.user, lesson)) {
       return res
         .status(403)
         .json({ message: "You do not have permission to view this lesson material" });
