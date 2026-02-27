@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import KnowledgeBase from "../models/KnowledgeBase.js";
+import Lesson from "../models/Lesson.js";
 import {
   uploadFileToCloudinary,
   deleteCloudinaryAssetFromUrl,
@@ -176,6 +177,36 @@ export const deleteKnowledgeBaseEntry = async (req, res) => {
 
     if (!canManageEntry(req.user, entry)) {
       return res.status(403).json({ message: "You do not have permission to delete this entry" });
+    }
+
+    const attachments = Array.isArray(entry.attachmentUrl)
+      ? entry.attachmentUrl
+      : (entry.attachmentUrl ? [entry.attachmentUrl] : []);
+
+    if (attachments.length) {
+      const referencedLessons = await Lesson.find({
+        $or: [
+          { materialUrl: { $in: attachments } },
+          { videoUrl: { $in: attachments } },
+        ],
+      }).select("materialUrl videoUrl");
+
+      const referencedMediaUrls = new Set();
+      referencedLessons.forEach((lesson) => {
+        if (lesson.materialUrl) referencedMediaUrls.add(lesson.materialUrl);
+        if (lesson.videoUrl) referencedMediaUrls.add(lesson.videoUrl);
+      });
+
+      for (const mediaUrl of attachments) {
+        if (referencedMediaUrls.has(mediaUrl)) {
+          continue;
+        }
+        try {
+          await deleteCloudinaryAssetFromUrl(mediaUrl);
+        } catch {
+          // best-effort cleanup
+        }
+      }
     }
 
     await KnowledgeBase.deleteOne({ _id: entry._id });

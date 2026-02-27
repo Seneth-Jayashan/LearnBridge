@@ -5,6 +5,7 @@ import {
   getAllAssignments,
   getAssignmentById,
   getAssignmentMaterialDownloadUrl,
+  getAssignmentSubmissionDownloadUrl,
   getAssignmentSubmissions,
   getMyAssignmentSubmission,
   submitAssignment,
@@ -41,6 +42,10 @@ router.route("/:id/my-submission").get(restrictTo("student"), getMyAssignmentSub
 router
   .route("/:id/submissions")
   .get(restrictTo("teacher", "school_admin", "super_admin"), getAssignmentSubmissions);
+
+router
+  .route("/:id/submissions/:submissionId/download")
+  .get(restrictTo("teacher", "school_admin", "super_admin"), getAssignmentSubmissionDownloadUrl);
 
 router
   .route("/:id")

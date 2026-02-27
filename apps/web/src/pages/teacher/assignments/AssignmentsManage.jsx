@@ -17,6 +17,7 @@ const AssignmentsManage = () => {
   const [error, setError] = useState("");
   const [submissionsByAssignment, setSubmissionsByAssignment] = useState({});
   const [submissionsLoading, setSubmissionsLoading] = useState({});
+  const [submissionsDownloading, setSubmissionsDownloading] = useState({});
   const [openSubmissions, setOpenSubmissions] = useState({});
 
   const loadData = async (q = "") => {
@@ -80,6 +81,29 @@ const AssignmentsManage = () => {
       setError(err?.response?.data?.message || "Failed to load assignment submissions");
     } finally {
       setSubmissionsLoading((prev) => ({ ...prev, [assignmentId]: false }));
+    }
+  };
+
+  const handleDownload = async (submission, assignmentId) => {
+    if (!submission?.fileUrl) return;
+    setError("");
+    setSubmissionsDownloading((prev) => ({ ...prev, [submission._id]: true }));
+    try {
+      const { downloadUrl } = await assignmentService.getSubmissionDownloadUrl(assignmentId, submission._id);
+      if (!downloadUrl) throw new Error("Download URL unavailable");
+
+      // Navigate to the signed download URL to let the browser handle the download.
+      window.location.assign(downloadUrl);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Failed to download file");
+      // Fallback: open original file URL in a new tab
+      try {
+        window.open(submission.fileUrl, '_blank', 'noopener');
+      } catch {
+        // ignore
+      }
+    } finally {
+      setSubmissionsDownloading((prev) => ({ ...prev, [submission._id]: false }));
     }
   };
 
@@ -175,14 +199,14 @@ const AssignmentsManage = () => {
                               </p>
                             </div>
                             {submission?.fileUrl ? (
-                              <a
-                                href={submission.fileUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center px-2.5 py-1 rounded-md border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                              <button
+                                type="button"
+                                onClick={() => handleDownload(submission, assignment._id)}
+                                disabled={Boolean(submissionsDownloading[submission._id])}
+                                className="inline-flex items-center px-2.5 py-1 rounded-md border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                               >
-                                View Work
-                              </a>
+                                {submissionsDownloading[submission._id] ? 'Downloading...' : 'Download Work'}
+                              </button>
                             ) : null}
                           </div>
                         ))}

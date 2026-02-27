@@ -101,6 +101,16 @@ const assignmentService = {
     });
     return response.data;
   },
+
+  async getSubmissionDownloadUrl(assignmentId, submissionId) {
+    const response = await api.get(`${assignmentPath(assignmentId)}/submissions/${submissionId}/download`, {
+      headers: getAuthHeaders(),
+    });
+    return {
+      downloadUrl: response.data?.downloadUrl || "",
+      fileName: response.data?.fileName || "",
+    };
+  },
 };
 
 export default assignmentService;

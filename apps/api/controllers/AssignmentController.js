@@ -419,11 +419,23 @@ export const deleteAssignment = async (req, res) => {
 
     const materialUrl = assignment.materialUrl || "";
 
+    const submissions = await AssignmentSubmission.find({ assignment: assignment._id }).select(
+      "fileUrl",
+    );
+    const submissionFileUrls = submissions
+      .map((submission) => submission.fileUrl)
+      .filter((fileUrl) => Boolean(fileUrl));
+
     await AssignmentSubmission.deleteMany({ assignment: assignment._id });
     await Assignment.findByIdAndDelete(assignment._id);
 
-    if (materialUrl) {
-      await Promise.allSettled([deleteCloudinaryAssetFromUrl(materialUrl)]);
+    const cloudinaryDeletionTasks = [
+      ...submissionFileUrls.map((fileUrl) => deleteCloudinaryAssetFromUrl(fileUrl)),
+      ...(materialUrl ? [deleteCloudinaryAssetFromUrl(materialUrl)] : []),
+    ];
+
+    if (cloudinaryDeletionTasks.length > 0) {
+      await Promise.allSettled(cloudinaryDeletionTasks);
     }
 
     return res.status(200).json({ message: "Assignment deleted successfully" });
@@ -451,6 +463,45 @@ export const getMyAssignmentSubmission = async (req, res) => {
     });
 
     return res.status(200).json({ submission });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getAssignmentSubmissionDownloadUrl = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+
+    if (!canManageAssignment(req.user, assignment)) {
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to download this submission" });
+    }
+
+    const submissionId = req.params.submissionId;
+    if (!submissionId) {
+      return res.status(400).json({ message: "Submission id is required" });
+    }
+
+    const submission = await AssignmentSubmission.findById(submissionId);
+    if (!submission || String(submission.assignment) !== String(assignment._id)) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    if (!submission.fileUrl) {
+      return res.status(404).json({ message: "Submission file not found" });
+    }
+
+    const fileName = getCloudinaryFileNameFromUrl(submission.fileUrl);
+    const downloadUrl = createSignedDownloadUrlFromCloudinaryUrl(submission.fileUrl, {
+      expiresInSeconds: 300,
+      fileName,
+    });
+
+    return res.status(200).json({ downloadUrl, fileName });
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
