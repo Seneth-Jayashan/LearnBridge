@@ -8,6 +8,8 @@ import {
     validateUpdateModuleBusinessRules,
 } from "../validators/ModuleValidator.js";
 
+const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // --- Create a New Module ---
 export const createModule = async (req, res) => {
     try {
@@ -72,7 +74,7 @@ export const getAllModules = async (req, res) => {
             if (!req.user.grade) {
                 return res.status(200).json([]);
             }
-            match.grade = mongoose.Types.ObjectId(req.user.grade);
+            match.grade = new mongoose.Types.ObjectId(req.user.grade);
         }
 
         // Optional filters from query params (admin/others can use)
@@ -81,16 +83,16 @@ export const getAllModules = async (req, res) => {
             if (grade === "__unassigned") {
                 match.grade = { $exists: false };
             } else if (mongoose.Types.ObjectId.isValid(grade)) {
-                match.grade = mongoose.Types.ObjectId(grade);
+                match.grade = new mongoose.Types.ObjectId(grade);
             }
         }
         if (level && mongoose.Types.ObjectId.isValid(level)) {
-            match.level = mongoose.Types.ObjectId(level);
+            match.level = new mongoose.Types.ObjectId(level);
         }
 
         // If a text query is provided, use aggregation to search module.name, grade.name, level.name
         if (q && String(q).trim()) {
-            const re = new RegExp(String(q).trim(), 'i');
+            const re = new RegExp(escapeRegExp(String(q).trim()), 'i');
             const pipeline = [];
             if (Object.keys(match).length) pipeline.push({ $match: match });
 
@@ -115,6 +117,7 @@ export const getAllModules = async (req, res) => {
             .sort({ createdAt: -1 });
         res.status(200).json(modules);
     } catch (error) {
+        console.error("getAllModules error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };

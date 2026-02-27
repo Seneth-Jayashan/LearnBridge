@@ -46,6 +46,8 @@ const toNullableObjectId = (value) => {
   return mongoose.Types.ObjectId.isValid(value) ? value : null;
 };
 
+const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const ensureHasResource = (materialUrl, videoUrl) => Boolean(materialUrl || videoUrl);
 const isTruthy = (value) => {
   if (value === true || value === 1) return true;
@@ -204,7 +206,10 @@ export const getAllLessons = async (req, res) => {
       // created by non-school teachers (lesson.school === null) so global
       // lessons are visible to students.
       query.module = { $in: moduleIds };
-      query.$or = [{ school: req.user.school }, { school: null }];
+      const studentSchoolId = toNullableObjectId(req.user.school);
+      query.$or = studentSchoolId
+        ? [{ school: studentSchoolId }, { school: null }]
+        : [{ school: null }];
     }
 
     if (requestedModuleId && req.user.role !== "student") {
@@ -247,7 +252,7 @@ export const getAllLessons = async (req, res) => {
     }
 
     if (q && String(q).trim()) {
-      const re = new RegExp(String(q).trim(), "i");
+      const re = new RegExp(escapeRegExp(String(q).trim()), "i");
       filtered = filtered.filter((l) => {
         if (re.test(l.title || "")) return true;
         if (l.module && re.test(l.module.name || "")) return true;
@@ -258,6 +263,7 @@ export const getAllLessons = async (req, res) => {
 
     res.status(200).json(filtered);
   } catch (error) {
+    console.error("getAllLessons error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
