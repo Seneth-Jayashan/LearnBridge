@@ -8,11 +8,10 @@ import {
     updateSchoolStudent,
     deactivateStudent,
     getPendingTeachers,
-    getMySchoolDetails,
     createNeed,
     getMyPostedNeeds,
     updateNeed,
-    deleteNeed
+    deleteNeed,
     getVerifiedTeachers,
     verifySchoolTeacher,
     removeTeacherFromSchool
