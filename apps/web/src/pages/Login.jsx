@@ -29,7 +29,7 @@ const Login = () => {
     <div className="min-h-screen w-full flex flex-col md:flex-row font-sans text-slate-800">
       
       {/* --- Left Side: Brand Section (Gradient) --- */}
-      <div className="relative flex flex-col justify-center items-center w-full md:w-1/2 p-10 overflow-hidden bg-gradient-to-br from-[#0E2A47] via-[#207D86] to-[#4CAF50] text-white text-center">
+      <div className="relative flex flex-col justify-center items-center w-full md:w-1/2 p-10 overflow-hidden bg-linear-to-br from-[#0E2A47] via-[#207D86] to-[#4CAF50] text-white text-center">
         
         {/* Decorative Background Circles */}
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-white/10 blur-3xl"></div>
@@ -124,7 +124,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-[#0E2A47] to-[#207D86] hover:from-[#091E33] hover:to-[#18646C] text-white text-lg font-bold rounded-xl shadow-lg shadow-[#207D86]/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-3.5 px-4 bg-linear-to-r from-[#0E2A47] to-[#207D86] hover:from-[#091E33] hover:to-[#18646C] text-white text-lg font-bold rounded-xl shadow-lg shadow-[#207D86]/20 hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <span>Signing in...</span>
