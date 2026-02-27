@@ -128,14 +128,14 @@ export const confirmPayment = async (req, res) => {
       return res.status(400).json({ message: "Order ID mismatch" });
     }
 
-    if (need.status === "Pledged") {
-      return res.status(200).json({ message: "Already confirmed", need });
+    if (need.status === "Fulfilled") {
+      return res.status(200).json({ message: "Already fulfilled", need });
     }
 
-    // ── Update ResourceRequest ─────────────────────────────
-    need.status = "Pledged";
+    need.status = "Fulfilled";        
     need.donorId = req.user._id;
     need.pledgedDate = new Date();
+    need.fulfilledDate = new Date();  
     need.paymentStatus = "Completed";
     need.paymentMethod = "PayHere";
     await need.save();
@@ -197,9 +197,10 @@ export const paymentNotify = async (req, res) => {
     if (!need) return res.status(404).send("Need not found");
 
     if (status_code === "2") {
-      need.status = "Pledged";
+      need.status = "Fulfilled";        
       need.donorId = donorId;
       need.pledgedDate = new Date();
+      need.fulfilledDate = new Date();  
       need.paymentStatus = "Completed";
       need.paymentMethod = method;
       await need.save();
