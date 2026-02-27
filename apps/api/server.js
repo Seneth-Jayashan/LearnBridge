@@ -44,6 +44,9 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('combined'));
 }
 
+// ── Rate Limiters ─────────────────────────────────────────────────────
+
+// General limiter for all routes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
     max: 100, 
@@ -51,13 +54,32 @@ const limiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
 });
-app.use('/api', limiter);
 
+// Relaxed limiter specifically for PDF generation (large payloads + slow AI processing)
+const pdfLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many PDF generation requests. Please wait before trying again." }
+});
+
+app.use(limiter);
+
+// ── Body Parsers ──────────────────────────────────────────────────────
+
+// Large limit for PDF base64 uploads
+app.use('/api/v1/pdf', express.json({ limit: '50mb' }));
+app.use('/api/v1/pdf', express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/api/v1/pdf', pdfLimiter);
+
+// Standard limit for all other routes
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Mongo Sanitize ────────────────────────────────────────────────────
 app.use((req, res, next) => {
     if (req.body) req.body = mongoSanitize.sanitize(req.body);
     if (req.params) req.params = mongoSanitize.sanitize(req.params);
@@ -70,6 +92,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1', routes);
 
+// ── Base Routes ───────────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'LearnBridge API is running secure & fast!' });
 });
