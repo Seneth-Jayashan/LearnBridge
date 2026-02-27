@@ -6,19 +6,23 @@ const PDFParser = require("pdf2json");
 export const generateQuestionsFromPDF = async (req, res) => {
   try {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    const { pdfBase64, amount, difficulty } = req.body;
+
+    // ⬇️ NOW WE READ FROM MULTER
+    const { amount, difficulty } = req.body;
+    const file = req.file;
 
     console.log("✅ PDF route hit");
     console.log("📦 Amount:", amount);
     console.log("🎯 Difficulty:", difficulty);
-    console.log("📄 PDF data length:", pdfBase64?.length ?? "MISSING");
+    console.log("📄 File received:", !!file);
     console.log("🔑 Groq Key present:", !!process.env.GROQ_API_KEY);
 
-    if (!pdfBase64) {
-      return res.status(400).json({ message: "No PDF data received." });
+    // If no file uploaded
+    if (!file) {
+      return res.status(400).json({ message: "No PDF uploaded." });
     }
 
-    // ── Extract text from PDF ──────────────────────────────────────
+    // ── Extract text from PDF ─────────────────────────────
     const extractedText = await new Promise((resolve, reject) => {
       const pdfParser = new PDFParser(null, 1);
 
@@ -31,24 +35,28 @@ export const generateQuestionsFromPDF = async (req, res) => {
         resolve(text);
       });
 
-      const pdfBuffer = Buffer.from(pdfBase64, "base64");
+      // ⭐ HERE IS THE REAL FIX
+      const pdfBuffer = file.buffer;
       pdfParser.parseBuffer(pdfBuffer);
     });
 
     if (!extractedText || extractedText.trim().length < 50) {
-      return res.status(400).json({ 
-        message: "Could not extract text from PDF. Make sure it is not a scanned image." 
+      return res.status(400).json({
+        message: "Could not extract text from PDF. The PDF may be scanned (image-based).",
       });
     }
 
     console.log("📝 Extracted text length:", extractedText.length);
 
+    // Difficulty text
     const difficultyInstruction =
-      difficulty === "easy"   ? "simple and straightforward" :
-      difficulty === "medium" ? "moderately challenging" :
-                                "challenging and detailed";
+      difficulty === "easy"
+        ? "simple and straightforward"
+        : difficulty === "medium"
+        ? "moderately challenging"
+        : "challenging and detailed";
 
-    // ── Send to Groq ───────────────────────────────────────────────
+    // ── Send to Groq AI ──────────────────────────────────
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
@@ -58,23 +66,21 @@ export const generateQuestionsFromPDF = async (req, res) => {
 
 Requirements:
 - Each question must be ${difficultyInstruction}
-- Each question must have exactly 4 options (A, B, C, D)
-- Only one option should be correct
-- Questions must be directly based on the document content
-- Do NOT include any preamble, explanation, or markdown
+- Each question must have exactly 4 options
+- Only one option correct
+- No explanations
 
-Respond ONLY with a valid JSON array in this exact format with no extra text:
+Return ONLY valid JSON array:
+
 [
   {
     "questionText": "Question here?",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "options": ["A","B","C","D"],
     "correctAnswer": 0
   }
 ]
 
-Where correctAnswer is the 0-based index of the correct option.
-
-Document content:
+Document:
 ${extractedText.trim().slice(0, 8000)}`,
         },
       ],
@@ -86,15 +92,14 @@ ${extractedText.trim().slice(0, 8000)}`,
     const clean = rawText.replace(/```json|```/g, "").trim();
     const questions = JSON.parse(clean);
 
-    res.status(200).json({ questions });
+    return res.status(200).json({ questions });
 
   } catch (error) {
-    console.error("❌ Full error:", JSON.stringify(error.response?.data ?? error.message, null, 2));
-    res.status(500).json({
+    console.error("❌ ERROR:", error.message);
+
+    return res.status(500).json({
       message: "Failed to generate questions.",
       error: error.message,
-      detail: error.response?.data,
     });
   }
 };
-

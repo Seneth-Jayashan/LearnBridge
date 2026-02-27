@@ -172,37 +172,41 @@ const ImportModal = ({ onClose, onImport }) => {
   };
 
   // ── Uses PdfService instead of direct Anthropic fetch ─────────────
-  const generateFromPDF = async () => {
-    if (!pdfFile) return setPdfError("Please upload a PDF first.");
-    setPdfError("");
-    setGenerating(true);
+ // ── Generate Questions From PDF (CORRECT MULTER VERSION) ─────────────
+const generateFromPDF = async () => {
+  if (!pdfFile) {
+    setPdfError("Please upload a PDF first.");
+    return;
+  }
 
-    try {
-      // Convert PDF file to base64
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = () => reject(new Error("Failed to read file."));
-        reader.readAsDataURL(pdfFile);
-      });
+  setPdfError("");
+  setGenerating(true);
 
-      // Call backend via PdfService
-      const { questions } = await pdfService.generateQuestionsFromPDF(
-        base64,
-        pdfConfig.amount,
-        pdfConfig.difficulty
-      );
+  try {
+    // Send actual file instead of base64
+    const { questions } = await pdfService.generateQuestionsFromPDF(
+      pdfFile,
+      pdfConfig.amount,
+      pdfConfig.difficulty
+    );
 
-      if (!questions || questions.length === 0)
-        throw new Error("No questions were generated. Try a different PDF.");
-
-      setGeneratedQuestions(questions);
-    } catch (err) {
-      setPdfError(err.response?.data?.message || err.message || "Failed to generate questions.");
-    } finally {
-      setGenerating(false);
+    if (!questions || questions.length === 0) {
+      throw new Error("No questions were generated. Try a different PDF.");
     }
-  };
+
+    setGeneratedQuestions(questions);
+  } catch (err) {
+    console.error("PDF generation error:", err);
+
+    setPdfError(
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to generate questions."
+    );
+  } finally {
+    setGenerating(false);
+  }
+};
 
   const handlePDFConfirm = (selectedQuestions) => {
     onImport({ questions: selectedQuestions, mode: "import", source: "pdf" });
