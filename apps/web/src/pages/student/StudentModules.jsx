@@ -2,6 +2,64 @@ import { useEffect, useMemo, useState } from "react";
 import moduleService from "../../services/ModuleService";
 import lessonService from "../../services/LessonService";
 
+const toPublicMediaUrl = (value) => {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value) || /^blob:/i.test(value)) return value;
+  const apiBase =
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+  const origin = apiBase.replace(/\/api\/v1\/?$/i, "");
+  return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
+const inferFileNameFromUrl = (url) => {
+  if (!url) return "";
+  try {
+    const parsedUrl = new URL(url);
+    const pathSegments = parsedUrl.pathname.split("/").filter(Boolean);
+    const lastSegment = pathSegments[pathSegments.length - 1] || "";
+    return decodeURIComponent(lastSegment).trim();
+  } catch {
+    return "";
+  }
+};
+
+const triggerBrowserDownload = (url, fileName = "") => {
+  if (!url) return;
+  const link = document.createElement("a");
+  link.href = url;
+  if (fileName) {
+    link.download = fileName;
+  }
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const downloadFile = async (url, fileName = "", forceBlobDownload = false) => {
+  if (!url) return;
+  if (/^blob:/i.test(url)) {
+    triggerBrowserDownload(url, fileName || "resource");
+    return;
+  }
+  if (forceBlobDownload) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to download file");
+    const fileBlob = await response.blob();
+    const objectUrl = URL.createObjectURL(fileBlob);
+    try {
+      triggerBrowserDownload(
+        objectUrl,
+        fileName || inferFileNameFromUrl(url) || "resource",
+      );
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+    return;
+  }
+  triggerBrowserDownload(url, fileName || inferFileNameFromUrl(url) || "resource");
+};
+
 const StudentModules = () => {
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]);
@@ -94,6 +152,46 @@ const StudentModules = () => {
     });
   }, [modules, lessons, searchQuery]);
 
+  const handleMaterialDownload = async (lesson) => {
+    if (!lesson?.materialUrl) return;
+    const fallbackUrl = toPublicMediaUrl(lesson.materialUrl);
+    if (!lesson._id) {
+      await downloadFile(fallbackUrl, inferFileNameFromUrl(fallbackUrl), true);
+      return;
+    }
+    try {
+      const { downloadUrl: signedUrl, fileName } =
+        await lessonService.getMaterialDownloadUrl(lesson._id);
+      await downloadFile(
+        signedUrl || fallbackUrl,
+        fileName || inferFileNameFromUrl(signedUrl || fallbackUrl),
+        true,
+      );
+    } catch {
+      setError("Failed to download lesson material");
+    }
+  };
+
+  const handleVideoDownload = async (lesson) => {
+    if (!lesson?.videoUrl) return;
+    const fallbackUrl = toPublicMediaUrl(lesson.videoUrl);
+    if (!lesson._id) {
+      await downloadFile(fallbackUrl, inferFileNameFromUrl(fallbackUrl));
+      return;
+    }
+    try {
+      const { downloadUrl: signedUrl, fileName } =
+        await lessonService.getVideoDownloadUrl(lesson._id);
+      const resolvedVideoUrl = toPublicMediaUrl(signedUrl || fallbackUrl);
+      await downloadFile(
+        resolvedVideoUrl,
+        fileName || inferFileNameFromUrl(resolvedVideoUrl),
+      );
+    } catch {
+      setError("Failed to download lesson video");
+    }
+  };
+
   return (
     <section className="space-y-6">
       <div>
@@ -172,25 +270,23 @@ const StudentModules = () => {
 
                         <div className="mt-2 flex flex-wrap gap-2">
                           {lesson.materialUrl ? (
-                            <a
-                              href={lesson.materialUrl}
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleMaterialDownload(lesson)}
                               className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                             >
                               Material
-                            </a>
+                            </button>
                           ) : null}
 
                           {lesson.videoUrl ? (
-                            <a
-                              href={lesson.videoUrl}
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleVideoDownload(lesson)}
                               className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                             >
                               Video
-                            </a>
+                            </button>
                           ) : null}
 
                           {lesson?.onlineMeeting?.joinUrl ? (

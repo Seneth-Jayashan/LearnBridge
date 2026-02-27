@@ -329,6 +329,33 @@ export const getLessonMaterialDownloadUrl = async (req, res) => {
   }
 };
 
+export const getLessonVideoDownloadUrl = async (req, res) => {
+  try {
+    const lesson = await Lesson.findById(req.params.id).populate("module", "grade");
+
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+
+    if (!canViewLesson(req.user, lesson)) {
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to view this lesson video" });
+    }
+
+    if (!lesson.videoUrl) {
+      return res.status(404).json({ message: "Lesson video not found" });
+    }
+
+    const fileName = getCloudinaryFileNameFromUrl(lesson.videoUrl);
+    const downloadUrl = lesson.videoUrl;
+
+    return res.status(200).json({ downloadUrl, fileName });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export const updateLesson = async (req, res) => {
   try {
     const {

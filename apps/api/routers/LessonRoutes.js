@@ -4,6 +4,7 @@ import {
   getAllLessons,
   getLessonById,
   getLessonMaterialDownloadUrl,
+  getLessonVideoDownloadUrl,
   updateLesson,
   deleteLesson,
 } from "../controllers/LessonController.js";
@@ -30,6 +31,7 @@ router
   .get(getAllLessons);
 
 router.route("/:id/material-download").get(getLessonMaterialDownloadUrl);
+router.route("/:id/video-download").get(getLessonVideoDownloadUrl);
 
 router
   .route("/:id")

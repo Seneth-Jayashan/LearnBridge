@@ -92,6 +92,16 @@ const lessonService = {
       fileName: response.data?.fileName || "",
     };
   },
+
+  async getVideoDownloadUrl(id) {
+    const response = await api.get(`${lessonPath(id)}/video-download`, {
+      headers: getAuthHeaders(),
+    });
+    return {
+      downloadUrl: response.data?.downloadUrl || "",
+      fileName: response.data?.fileName || "",
+    };
+  },
 };
 
 export default lessonService;
