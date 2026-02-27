@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import RegisterDonor from "./pages/RegisterDonor";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
+import KnowledgeBasePublic from "./pages/KnowledgeBase/KnowledgeBasePublic";
 
 // --- Role-Specific Route Modules ---
 import AdminRoutes from "./routes/AdminRoutes";       // Super Admin
@@ -63,6 +64,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register-donor" element={<RegisterDonor />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="/knowledge-base" element={<KnowledgeBasePublic />} />
                 
                 {/* Generic Dashboard Route (Smart Router) */}
                 <Route element={<ProtectedRoutes />}>

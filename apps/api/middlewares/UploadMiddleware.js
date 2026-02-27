@@ -89,3 +89,38 @@ export const uploadModuleThumbnail = (req, res, next) => {
 		return res.status(400).json({ message: err.message || "File upload failed" });
 	});
 };
+
+// --- Knowledge Base Attachment Uploader ---
+const kbFileFilter = (_req, file, cb) => {
+	const allowedDocumentMimeTypes = [
+		"application/pdf",
+		"application/msword",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	];
+
+	if (file.mimetype.startsWith("image/")) return cb(null, true);
+	if (file.mimetype.startsWith("video/")) return cb(null, true);
+	if (allowedDocumentMimeTypes.includes(file.mimetype)) return cb(null, true);
+
+	cb(new Error("Invalid file type. Allowed: images, videos, PDF/Word documents"));
+};
+
+const kbUploader = multer({
+	storage,
+	fileFilter: kbFileFilter,
+	limits: { fileSize: 150 * 1024 * 1024 },
+});
+
+const uploadKBAttachmentFields = kbUploader.fields([{ name: "attachment", maxCount: 1 }]);
+
+export const uploadKBAttachment = (req, res, next) => {
+	uploadKBAttachmentFields(req, res, (err) => {
+		if (!err) return next();
+
+		if (err instanceof multer.MulterError) {
+			return res.status(400).json({ message: err.message });
+		}
+
+		return res.status(400).json({ message: err.message || "File upload failed" });
+	});
+};

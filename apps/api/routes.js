@@ -7,6 +7,7 @@ import GradeRoutes from "./routers/GradeRoutes.js";
 import SchoolAdminRoutes from "./routers/SchoolAdminRoutes.js";
 import ModuleRoutes from "./routers/ModuleRoutes.js";
 import LessonRoutes from "./routers/LessonRoutes.js";
+import KnowledgeBaseRoutes from "./routers/KnowledgeBaseRoutes.js";
 
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.use("/levels", LevelRoutes);
 router.use("/grades", GradeRoutes);
 router.use("/modules", ModuleRoutes);
 router.use("/lessons", LessonRoutes);
+router.use("/knowledge-base", KnowledgeBaseRoutes);
 
 export default router;

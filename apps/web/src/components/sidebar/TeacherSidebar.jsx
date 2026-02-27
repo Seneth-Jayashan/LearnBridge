@@ -18,6 +18,8 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
     { name: "Overview", path: "/teacher/dashboard", icon: FiHome },
     { name: "Add Lesson", path: "/teacher/lessons/add", icon: IoMdAddCircle },
     { name: "Manage Lessons", path: "/teacher/lessons/manage", icon: FiFileText },
+    { name: "Add KB Article", path: "/teacher/knowledge-base/add", icon: IoMdAddCircle },
+    { name: "Manage KB", path: "/teacher/knowledge-base/manage", icon: FiBookOpen },
   ];
 
   const handleLogout = async () => {
