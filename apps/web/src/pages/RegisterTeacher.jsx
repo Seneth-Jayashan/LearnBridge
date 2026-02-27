@@ -54,6 +54,7 @@ const RegisterTeacher = () => {
     setError(null);
 
     try {
+      console.log("Submitting Teacher Registration with data:", formData);
       await userService.registerTeacher(formData);
       setIsSuccess(true);
       setTimeout(() => navigate("/login"), 4000);

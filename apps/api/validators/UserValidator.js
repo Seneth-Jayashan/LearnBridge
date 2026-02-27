@@ -26,7 +26,7 @@ export const registerTeacherSchema = z.object({
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(9, "Phone number must be at least 9 digits"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  schoolId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid School ID").optional(),
+  schoolId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid School ID").optional().or(z.literal("")),
 });
 
 // --- Existing Schemas ---

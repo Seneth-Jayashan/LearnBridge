@@ -14,6 +14,7 @@ const userService = {
 
   async registerTeacher(teacherData) {
     const response = await api.post("/users/register-teacher", teacherData);
+    console.log("Received response from registerTeacher API:", response.data);
     return response.data;
   },
 
