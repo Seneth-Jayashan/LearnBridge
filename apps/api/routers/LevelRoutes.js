@@ -16,6 +16,13 @@ const router = express.Router();
 
 // --- Level Management Routes ---
 
+/*
+    Level Routes
+    - Seed endpoint and write operations are restricted to `super_admin`.
+    - Listing and retrieval require authentication.
+    - `validate` middleware ensures payloads conform to expected schemas.
+*/
+
 router.post(
     "/seed-defaults",
     protect,

@@ -20,6 +20,14 @@ const router = express.Router();
 // Apply authentication middleware to all routes
 router.use(protect);
 
+/*
+    Module Routes
+    - Authentication is applied to all routes via `protect`.
+    - Read endpoints are available to authenticated users; write operations
+        (create/update/delete) are restricted to `super_admin` only.
+    - Thumbnails use `uploadModuleThumbnail` to validate image uploads.
+*/
+
 // --- Public Access (Read Only) for Authenticated Users ---
 // Students, Teachers, and Admins can all view modules
 router.get("/", getAllModules);

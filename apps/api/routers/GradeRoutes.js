@@ -16,6 +16,13 @@ const router = express.Router();
 
 // --- Grade Management Routes ---
 
+/*
+    Routes for managing Grades
+    - Seeding and administrative actions are restricted to `super_admin`.
+    - Listing and retrieval require authentication (`protect`).
+    - Uses `validate` middleware to enforce payload schemas for create/update.
+*/
+
 router.post(
     "/seed-defaults",
     protect,

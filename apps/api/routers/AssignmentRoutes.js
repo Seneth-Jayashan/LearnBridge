@@ -22,6 +22,15 @@ import {
 
 const router = express.Router();
 
+/*
+  Assignment Routes
+  - All routes are protected by `protect` (applied below).
+  - Teachers/school_admins/super_admins may create/update/delete assignments.
+  - Students may submit to `/:id/submit` and view their own submission.
+  - File uploads for creation/submission use `uploadAssignmentFiles` middleware.
+  - Validation schemas ensure request payloads are well-formed.
+*/
+
 router.use(protect);
 
 router

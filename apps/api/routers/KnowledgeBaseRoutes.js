@@ -31,6 +31,15 @@ router.get("/public/:id/attachment-download", async (req, res, next) => {
   }
 });
 
+/*
+  Knowledge Base Routes
+  - Public endpoints (e.g. `/public`) return published entries without auth.
+  - Public attachment download uses a dynamic controller import to keep
+    signing/Cloudinary helpers separate from public route setup.
+  - Remaining endpoints are protected and restricted to teacher/school_admin/super_admin
+    for creation, updates, and deletion. Attachments use `uploadKBAttachment`.
+*/
+
 router.use(protect);
 
 router
