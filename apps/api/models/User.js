@@ -5,23 +5,16 @@ const userSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
-    // REMOVED unique: true to allow shared emails
     email: { type: String, required: true, lowercase: true, trim: true },
-    // REMOVED unique: true to allow shared phones
     phoneNumber: { type: String, required: true }, 
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ["super_admin","school_admin", "teacher", "donor", "student"],
+      enum: ["super_admin", "school_admin", "teacher", "donor", "student"],
       default: "student",
     },
-    // --- NEW: Multi-Tenant / School Linking ---
     school: { type: mongoose.Schema.Types.ObjectId, ref: "School", default: null },
-    
-    // For Teachers: True if standalone or verified by School Admin. False if pending school approval.
     isSchoolVerified: { type: Boolean, default: true },
-    
-    // regNumber remains UNIQUE because it identifies the student specifically
     regNumber: { type: String, unique: true, sparse: true, trim: true },
     grade: { type: mongoose.Schema.Types.ObjectId, ref: "Grade" },
     address: {
@@ -44,31 +37,38 @@ const userSchema = new mongoose.Schema(
     ],
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
+    
+    // --- NEW: Flag for First Login Password Reset ---
+    requiresPasswordChange: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 const SALT_WORK_FACTOR = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
 
-// --- FIX 1: Hash Password Hook (Async, No 'next') ---
+// --- FIX 1: Hash Password Hook ---
 userSchema.pre("save", async function () {
-  // If password is not modified, return immediately
   if (!this.isModified("password")) return;
 
-  // No try/catch needed here; if it fails, Mongoose catches the promise rejection
+  // NEW: If this is an existing user updating their password, 
+  // automatically clear the requirement to change it.
+  if (!this.isNew) {
+    this.requiresPasswordChange = false;
+  }
+
   const salt = await bcrypt.genSalt(SALT_WORK_FACTOR);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// --- FIX 2: RegNumber Generation Hook (Async, No 'next') ---
+// --- FIX 2: RegNumber Generation Hook ---
 userSchema.pre("save", async function () {
-  // Only run if it's a student and doesn't have a regNumber yet
   if (this.role === "student" && !this.regNumber) {
+    // Note: this.constructor is correct here, but ensure no concurrency issues in heavy traffic
     const lastStudent = await this.constructor
       .findOne({ role: "student" })
       .sort({ regNumber: -1 });
 
-    const lastRegNumber = lastStudent
+    const lastRegNumber = lastStudent && lastStudent.regNumber
       ? parseInt(lastStudent.regNumber.slice(3))
       : 0;
 
@@ -76,8 +76,19 @@ userSchema.pre("save", async function () {
   }
 });
 
+// --- METHODS ---
+
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
+};
+
+// NEW: Helper method to specifically handle first-login password updates
+userSchema.methods.updatePassword = async function (newPassword) {
+  this.password = newPassword;
+  // Saving will trigger the pre('save') hook, which hashes the new password
+  // and sets this.requiresPasswordChange = false automatically.
+  await this.save(); 
+  return true;
 };
 
 userSchema.methods.generateOTP = function () {

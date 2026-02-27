@@ -30,6 +30,14 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+
+        // THE FIX: Circuit Breaker
+        // If the request that failed with 401 WAS the refresh route, reject immediately!
+        // This stops the infinite loop and passes the error back to checkSession()
+        if (error.response?.status === 401 && originalRequest.url.includes('/auth/refresh')) {
+            return Promise.reject(error);
+        }
+
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             try {

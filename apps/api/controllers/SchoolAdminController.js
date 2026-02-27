@@ -1,5 +1,7 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
+import { sendAccountCreationSms } from "../utils/templates/SMS.js";
+import { accountCreationEmail } from "../utils/templates/Email.js";
 
 // ==========================================
 // --- DASHBOARD & PROFILE ---
@@ -70,10 +72,12 @@ export const createStudentForSchool = async (req, res) => {
             isSchoolVerified: true,
             // Ensure grade is passed explicitly
             grade: studentData.grade,
-            level: studentData.level 
+            requiresPasswordChange: true
         });
 
         await newStudent.save();
+        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, studentData.email, studentData.password);
+        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,studentData.email, studentData.password);
 
         await School.findByIdAndUpdate(schoolId, { $push: { students: newStudent._id } });
 
@@ -176,10 +180,13 @@ export const createTeacherForSchool = async (req, res) => {
             password,
             role: "teacher",
             school: targetSchoolId, 
-            isSchoolVerified: true // Auto-verified since Admin created them
+            isSchoolVerified: true, // Auto-verified since Admin created them
+            requiresPasswordChange: true
         });
 
         await newTeacher.save();
+        await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
+        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
 
         // Push to School's teachers array
         if (targetSchoolId) {

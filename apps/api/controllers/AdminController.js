@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
-import { sendWelcomeSms } from "../utils/templates/SMS.js";
-
+import { sendAccountCreationSms } from "../utils/templates/SMS.js";
+import { accountCreationEmail } from "../utils/templates/Email.js";
 // ==========================================
 // --- USER MANAGEMENT (SUPER ADMIN) ---
 // ==========================================
@@ -33,14 +33,14 @@ export const createUser = async (req, res) => {
             phoneNumber,
             password,
             role: targetRole,
-            grade: targetRole === "student" ? grade : undefined, // Only save grade if student
-            level: targetRole === "student" ? level : undefined,
+            grade: targetRole === "student" ? grade : undefined,
             address,
+            requiresPasswordChange: true
         });
 
         await newUser.save();
-        await sendWelcomeSms(newUser.phoneNumber, newUser.firstName);
-
+        await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
+        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
         res.status(201).json({ 
             message: "User created successfully", 
             userId: newUser._id 
@@ -56,7 +56,6 @@ export const getAllUsers = async (req, res) => {
         const users = await User.find()
             .select("-password")
             .populate("grade", "name")
-            .populate("level", "name");
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
@@ -68,7 +67,6 @@ export const getUserById = async (req, res) => {
         const user = await User.findById(req.params.id)
             .select("-password")
             .populate("grade", "name")
-            .populate("level", "name");
         if (!user) return res.status(404).json({ message: "User not found" });
         res.status(200).json(user);
     } catch (error) {
@@ -213,7 +211,8 @@ export const createSchoolWithAdmin = async (req, res) => {
             email: adminData.email.toLowerCase(),
             role: "school_admin",
             school: newSchool._id,
-            isSchoolVerified: true
+            isSchoolVerified: true,
+            requiresPasswordChange: true
         });
         await schoolAdmin.save();
 

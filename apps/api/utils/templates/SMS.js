@@ -1,7 +1,7 @@
 import SmsSender from "../../services/SMS.js";
 
 // --- Configuration ---
-const BRAND_NAME = "SL Accounting";
+const BRAND_NAME = "Learn Bridge"; // Used in all messages for consistent branding
 
 /* ---------- Helpers ---------- */
 
@@ -28,106 +28,26 @@ const sanitizePhone = (phone) => {
   return cleanNumber;
 };
 
-/**
- * Shorten URLs if necessary (Optional placeholder).
- * In production, you might want to use a URL shortener service to save SMS characters.
- */
-const shortUrl = (url) => url; 
-
 /* ---------- Templates ---------- */
 
 /**
- * Send OTP Verification Code
- * Message Length: ~60 chars
+ * Send Account Creation Message
+ * Includes login details and a prompt to reset the password.
  */
-export const sendVerificationSms = async (phone, otpCode) => {
-  const message = `${BRAND_NAME}: Your verification code is ${otpCode}. Do not share this code.`;
+export const sendAccountCreationSms = async (phone, name, email, password) => {
+  const message = `${BRAND_NAME}: Welcome ${name}! Login: ${email} Pass: ${password}. Please change your password after your first login.`;
   
   return SmsSender.send(sanitizePhone(phone), message);
 };
 
-/**
- * Send Welcome Message
- * Message Length: ~80 chars
- */
-export const sendWelcomeSms = async (phone, name) => {
-  const message = `Welcome to ${BRAND_NAME}, ${name}! Your account is active. Log in to view your classes.`;
-  
+// TODO : sendVerificationSms(user.phoneNumber, otp)
+export const sendVerificationSms = async (phone, otp) => {
+  const message = `${BRAND_NAME}: Your verification code is ${otp}. It expires in 10 minutes.`;
   return SmsSender.send(sanitizePhone(phone), message);
 };
 
-/**
- * Send Payment Receipt
- * Message Length: ~100 chars
- */
-export const sendPaymentReceiptSms = async (phone, amount, className, refId) => {
-  // Truncate class name to ensure message fits
-  const safeClassName = className.length > 20 ? className.substring(0, 18) + ".." : className;
-  
-  const message = `${BRAND_NAME}: Payment received LKR ${amount} through Online Payment Gateway for ${safeClassName}. Ref: ${refId}. Thank you!`;
-  
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-/**
- * Send Class Reminder
- * Message Length: ~120 chars
- */
-export const sendClassReminderSms = async (phone, className, time, link) => {
-  const safeClassName = className.length > 20 ? className.substring(0, 18) + ".." : className;
-  
-  // Note: Ensure the 'link' is short, otherwise this might split into 2 SMS segments
-  const message = `Reminder: ${safeClassName} starts at ${time}. Join here: ${shortUrl(link)}`;
-  
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-/**
- * Send Generic Notification
- * Message Length: Variable (Watch for 160 char limit)
- */
-export const sendNotificationSms = async (phone, text) => {
-  const message = `${BRAND_NAME}: ${text}`;
-  
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-/**
- * Send Cancellation Alert
- * Message Length: ~100 chars
- */
-export const sendCancellationSms = async (phone, className, reason) => {
-  const message = `${BRAND_NAME}: Session for ${className} has been cancelled. Reason: ${reason}. Check portal for details.`;
-  
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-export const sendPaymentVerifiedSms = async (phone, amount, className) => {
-  const message = `${BRAND_NAME}: Your payment of LKR ${amount} for ${className} has been verified. Thank you!`;
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-export const sendClassRescheduleSms = async (phone, className, newTime) => {
-  const message = `${BRAND_NAME}: The session for ${className} has been rescheduled to ${newTime}. Please check your schedule.`;
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-export const sendEnrollmentConfirmationSms = async (phone, className) => {
-  const message = `${BRAND_NAME}: You have been successfully enrolled in ${className}. Welcome aboard!`;
-  return SmsSender.send(sanitizePhone(phone), message);
-};
-
-
-
-// Export as a bundle for easier imports if needed
+// Export as a bundle for easier imports
 export default {
-  sendVerificationSms,
-  sendWelcomeSms,
-  sendPaymentReceiptSms,
-  sendClassReminderSms,
-  sendNotificationSms,
-  sendCancellationSms,
-  sendPaymentVerifiedSms,
-  sendClassRescheduleSms,
-  sendEnrollmentConfirmationSms,
+  sendAccountCreationSms,
+  sendVerificationSms
 };

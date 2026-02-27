@@ -1,6 +1,8 @@
 import express from "express";
 import { 
     login, 
+    verifyFirstLoginOtp, // NEW
+    setupNewPassword,    // NEW
     forgotPassword, 
     resetPassword, 
     logout, 
@@ -25,6 +27,18 @@ router.post(
     validate(loginSchema), 
     login
 );
+
+// --- NEW: First-Login Flow Routes ---
+router.post(
+    "/verify-first-login-otp",
+    verifyFirstLoginOtp
+);
+
+router.post(
+    "/setup-new-password",
+    setupNewPassword
+);
+// ------------------------------------
 
 router.post(
     "/refresh", 
