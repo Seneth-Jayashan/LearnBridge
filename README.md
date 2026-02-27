@@ -104,16 +104,19 @@ Unlike traditional LMS platforms, LearnBridge enables schools to post specific p
 
 ```bash
 git clone https://github.com/Seneth-Jayashan/LearnBridge
+```
 
 ### 2️⃣ Navigate to Apps Directory
 
 ```bash
 cd LearnBridge/apps
+```
 
 ### 3️⃣ Install Dependencies
 
 ```bash
 npm install
+```
 
 ### 4️⃣ Configure Environment Variables
 
@@ -124,6 +127,7 @@ npm install
 
  - apps/web
 
+```bash
 Example:
 
 #server configuration
@@ -167,12 +171,15 @@ SMS_DRIVER=textlk
 TEXTLK_API_KEY=your_textlk_api_key
 TEXTLK_SENDER_ID="Your Sender ID"
 TEXTLK_URL=https://app.text.lk/api/v3/sms/send
+```
 
 ### 5️⃣ Run Development Server
 ```bash
 npm run dev
+```
 
 ## 🚀 Project Structure
+```bash
 LearnBridge/
 │
 ├── apps/
@@ -183,6 +190,7 @@ LearnBridge/
 │   └── workflows/     # Shared utilities (if applicable)
 │
 └── README.md
+```
 
 ## 🎯 Mission
 
