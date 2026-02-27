@@ -8,6 +8,9 @@ import SchoolAdminRoutes from "./routers/SchoolAdminRoutes.js";
 import ModuleRoutes from "./routers/ModuleRoutes.js";
 import QuizRoutes from "./routers/QuizRoutes.js";
 import PdfRoutes from "./routers/PdfRoutes.js";
+import LessonRoutes from "./routers/LessonRoutes.js";
+import KnowledgeBaseRoutes from "./routers/KnowledgeBaseRoutes.js";
+import AssignmentRoutes from "./routers/AssignmentRoutes.js";
 
 const router = express.Router();
 
@@ -22,5 +25,8 @@ router.use("/grades", GradeRoutes);
 router.use("/modules", ModuleRoutes);
 router.use("/quizzes", QuizRoutes);
 router.use("/pdf", PdfRoutes);
+router.use("/lessons", LessonRoutes);
+router.use("/knowledge-base", KnowledgeBaseRoutes);
+router.use("/assignments", AssignmentRoutes);
 
 export default router;

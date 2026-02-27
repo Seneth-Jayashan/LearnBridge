@@ -6,6 +6,7 @@ import {
   FiChevronLeft, FiChevronRight, FiLogOut,
   FiChevronDown, FiChevronUp, FiPlusCircle, FiList
 } from "react-icons/fi";
+import { IoMdAddCircle } from "react-icons/io";
 
 const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const location = useLocation();
@@ -16,16 +17,21 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const isOnQuizPage = location.pathname.includes("/teacher/quiz");
   const [isQuizOpen, setIsQuizOpen] = useState(isOnQuizPage);
 
-  const links = [
-    { name: "Overview",   path: "/teacher/dashboard", icon: FiHome },
-    { name: "My Classes", path: "/teacher/classes",   icon: FiBookOpen },
-    { name: "Grading",    path: "/teacher/grades",    icon: FiEdit3 },
-    { name: "Messages",   path: "/teacher/messages",  icon: FiMessageSquare },
-  ];
-
   const quizLinks = [
     { name: "Create Quiz", path: "/teacher/quiz/create", icon: FiPlusCircle },
     { name: "My Quizzes",  path: "/teacher/quizzes",     icon: FiList },
+
+  const links = [
+    { name: "Overview", path: "/teacher/dashboard", icon: FiHome },
+    { name: "My Classes", path: "/teacher/classes",   icon: FiBookOpen },
+    { name: "Grading",    path: "/teacher/grades",    icon: FiEdit3 },
+    { name: "Messages",   path: "/teacher/messages",  icon: FiMessageSquare },
+    { name: "Add Lesson", path: "/teacher/lessons/add", icon: IoMdAddCircle },
+    { name: "Manage Lessons", path: "/teacher/lessons/manage", icon: FiFileText },
+    { name: "Add Assignment", path: "/teacher/assignments/add", icon: IoMdAddCircle },
+    { name: "Manage Assignments", path: "/teacher/assignments/manage", icon: FiCheckSquare },
+    { name: "Add KB Article", path: "/teacher/knowledge-base/add", icon: IoMdAddCircle },
+    { name: "Manage KB", path: "/teacher/knowledge-base/manage", icon: FiBookOpen },
   ];
 
   const handleLogout = async () => {
