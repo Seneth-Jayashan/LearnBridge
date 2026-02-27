@@ -9,6 +9,20 @@ import {
   uploadFileToCloudinary,
 } from "../services/CloudinaryService.js";
 
+/*
+  LessonController
+  - Responsibility: handle lesson CRUD, resource uploads (documents/videos),
+    online meeting creation (Zoom), and resource download URL generation.
+  - Important behaviors:
+    * Role-based permission helpers (`canManageLesson`, `canViewLesson`) enforce
+      who can read/modify lessons.
+    * Files uploaded in request (`req.files`) are stored in Cloudinary via
+      `uploadFileToCloudinary` and cleaned up when replaced/deleted via
+      `deleteCloudinaryAssetFromCloudinary`.
+    * For student users, listing and retrieval are filtered by the student's
+      grade and school so they only access lessons intended for them.
+*/
+
 const canManageLesson = (user, lesson) => {
   if (user.role === "super_admin") return true;
 
@@ -27,6 +41,11 @@ const canManageLesson = (user, lesson) => {
   return false;
 };
 
+// Permission helper: who may manage (create/update/delete) a lesson
+// - Super admins may manage everything
+// - School admins may manage lessons belonging to their school
+// - Teachers may manage lessons they created
+
 const canViewLesson = (user, lesson) => {
   if (canManageLesson(user, lesson)) return true;
 
@@ -41,12 +60,21 @@ const canViewLesson = (user, lesson) => {
   return false;
 };
 
+// Permission helper: who may view a lesson
+// - Managers (super_admin/school_admin/creator-teacher) can view
+// - Students can view when their grade matches the lesson's module grade
+
 const toNullableObjectId = (value) => {
   if (!value) return null;
   return mongoose.Types.ObjectId.isValid(value) ? value : null;
 };
 
+// Convert a value to an ObjectId-compatible value or null.
+// Used to normalize optional `school` references coming from the user.
+
 const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Escape user-supplied strings for safe RegExp usage when filtering/searching
 
 const ensureHasResource = (materialUrl, videoUrl) => Boolean(materialUrl || videoUrl);
 const isTruthy = (value) => {
@@ -55,6 +83,9 @@ const isTruthy = (value) => {
   const normalized = value.trim().toLowerCase();
   return normalized === "true" || normalized === "1" || normalized === "on" || normalized === "yes";
 };
+
+// Ensure lesson contains at least one resource (document or video)
+// Interpret various forms of booleans coming from requests (form toggles, strings)
 
 const buildOnlineMeeting = async ({ title, description, createMeeting, startTime }) => {
   if (!createMeeting) return null;
@@ -78,7 +109,19 @@ const buildOnlineMeeting = async ({ title, description, createMeeting, startTime
   };
 };
 
+// Build an online meeting object by calling the Zoom service when requested.
+// Returns `null` when no meeting should be created.
+
 export const createLesson = async (req, res) => {
+  // Create a lesson
+  // Steps:
+  // 1. Read fields and files from the request
+  // 2. Upload files (material/video) to Cloudinary when provided
+  // 3. Validate module exists and that lesson has at least one resource
+  // 4. Optionally create a Zoom meeting and attach meeting metadata
+  // 5. Persist lesson with `createdBy` and optional `school` reference
+  // 6. Return created lesson and any onlineMeeting payload
+
   try {
     const {
       title,
@@ -174,6 +217,11 @@ export const createLesson = async (req, res) => {
 };
 
 export const getAllLessons = async (req, res) => {
+  // List lessons with role-aware filtering and optional search
+  // - Teachers: only lessons they created
+  // - School admins: lessons belonging to their school
+  // - Students: lessons for their grade (and optionally a specific module)
+  // Also handles text search (`q`) and grade filtering.
   try {
     const query = {};
     const requestedModuleId =
@@ -202,9 +250,6 @@ export const getAllLessons = async (req, res) => {
         return res.status(200).json([]);
       }
 
-      // Include lessons belonging to matching modules. Also include lessons
-      // created by non-school teachers (lesson.school === null) so global
-      // lessons are visible to students.
       query.module = { $in: moduleIds };
       const studentSchoolId = toNullableObjectId(req.user.school);
       query.$or = studentSchoolId
@@ -225,6 +270,7 @@ export const getAllLessons = async (req, res) => {
       .populate("createdBy", "firstName lastName role")
       .sort({ createdAt: -1 });
 
+    // Remove lessons whose referenced module no longer exists (orphaned)
     const orphanLessonIds = lessons
       .filter((lesson) => !lesson.module)
       .map((lesson) => lesson._id);
@@ -235,9 +281,7 @@ export const getAllLessons = async (req, res) => {
 
     const validLessons = lessons.filter((lesson) => Boolean(lesson.module));
 
-    // Apply optional server-side filtering by query params:
-    // - q: text search matches lesson.title, module.name, or module.grade.name
-    // - grade: module.grade._id or special '__unassigned'
+
     const { q, grade } = req.query || {};
     let filtered = validLessons;
 
@@ -269,6 +313,7 @@ export const getAllLessons = async (req, res) => {
 };
 
 export const getLessonById = async (req, res) => {
+  // Get a single lesson by id, ensuring the requester is authorized to view it
   try {
     const lesson = await Lesson.findById(req.params.id)
       .populate({
@@ -300,6 +345,7 @@ export const getLessonById = async (req, res) => {
 };
 
 export const getLessonMaterialDownloadUrl = async (req, res) => {
+  // Create a short-lived signed download URL for lesson material stored in Cloudinary
   try {
     const lesson = await Lesson.findById(req.params.id).populate("module", "grade");
 
@@ -330,6 +376,8 @@ export const getLessonMaterialDownloadUrl = async (req, res) => {
 };
 
 export const getLessonVideoDownloadUrl = async (req, res) => {
+  // Return a (public) video URL and the file name. Videos are typically served
+  // directly; we still provide the filename for client download handling.
   try {
     const lesson = await Lesson.findById(req.params.id).populate("module", "grade");
 
@@ -357,6 +405,10 @@ export const getLessonVideoDownloadUrl = async (req, res) => {
 };
 
 export const updateLesson = async (req, res) => {
+  // Update an existing lesson
+  // - Accepts new uploads for material/video and will replace previous assets
+  // - Handles switching/creating/removing the online meeting based on toggles
+  // - Cleans up replaced Cloudinary assets asynchronously
   try {
     const {
       title,
@@ -465,6 +517,7 @@ export const updateLesson = async (req, res) => {
 
     await lesson.save();
 
+    // Clean up replaced media assets in Cloudinary (best-effort)
     const cleanupTargets = [];
     if (previousMaterialUrl && previousMaterialUrl !== lesson.materialUrl) {
       cleanupTargets.push(previousMaterialUrl);
@@ -492,6 +545,7 @@ export const updateLesson = async (req, res) => {
 };
 
 export const deleteLesson = async (req, res) => {
+  // Delete a lesson if the requester has manage permissions. Clean up stored media.
   try {
     const lesson = await Lesson.findById(req.params.id);
 

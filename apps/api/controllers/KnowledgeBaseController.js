@@ -8,13 +8,17 @@ import {
   getCloudinaryFileNameFromUrl,
 } from "../services/CloudinaryService.js";
 
+// Escape user input for safe use inside RegExp objects.
 const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Convert a value to a nullable ObjectId (or return null for falsy/invalid values).
 const toNullableObjectId = (value) => {
   if (!value) return null;
   return mongoose.Types.ObjectId.isValid(value) ? value : null;
 };
 
+// Authorization helper: determine whether the `user` may manage (edit/delete)
+// the knowledge base `entry`.
 const canManageEntry = (user, entry) => {
   if (user.role === "super_admin") return true;
 
@@ -33,6 +37,7 @@ const canManageEntry = (user, entry) => {
   return false;
 };
 
+// Build a MongoDB text search filter for title/content/category using regex.
 const buildQueryFilter = (q) => {
   if (!q || !String(q).trim()) return {};
   const regex = new RegExp(escapeRegExp(String(q).trim()), "i");
@@ -41,6 +46,7 @@ const buildQueryFilter = (q) => {
   };
 };
 
+// Public listing of published knowledge-base entries with optional search.
 export const getPublicKnowledgeBaseEntries = async (req, res) => {
   try {
     const filter = { isPublished: true, ...buildQueryFilter(req.query?.q) };
@@ -54,6 +60,7 @@ export const getPublicKnowledgeBaseEntries = async (req, res) => {
   }
 };
 
+// Return knowledge-base entries visible to the authenticated user.
 export const getKnowledgeBaseEntries = async (req, res) => {
   try {
     const searchFilter = buildQueryFilter(req.query?.q);
@@ -75,6 +82,8 @@ export const getKnowledgeBaseEntries = async (req, res) => {
   }
 };
 
+// Create a knowledge-base entry. Handles optional attachment uploads
+// (multiple files) and stores their secure URLs on the document.
 export const createKnowledgeBaseEntry = async (req, res) => {
   try {
     let attachmentUrl = [];
@@ -111,6 +120,8 @@ export const createKnowledgeBaseEntry = async (req, res) => {
   }
 };
 
+// Update an entry. Validates permissions and replaces attachments when new
+// files are provided (removing old attachments from Cloudinary where possible).
 export const updateKnowledgeBaseEntry = async (req, res) => {
   try {
     const entry = await KnowledgeBase.findById(req.params.id);
@@ -127,16 +138,16 @@ export const updateKnowledgeBaseEntry = async (req, res) => {
     if (req.body.category !== undefined) entry.category = req.body.category || "General";
     if (req.body.isPublished !== undefined) entry.isPublished = req.body.isPublished;
 
-    // Handle attachment replacement (allow multiple)
     const attachmentFiles = Array.isArray(req.files?.attachment) ? req.files.attachment : [];
     if (attachmentFiles.length) {
-      // delete previous cloudinary assets if present (best-effort)
+
+      // Attempt to delete any previously stored attachments to avoid orphaned assets.
       if (Array.isArray(entry.attachmentUrl) && entry.attachmentUrl.length) {
         for (const prev of entry.attachmentUrl) {
           try {
             await deleteCloudinaryAssetFromUrl(prev);
           } catch {
-            // ignore
+            // Ignore deletion failures; proceed with updating attachment list.
           }
         }
       } else if (entry.attachmentUrl) {
@@ -168,6 +179,8 @@ export const updateKnowledgeBaseEntry = async (req, res) => {
   }
 };
 
+// Delete an entry and its attachments (unless those attachments are referenced
+// elsewhere, e.g., by lessons). Permissions are validated before deletion.
 export const deleteKnowledgeBaseEntry = async (req, res) => {
   try {
     const entry = await KnowledgeBase.findById(req.params.id);
@@ -184,6 +197,7 @@ export const deleteKnowledgeBaseEntry = async (req, res) => {
       : (entry.attachmentUrl ? [entry.attachmentUrl] : []);
 
     if (attachments.length) {
+      // Find lessons which reference these media URLs to avoid deleting shared assets.
       const referencedLessons = await Lesson.find({
         $or: [
           { materialUrl: { $in: attachments } },
@@ -204,7 +218,7 @@ export const deleteKnowledgeBaseEntry = async (req, res) => {
         try {
           await deleteCloudinaryAssetFromUrl(mediaUrl);
         } catch {
-          // best-effort cleanup
+          // Ignore Cloudinary deletion errors.
         }
       }
     }
@@ -217,6 +231,8 @@ export const deleteKnowledgeBaseEntry = async (req, res) => {
   }
 };
 
+// Public endpoint to generate a signed download URL for a specific attachment
+// (by index) on a published knowledge-base entry.
 export const getKnowledgeBaseAttachmentDownloadUrlPublic = async (req, res) => {
   try {
     const entry = await KnowledgeBase.findById(req.params.id);

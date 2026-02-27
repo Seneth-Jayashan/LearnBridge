@@ -5,6 +5,12 @@ import Level from "../models/Level.js";
 
 dotenv.config();
 
+/*
+  seedLevels.js
+  - Purpose: populate a set of educational `Level` documents (e.g. Primary, Junior Secondary).
+  - Behavior: idempotent upsert loop so the script can be re-run safely; logs created/updated counts.
+*/
+
 const defaultLevels = [
     { name: "Primary Education", description: "Grade 1 – 5" },
     { name: "Junior Secondary", description: "Grade 6 – 9" },
@@ -20,6 +26,7 @@ const seedLevels = async () => {
         let updated = 0;
 
         for (const level of defaultLevels) {
+            // Upsert each level so existing entries are updated and missing ones created
             const result = await Level.updateOne(
                 { name: level.name },
                 { $set: { description: level.description } },

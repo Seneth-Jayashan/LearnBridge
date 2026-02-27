@@ -1,5 +1,6 @@
 import Level from "../models/Level.js";
 
+// Default educational levels used for seeding initial data.
 const defaultLevels = [
     { name: "Primary Education", description: "Grade 1 – 5" },
     { name: "Junior Secondary", description: "Grade 6 – 9" },
@@ -7,16 +8,15 @@ const defaultLevels = [
     { name: "Advanced Level – G.C.E. A/L", description: "Grade 12 – 13" },
 ];
 
+// Create a new level. Validates required fields and prevents duplicates.
 export const createLevel = async (req, res) => {
     try {
         const { name, description } = req.body;
 
-        // 1. Validation: Prevent crash if name is missing
         if (!name) {
             return res.status(400).json({ message: "Level name is required" });
         }
 
-        // 2. Check for duplicates
         const existingLevel = await Level.findOne({ name: name.trim() });
         if (existingLevel) {
             return res.status(400).json({ message: "Level with this name already exists" });
@@ -35,6 +35,7 @@ export const createLevel = async (req, res) => {
     }
 };
 
+// Return all levels, newest first.
 export const getAllLevels = async (req, res) => {
     try {
         const levels = await Level.find().sort({ createdAt: -1 });
@@ -44,6 +45,7 @@ export const getAllLevels = async (req, res) => {
     }
 };
 
+// Get a single level by id.
 export const getLevelById = async (req, res) => {
     try {
         const level = await Level.findById(req.params.id);
@@ -56,21 +58,23 @@ export const getLevelById = async (req, res) => {
     }
 };
 
+// Update a level. Ensures any provided new name does not clash with an
+// existing level's name.
 export const updateLevel = async (req, res) => {
     try {
         const { name, description } = req.body;
         
-        // Find the level first
+
         const level = await Level.findById(req.params.id);
         if (!level) {
             return res.status(404).json({ message: "Level not found" });
         }
 
-        // 1. Handle Name Update
+
         if (name) {
             const newName = name.trim();
             
-            // Only check duplicates if the name is actually changing
+
             if (newName !== level.name) {
                 const existingLevel = await Level.findOne({ name: newName });
                 if (existingLevel) {
@@ -80,7 +84,7 @@ export const updateLevel = async (req, res) => {
             }
         }
 
-        // 2. Handle Description Update
+
         if (description !== undefined) {
             level.description = description;
         }
@@ -92,10 +96,10 @@ export const updateLevel = async (req, res) => {
     }
 };
 
+// Delete a level by id.
 export const deleteLevel = async (req, res) => {
     try {
-        // Optimization: Find and Delete in one DB call
-        // 'level.remove()' is deprecated in Mongoose 6+
+
         const level = await Level.findByIdAndDelete(req.params.id);
 
         if (!level) {
@@ -108,6 +112,7 @@ export const deleteLevel = async (req, res) => {
     }
 };
 
+// Seed default levels to the database. Returns counts of created/updated.
 export const seedDefaultLevels = async (req, res) => {
     try {
         let created = 0;

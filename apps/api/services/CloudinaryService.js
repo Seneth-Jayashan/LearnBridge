@@ -4,6 +4,22 @@ import { v2 as cloudinary } from "cloudinary";
 
 let isConfigured = false;
 
+/*
+  CloudinaryService
+  - Purpose: provide safe, robust helpers for uploading files to Cloudinary,
+    deleting assets by URL, extracting a user-friendly filename from an
+    asset URL, and generating short-lived signed download URLs.
+  - Notes:
+    * The module defers Cloudinary configuration until the first operation
+      that needs it (`ensureCloudinaryConfigured`) so the service can be
+      imported without immediate environment validation.
+    * Upload functions support both buffer and temporary-file payloads
+      (Multer memory storage or disk uploads). Files are uploaded using
+      `uploadFileToCloudinary` which chooses an appropriate `resource_type`.
+    * Deletion attempts several publicId/resource-type combinations and
+      falls back to bulk delete when individual deletes don't find assets.
+*/
+
 const ensureCloudinaryConfigured = () => {
   if (isConfigured) {
     return;
@@ -32,9 +48,12 @@ const removeTemporaryFile = async (filePath) => {
   try {
     await fs.unlink(filePath);
   } catch {
-    // Ignore cleanup errors.
+
   }
 };
+
+// Helper: attempt to remove a temporary file path created by disk-based upload
+// providers. Failing to remove a temp file is non-fatal so errors are swallowed.
 
 const uploadFromBuffer = (fileBuffer, options) =>
   new Promise((resolve, reject) => {
@@ -45,11 +64,17 @@ const uploadFromBuffer = (fileBuffer, options) =>
     stream.end(fileBuffer);
   });
 
+// Upload helper that streams a Buffer to Cloudinary using the SDK's upload_stream.
+// This is used when files come from Multer's memoryStorage (file.buffer).
+
 const sanitizeBaseName = (name) =>
   (name || "file")
     .replace(/[^a-zA-Z0-9_-]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 120) || "file";
+
+// Create a safe short base name for public_id generation. Keeps only safe
+// characters and trims to a reasonable length.
 
 const parseCloudinaryAssetUrl = (assetUrl) => {
   if (!assetUrl || !/^https?:\/\//i.test(assetUrl)) return null;
@@ -97,6 +122,9 @@ const parseCloudinaryAssetUrl = (assetUrl) => {
   };
 };
 
+// Parse a Cloudinary asset URL into components we can use for delete
+// and signed-url generation. Returns `null` for non-Cloudinary or invalid URLs.
+
 const sanitizeAttachmentFileName = (name) => {
   if (!name) return "";
   const cleaned = String(name)
@@ -106,6 +134,10 @@ const sanitizeAttachmentFileName = (name) => {
     .slice(0, 180);
   return cleaned || "";
 };
+
+// Sanitize a filename for use as an attachment filename when generating
+// download responses. Removes problematic filesystem characters and collapses
+// whitespace.
 
 export const getCloudinaryFileNameFromUrl = (assetUrl) => {
   const parsedAsset = parseCloudinaryAssetUrl(assetUrl);
@@ -179,7 +211,7 @@ export const deleteCloudinaryAssetFromUrl = async (assetUrl) => {
             sawNotFound = true;
           }
         } catch {
-          // Try next candidate.
+          
         }
       }
 
@@ -201,13 +233,19 @@ export const deleteCloudinaryAssetFromUrl = async (assetUrl) => {
           sawNotFound = true;
         }
       } catch {
-        // Continue trying other candidate combinations.
+        
       }
     }
   }
 
   return sawNotFound;
 };
+
+// Attempt to delete the asset referenced by a Cloudinary URL.
+// The function is tolerant: it tries a set of plausible `public_id` forms,
+// resource types, and delivery types, and also issues a bulk delete as a
+// fallback. Returns `true` when a deletion occurred, `false` when nothing
+// was found or deletion failed.
 
 export const uploadFileToCloudinary = async (file, { folder, resourceType = "auto" } = {}) => {
   if (!file) {
@@ -216,8 +254,7 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
 
   ensureCloudinaryConfigured();
 
-  // Auto-detect common document mimetypes and force raw upload so Cloudinary
-  // doesn't treat them as images or attempt conversions.
+  
   let resolvedResourceType = resourceType;
   const mimetype = file.mimetype || "";
   const docMimeMarkers = ["pdf", "msword", "officedocument", "vnd.openxmlformats"];
@@ -227,7 +264,7 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
       resolvedResourceType = "raw";
     }
   }
-  // If mimetype is missing or unreliable, fall back to filename extension detection
+  
   if (resourceType === "auto" && resolvedResourceType === "auto") {
     const filename = (file.originalname || file.path || "").toString();
     const ext = (filename.split("?")[0].split('.').pop() || '').toLowerCase();
@@ -276,6 +313,12 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
   throw new Error("Unsupported file payload for Cloudinary upload");
 };
 
+// Main upload entrypoint used by controllers/services.
+// - Accepts `file.path` (disk) or `file.buffer` (memory). Chooses resource
+//   type heuristically when `resourceType: "auto"` is provided.
+// - Generates a predictable `public_id` when `originalname` is present to
+//   make debugging and manual cleanup easier.
+
 export const createSignedDownloadUrlFromCloudinaryUrl = (
   assetUrl,
   { expiresInSeconds = 300, fileName = "" } = {},
@@ -317,3 +360,9 @@ export const createSignedDownloadUrlFromCloudinaryUrl = (
     flags: attachmentFlag,
   });
 };
+
+// Generate a short-lived, signed download URL for Cloudinary assets.
+// - For `raw` (document) resources we use `private_download_url` so attachments
+//   are served with the correct content-disposition and filename.
+// - For other resources (image/video), we request a signed `cloudinary.url`
+//   with an `attachment` flag so browsers prompt to download with the given name.

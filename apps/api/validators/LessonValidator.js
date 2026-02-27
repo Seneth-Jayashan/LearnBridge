@@ -1,6 +1,17 @@
 import { z } from "zod";
 import mongoose from "mongoose";
 
+/*
+  LessonValidator
+  - Validates lesson create/update payloads and normalizes common form inputs.
+  - Key behaviors:
+    * `module` must be a valid ObjectId string.
+    * Optional URL fields accept empty strings (treated as omitted).
+    * Boolean-like form values are normalized ("on", "yes", "1").
+    * If `createZoomMeeting` is requested, either `zoomStartTime` or
+      `onlineMeetingStartTime` is required; enforced via `.superRefine()`.
+*/
+
 const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
 const optionalUrl = z.preprocess(
@@ -8,6 +19,7 @@ const optionalUrl = z.preprocess(
   z.string().url("Must be a valid URL").trim().optional(),
 );
 
+// Normalize boolean-like form inputs to real booleans
 const optionalBoolean = z.preprocess((value) => {
   if (value === "" || value === undefined || value === null) return undefined;
   if (value === true || value === "true") return true;

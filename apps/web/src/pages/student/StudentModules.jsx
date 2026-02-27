@@ -66,6 +66,7 @@ const StudentModules = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [visibleVideos, setVisibleVideos] = useState({});
 
   useEffect(() => {
     let isMounted = true;
@@ -289,6 +290,21 @@ const StudentModules = () => {
                             </button>
                           ) : null}
 
+                          {lesson.videoUrl ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setVisibleVideos((s) => ({
+                                  ...s,
+                                  [lesson._id]: !s[lesson._id],
+                                }))
+                              }
+                              className="rounded-md border border-[#207D86] bg-[#207D86]/10 px-2.5 py-1 text-xs font-medium text-[#207D86] hover:bg-[#207D86]/20"
+                            >
+                              {visibleVideos[lesson._id] ? "Hide Video" : "Watch Video"}
+                            </button>
+                          ) : null}
+
                           {lesson?.onlineMeeting?.joinUrl ? (
                             <a
                               href={lesson.onlineMeeting.joinUrl}
@@ -310,6 +326,31 @@ const StudentModules = () => {
                             <span className="block">Independent Teacher</span>
                           ) : null}
                         </div>
+
+                        {lesson.videoUrl && visibleVideos[lesson._id] ? (
+                          <div className="mt-3 space-y-2 rounded-lg border border-slate-200 overflow-hidden">
+                            <div className="flex items-center justify-between bg-slate-900 px-3 py-2">
+                              <span className="text-[11px] font-medium text-white">Video Preview</span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setVisibleVideos((s) => ({
+                                    ...s,
+                                    [lesson._id]: false,
+                                  }))
+                                }
+                                className="text-[11px] text-slate-300 hover:text-white"
+                              >
+                                Close [x]
+                              </button>
+                            </div>
+                            <video
+                              controls
+                              className="w-full max-h-72 bg-black"
+                              src={toPublicMediaUrl(lesson.videoUrl)}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>

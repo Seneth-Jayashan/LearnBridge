@@ -10,9 +10,12 @@ import {
     validateUpdateModuleBusinessRules,
 } from "../validators/ModuleValidator.js";
 
+// Escape a value for regex-based searching.
 const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// --- Create a New Module ---
+// Create a new module. Validates business rules via the ModuleValidator,
+// accepts an optional thumbnail file (uploaded to Cloudinary) and stores
+// normalized fields on the created Module document.
 export const createModule = async (req, res) => {
     try {
         const { name, description, thumbnailUrl, level, grade, subjectStream } = req.body;
@@ -65,13 +68,14 @@ export const createModule = async (req, res) => {
     }
 };
 
-// --- Get All Modules ---
+// List modules with optional filters for grade/level and text search.
+// When `q` is provided we use an aggregation to perform text matching
+// against module name, grade name or level name for better performance.
 export const getAllModules = async (req, res) => {
     try {
-        // Build base match conditions
+
         const match = {};
 
-        // If student, restrict to student's grade
         if (req.user?.role === "student") {
             if (!req.user.grade) {
                 return res.status(200).json([]);
@@ -79,7 +83,6 @@ export const getAllModules = async (req, res) => {
             match.grade = new mongoose.Types.ObjectId(req.user.grade);
         }
 
-        // Optional filters from query params (admin/others can use)
         const { q, grade, level } = req.query || {};
         if (grade) {
             if (grade === "__unassigned") {
@@ -92,13 +95,11 @@ export const getAllModules = async (req, res) => {
             match.level = new mongoose.Types.ObjectId(level);
         }
 
-        // If a text query is provided, use aggregation to search module.name, grade.name, level.name
         if (q && String(q).trim()) {
             const re = new RegExp(escapeRegExp(String(q).trim()), 'i');
             const pipeline = [];
             if (Object.keys(match).length) pipeline.push({ $match: match });
 
-            // lookup grade and level
             pipeline.push(
                 { $lookup: { from: 'grades', localField: 'grade', foreignField: '_id', as: 'grade' } },
                 { $unwind: { path: '$grade', preserveNullAndEmptyArrays: true } },
@@ -112,7 +113,6 @@ export const getAllModules = async (req, res) => {
             return res.status(200).json(modules);
         }
 
-        // Fallback: simple find with optional match
         const modules = await Module.find(match)
             .populate('level', 'name description')
             .populate('grade', 'name description')
@@ -124,7 +124,7 @@ export const getAllModules = async (req, res) => {
     }
 };
 
-// --- Get Single Module by ID ---
+// Retrieve a module by id, including level and grade information.
 export const getModuleById = async (req, res) => {
     try {
         const module = await Module.findById(req.params.id)
@@ -141,7 +141,8 @@ export const getModuleById = async (req, res) => {
     }
 };
 
-// --- Update Module ---
+// Update a module. Validates business rules through the ModuleValidator
+// and supports replacing the thumbnail image via Cloudinary.
 export const updateModule = async (req, res) => {
     try {
         const { name, description, thumbnailUrl, level, grade, subjectStream } = req.body;
@@ -199,7 +200,9 @@ export const updateModule = async (req, res) => {
     }
 };
 
-// --- Delete Module ---
+// Delete a module and cascade-remove related lessons, assignments and
+// assignment submissions. Attempts to delete thumbnail assets from Cloudinary
+// when they exist, but ignores Cloudinary failures to avoid blocking the API.
 export const deleteModule = async (req, res) => {
     try {
         const module = await Module.findById(req.params.id);
@@ -212,7 +215,6 @@ export const deleteModule = async (req, res) => {
             ? new mongoose.Types.ObjectId(req.params.id)
             : null;
 
-        // Attempt to remove module thumbnail from Cloudinary (ignore errors)
         try {
             if (module?.thumbnailUrl) {
                 if (Array.isArray(module.thumbnailUrl)) {
@@ -224,7 +226,7 @@ export const deleteModule = async (req, res) => {
                 }
             }
         } catch (err) {
-            // Swallow thumbnail deletion errors so module deletion can proceed
+  
         }
 
         const lessonDeleteFilter = {

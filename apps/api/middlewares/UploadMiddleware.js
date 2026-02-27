@@ -1,6 +1,17 @@
 import multer from "multer";
+
+// Use memory storage because files are immediately uploaded to Cloudinary
+// from buffers; no local disk persistence is needed.
 const storage = multer.memoryStorage();
 
+/*
+  Lesson uploads
+  - Accepts either direct file fields (`material`, `video`) or fallback
+	fields that carry pre-uploaded URLs (`materialUrl`, `videoUrl`).
+  - Allowed document types: PDF and Word documents. Videos must have
+	a `video/*` mime type.
+  - Limit: 200 MB per file (chosen to allow large video uploads).
+*/
 const lessonFileFilter = (_req, file, cb) => {
 	const isMaterialField =
 		file.fieldname === "material" || file.fieldname === "materialUrl";
@@ -20,6 +31,7 @@ const lessonFileFilter = (_req, file, cb) => {
 		return cb(null, true);
 	}
 
+	// Reject anything else for lesson uploads
 	cb(new Error("Invalid lesson file type. Only PDF/Word documents and videos are allowed"));
 };
 
@@ -38,6 +50,7 @@ const uploadLessonMediaFields = lessonUploader.fields([
 	{ name: "videoUrl", maxCount: 1 },
 ]);
 
+// Middleware wrapper: standardizes Multer errors into JSON responses
 export const uploadLessonMedia = (req, res, next) => {
 	uploadLessonMediaFields(req, res, (err) => {
 		if (!err) {
@@ -52,6 +65,10 @@ export const uploadLessonMedia = (req, res, next) => {
 	});
 };
 
+/*
+  Module thumbnail uploads
+  - Thumbnails must be images and are limited to 15 MB to keep thumbnails small.
+*/
 const moduleFileFilter = (_req, file, cb) => {
 	const isThumbnailField =
 		file.fieldname === "thumbnail" || file.fieldname === "thumbnailUrl";
@@ -90,7 +107,11 @@ export const uploadModuleThumbnail = (req, res, next) => {
 	});
 };
 
-// --- Knowledge Base Attachment Uploader ---
+/*
+  Knowledge Base attachments
+  - Allows images, video, and common document types (PDF/Word).
+  - Limit: 150 MB per file and up to 5 attachments per request.
+*/
 const kbFileFilter = (_req, file, cb) => {
 	const allowedDocumentMimeTypes = [
 		"application/pdf",
@@ -125,6 +146,12 @@ export const uploadKBAttachment = (req, res, next) => {
 	});
 };
 
+/*
+  Assignment uploads
+  - Accepts assignment materials and student submissions.
+  - Allowed: images, PDF/Word, ZIP, and plain text.
+  - Limit: 100 MB per file.
+*/
 const assignmentFileFilter = (_req, file, cb) => {
 	const isAssignmentField =
 		file.fieldname === "material" ||

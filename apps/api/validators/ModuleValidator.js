@@ -4,8 +4,19 @@ import Module from "../models/Module.js";
 import Grade from "../models/Grade.js";
 import Level from "../models/Level.js";
 
+/*
+  ModuleValidator
+  - Contains Zod schemas and business-rule validators for creating/updating
+    `Module` documents.
+  - Business rules enforced here include:
+    * Ensuring referenced `level` and `grade` exist
+    * Requiring a `subjectStream` for grades 12 and 13
+    * Preventing duplicate module names for the same level/grade/stream
+*/
+
 const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
+// Allowed subject streams for advanced grades
 const STREAMS = [
   "Mathematics Stream",
   "Biology Stream",
@@ -14,6 +25,7 @@ const STREAMS = [
   "Technology Stream",
 ];
 
+// Helper: parse a numeric grade name (e.g., "12" -> 12). Returns null when not numeric
 const parseGradeNumber = (gradeName) => {
   const parsed = Number.parseInt(String(gradeName || "").trim(), 10);
   return Number.isNaN(parsed) ? null : parsed;
@@ -26,6 +38,7 @@ export class ModuleValidationError extends Error {
   }
 }
 
+// Allow subjectStream to be omitted or explicitly null; normalize empty strings
 const optionalSubjectStream = z.preprocess(
   (value) => {
     if (value === undefined || value === null) return undefined;
@@ -44,6 +57,7 @@ const optionalSubjectStream = z.preprocess(
     .optional(),
 );
 
+// Normalize thumbnailUrl empty values to an empty string (controller handles logic)
 const optionalThumbnailUrl = z.preprocess(
   (value) => {
     if (value === undefined || value === null) return undefined;
@@ -77,6 +91,7 @@ export const updateModuleSchema = z.object({
   subjectStream: optionalSubjectStream,
 });
 
+// Ensure the provided level and grade ids correspond to actual records
 const ensureLevelAndGradeExist = async ({ levelId, gradeId }) => {
   const [levelRecord, gradeRecord] = await Promise.all([
     Level.findById(levelId),
@@ -94,6 +109,7 @@ const ensureLevelAndGradeExist = async ({ levelId, gradeId }) => {
   return { gradeRecord };
 };
 
+// Enforce stream rules: streams required for grade 12/13, forbidden otherwise
 const ensureStreamRules = ({ gradeName, subjectStream }) => {
   const gradeNumber = parseGradeNumber(gradeName);
 
@@ -112,6 +128,7 @@ const ensureStreamRules = ({ gradeName, subjectStream }) => {
   }
 };
 
+// Ensure no other module exists with same name/level/grade/stream (optionally exclude one id)
 const ensureModuleUniqueness = async ({
   name,
   level,

@@ -1,10 +1,20 @@
 import { z } from "zod";
 
+/*
+  KnowledgeBaseValidator
+  - Validates payloads for Knowledge Base entries.
+  - Normalizes common form values:
+    * empty strings are treated as omitted for optional URL fields
+    * boolean-like strings/values ("on", "yes", "1") are mapped to booleans
+  - This helps accepting both JSON API clients and HTML form submissions.
+*/
+
 const optionalUrl = z.preprocess(
   (value) => (value === "" ? undefined : value),
   z.string().url("Must be a valid URL").trim().optional(),
 );
 
+// Accept several representations of boolean-like inputs from forms/clients
 const optionalBoolean = z.preprocess((value) => {
   if (value === "" || value === undefined || value === null) return undefined;
   if (value === true || value === "true") return true;
