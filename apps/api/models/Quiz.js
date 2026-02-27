@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 const questionSchema = new mongoose.Schema(
   {
     questionText:  { type: String,  required: true },
-    options:       [{ type: String, required: true }], // always 4 items
-    correctAnswer: { type: Number,  required: true },  // index of correct option (0-3)
-    isFlagged:     { type: Boolean, default: false },  // teacher can flag a question
+    options:       [{ type: String, required: true }], 
+    correctAnswer: { type: Number,  required: true },  
+    isFlagged:     { type: Boolean, default: false },  
   }
 );
 
@@ -16,7 +16,7 @@ const quizSchema = new mongoose.Schema(
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User",   required: true },
 
     questions:   [questionSchema],
-    timeLimit:   { type: Number,  required: true },      // in minutes
+    timeLimit:   { type: Number,  required: true },      
     isPublished: { type: Boolean, default: false },
     isDeleted:   { type: Boolean, default: false },
   },
