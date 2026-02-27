@@ -5,6 +5,9 @@ import TeacherDashboard from "../pages/teacher/Dashboard";
 import LessonsAdd from "../pages/teacher/lessons/LessonsAdd";
 import LessonsManage from "../pages/teacher/lessons/LessonsManage";
 import LessonsEdit from "../pages/teacher/lessons/LessonsEdit";
+import AssignmentsAdd from "../pages/teacher/assignments/AssignmentsAdd";
+import AssignmentsManage from "../pages/teacher/assignments/AssignmentsManage";
+import AssignmentsEdit from "../pages/teacher/assignments/AssignmentsEdit";
 import KnowledgeBaseAdd from "../pages/teacher/knowledge-base/KnowledgeBaseAdd";
 import KnowledgeBaseManage from "../pages/teacher/knowledge-base/KnowledgeBaseManage";
 import KnowledgeBaseEdit from "../pages/teacher/knowledge-base/KnowledgeBaseEdit";
@@ -33,6 +36,10 @@ const TeacherRoutes = () => {
           <Route path="lessons/add" element={<LessonsAdd />} />
           <Route path="lessons/manage" element={<LessonsManage />} />
           <Route path="lessons/edit/:id" element={<LessonsEdit />} />
+          <Route path="assignments" element={<Navigate to="manage" replace />} />
+          <Route path="assignments/add" element={<AssignmentsAdd />} />
+          <Route path="assignments/manage" element={<AssignmentsManage />} />
+          <Route path="assignments/edit/:id" element={<AssignmentsEdit />} />
           <Route path="knowledge-base" element={<Navigate to="manage" replace />} />
           <Route path="knowledge-base/add" element={<KnowledgeBaseAdd />} />
           <Route path="knowledge-base/manage" element={<KnowledgeBaseManage />} />

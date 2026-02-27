@@ -124,3 +124,58 @@ export const uploadKBAttachment = (req, res, next) => {
 		return res.status(400).json({ message: err.message || "File upload failed" });
 	});
 };
+
+const assignmentFileFilter = (_req, file, cb) => {
+	const isAssignmentField =
+		file.fieldname === "material" ||
+		file.fieldname === "materialUrl" ||
+		file.fieldname === "submission" ||
+		file.fieldname === "submissionUrl";
+
+	if (!isAssignmentField) {
+		return cb(new Error("Invalid assignment upload field"));
+	}
+
+	const allowedMimeTypes = [
+		"application/pdf",
+		"application/msword",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/zip",
+		"application/x-zip-compressed",
+		"text/plain",
+	];
+
+	if (file.mimetype.startsWith("image/")) return cb(null, true);
+	if (allowedMimeTypes.includes(file.mimetype)) return cb(null, true);
+
+	cb(new Error("Invalid assignment file type. Allowed: PDF/Word, images, ZIP, or TXT"));
+};
+
+const assignmentUploader = multer({
+	storage,
+	fileFilter: assignmentFileFilter,
+	limits: {
+		fileSize: 100 * 1024 * 1024,
+	},
+});
+
+const uploadAssignmentFileFields = assignmentUploader.fields([
+	{ name: "material", maxCount: 1 },
+	{ name: "materialUrl", maxCount: 1 },
+	{ name: "submission", maxCount: 1 },
+	{ name: "submissionUrl", maxCount: 1 },
+]);
+
+export const uploadAssignmentFiles = (req, res, next) => {
+	uploadAssignmentFileFields(req, res, (err) => {
+		if (!err) {
+			return next();
+		}
+
+		if (err instanceof multer.MulterError) {
+			return res.status(400).json({ message: err.message });
+		}
+
+		return res.status(400).json({ message: err.message || "File upload failed" });
+	});
+};

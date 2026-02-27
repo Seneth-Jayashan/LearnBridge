@@ -1,8 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { 
-  FiHome, FiBookOpen, FiFileText, 
+  FiHome, FiBookOpen, FiFileText, FiCheckSquare,
   FiChevronLeft, FiChevronRight, FiLogOut 
 } from "react-icons/fi";
 import { IoMdAddCircle } from "react-icons/io";
@@ -12,12 +11,13 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  const [lessonsOpen, setLessonsOpen] = useState(false);
 
   const links = [
     { name: "Overview", path: "/teacher/dashboard", icon: FiHome },
     { name: "Add Lesson", path: "/teacher/lessons/add", icon: IoMdAddCircle },
     { name: "Manage Lessons", path: "/teacher/lessons/manage", icon: FiFileText },
+    { name: "Add Assignment", path: "/teacher/assignments/add", icon: IoMdAddCircle },
+    { name: "Manage Assignments", path: "/teacher/assignments/manage", icon: FiCheckSquare },
     { name: "Add KB Article", path: "/teacher/knowledge-base/add", icon: IoMdAddCircle },
     { name: "Manage KB", path: "/teacher/knowledge-base/manage", icon: FiBookOpen },
   ];

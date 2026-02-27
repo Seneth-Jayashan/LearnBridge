@@ -1,5 +1,7 @@
 import Module from "../models/Module.js";
 import Lesson from "../models/Lesson.js";
+import Assignment from "../models/Assignment.js";
+import AssignmentSubmission from "../models/AssignmentSubmission.js";
 import mongoose from "mongoose";
 import { uploadFileToCloudinary, deleteCloudinaryAssetFromUrl } from "../services/CloudinaryService.js";
 import {
@@ -234,11 +236,32 @@ export const deleteModule = async (req, res) => {
         };
 
         const lessonDeleteResult = await Lesson.deleteMany(lessonDeleteFilter);
+        const assignmentDeleteFilter = {
+            $or: [
+                { module: req.params.id },
+                ...(moduleObjectId ? [{ module: moduleObjectId }] : []),
+            ],
+        };
+
+        const assignmentsToDelete = await Assignment.find(assignmentDeleteFilter).select("_id");
+        const assignmentIds = assignmentsToDelete.map((item) => item._id);
+
+        let submissionDeleteCount = 0;
+        if (assignmentIds.length > 0) {
+            const submissionDeleteResult = await AssignmentSubmission.deleteMany({
+                assignment: { $in: assignmentIds },
+            });
+            submissionDeleteCount = submissionDeleteResult.deletedCount || 0;
+        }
+
+        const assignmentDeleteResult = await Assignment.deleteMany(assignmentDeleteFilter);
         await Module.deleteOne({ _id: req.params.id });
 
         res.status(200).json({
             message: "Module deleted successfully",
             deletedLessons: lessonDeleteResult.deletedCount || 0,
+            deletedAssignments: assignmentDeleteResult.deletedCount || 0,
+            deletedAssignmentSubmissions: submissionDeleteCount,
         });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
