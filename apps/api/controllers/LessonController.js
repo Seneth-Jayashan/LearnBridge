@@ -35,7 +35,8 @@ const canManageLesson = (user, lesson) => {
   }
 
   if (user.role === "teacher") {
-    return lesson.createdBy.toString() === user._id.toString();
+    //lesson.createdBy: _id , firstName, lastName, role
+    return lesson.createdBy._id.toString() === user._id.toString();
   }
 
   return false;
