@@ -4,7 +4,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { 
   FiHome, FiBookOpen, FiEdit3, FiMessageSquare, 
   FiChevronLeft, FiChevronRight, FiLogOut,
-  FiChevronDown, FiChevronUp, FiPlusCircle, FiList
+  FiChevronDown, FiChevronUp, FiPlusCircle, FiList,
+  FiFile,
+  FiCheckSquare
 } from "react-icons/fi";
 import { IoMdAddCircle } from "react-icons/io";
 
@@ -28,7 +30,7 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
     { name: "Grading",    path: "/teacher/grades",    icon: FiEdit3 },
     { name: "Messages",   path: "/teacher/messages",  icon: FiMessageSquare },
     { name: "Add Lesson", path: "/teacher/lessons/add", icon: IoMdAddCircle },
-    { name: "Manage Lessons", path: "/teacher/lessons/manage", icon: FiFileText },
+    { name: "Manage Lessons", path: "/teacher/lessons/manage", icon: FiFile },
     { name: "Add Assignment", path: "/teacher/assignments/add", icon: IoMdAddCircle },
     { name: "Manage Assignments", path: "/teacher/assignments/manage", icon: FiCheckSquare },
     { name: "Add KB Article", path: "/teacher/knowledge-base/add", icon: IoMdAddCircle },
