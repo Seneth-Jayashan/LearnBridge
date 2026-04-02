@@ -5,6 +5,7 @@ import { FiMenu } from 'react-icons/fi';
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { user } = useAuth();
   
   // Note: We leave the state toggle here so you can pass it down to your 
@@ -22,10 +23,10 @@ export default function DashboardLayout() {
       */}
 
       {/* --- Main Content Area --- */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden w-full">
+      <div className={`flex-1 flex flex-col h-screen overflow-hidden w-full transition-all duration-300 ${isExpanded ? "md:ml-64" : "md:ml-20"}`}>
         
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 lg:px-10 shrink-0 w-full z-10">
+          <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 lg:px-10 shrink-0 w-full z-10">
           
           {/* Mobile Menu Button (Triggers your custom sidebars) */}
           <button 
@@ -62,7 +63,7 @@ export default function DashboardLayout() {
            {/* If you pass isMobileMenuOpen to Outlet context, 
              your individual sidebars can listen to it.
            */}
-           <Outlet context={{ isMobileMenuOpen, setIsMobileMenuOpen }} />
+            <Outlet context={{ isMobileMenuOpen, setIsMobileMenuOpen, isExpanded, setIsExpanded }} />
         </main>
       </div>
 

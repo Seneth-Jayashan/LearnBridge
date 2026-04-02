@@ -29,7 +29,7 @@ const TeacherRoutes = () => {
       />
       
       {/* 3. Make the padding dynamic based on the isExpanded state! */}
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
+      <div className={`transition-all duration-300 `}>
         <Routes>
           <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="lessons" element={<Navigate to="manage" replace />} />

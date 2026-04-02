@@ -19,7 +19,7 @@ const adminRoutes = () => {
       />
       
       {/* 3. Make the padding dynamic! */}
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
+      <div className={`transition-all duration-300 `}>
         <Routes>
           <Route path="dashboard" element={<div>School Dashboard Content</div>} />
           {/* ... Add your other admin routes here ... */}
