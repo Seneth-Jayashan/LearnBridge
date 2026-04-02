@@ -13,13 +13,11 @@ const schoolSchema = new mongoose.Schema(
     contactPhone: { type: String, trim: true },
     logoUrl: { type: String, trim: true },
     
-    // Arrays for easy population, though querying Users by { school: schoolId } is often better
     admins: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     teachers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     
-    // --- NEW: Super Admin Verification ---
-    isVerified: { type: Boolean, default: false }, // Super Admin must verify
+    isVerified: { type: Boolean, default: false },
     
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },

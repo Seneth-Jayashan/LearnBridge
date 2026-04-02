@@ -7,11 +7,14 @@ import {
     deleteUser, 
     checkPhoneNumber, 
     checkEmail,
-    // --- New Controller Imports ---
     createSchoolWithAdmin,
     toggleUserStatus,
     toggleUserLock,
-    restoreUser
+    restoreUser,
+    getAllSchools,
+    getSchoolById,
+    updateSchool,
+    deleteSchool
 } from "../controllers/AdminController.js"; 
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
@@ -29,20 +32,45 @@ const router = express.Router();
 // SUPER ADMIN: SCHOOL MANAGEMENT
 // ==========================================
 
-// Create a new School along with its School Admin
 router.post(
     "/create-school",
     protect,
     restrictTo("super_admin"),
-    // Note: You can add a specific validation schema here later (e.g., validate(createSchoolSchema))
     createSchoolWithAdmin
+);
+
+router.get(
+    "/schools", 
+    protect, 
+    restrictTo("super_admin"), 
+    getAllSchools
+);
+
+router.get(
+    "/schools/:id", 
+    protect, 
+    restrictTo("super_admin"), 
+    getSchoolById
+);
+
+router.put(
+    "/schools/:id", 
+    protect, 
+    restrictTo("super_admin"), 
+    updateSchool
+);
+
+router.delete(
+    "/schools/:id", 
+    protect, 
+    restrictTo("super_admin"), 
+    deleteSchool
 );
 
 // ==========================================
 // SUPER ADMIN: USER MANAGEMENT
 // ==========================================
 
-// Create User: Protect -> super_admin Only -> Validate Body -> Controller
 router.post(
     "/create-user", 
     protect, 
@@ -51,7 +79,6 @@ router.post(
     createUser
 );
 
-// Get All Users
 router.get(
     "/users", 
     protect, 
@@ -59,7 +86,6 @@ router.get(
     getAllUsers
 );
 
-// Get Single User by ID
 router.get(
     "/users/:id", 
     protect, 
@@ -67,7 +93,6 @@ router.get(
     getUserById
 );
 
-// Update User
 router.put(
     "/users/:id", 
     protect, 
@@ -76,7 +101,6 @@ router.put(
     updateUser
 );
 
-// Delete User (Soft delete based on controller)
 router.delete(
     "/users/:id", 
     protect, 
@@ -86,7 +110,6 @@ router.delete(
 
 // --- User Status & Security Actions ---
 
-// Toggle Active/Inactive Status
 router.patch(
     "/users/:id/toggle-status",
     protect,
@@ -94,7 +117,6 @@ router.patch(
     toggleUserStatus
 );
 
-// Toggle Locked/Unlocked Status
 router.patch(
     "/users/:id/toggle-lock",
     protect,
@@ -102,7 +124,6 @@ router.patch(
     toggleUserLock
 );
 
-// Restore a previously deleted user
 router.patch(
     "/users/:id/restore",
     protect,
