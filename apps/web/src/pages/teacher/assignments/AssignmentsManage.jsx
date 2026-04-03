@@ -28,6 +28,14 @@ const formatDateTime = (value) => {
     return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 };
 
+const isLateSubmission = (submittedAt, dueDate) => {
+    if (!submittedAt || !dueDate) return false;
+    const submittedDate = new Date(submittedAt);
+    const dueDateValue = new Date(dueDate);
+    if (Number.isNaN(submittedDate.getTime()) || Number.isNaN(dueDateValue.getTime())) return false;
+    return submittedDate.getTime() > dueDateValue.getTime();
+};
+
 const AssignmentsManage = () => {
     const navigate = useNavigate();
     const [assignments, setAssignments] = useState([]);
@@ -330,47 +338,64 @@ const AssignmentsManage = () => {
                                                 </div>
                                             ) : (
                                                 <div className="grid gap-2">
-                                                    {(submissionsByAssignment[assignment._id] || []).map((submission) => (
-                                                        <div
-                                                            key={submission._id}
-                                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-slate-300 transition-colors shadow-sm"
-                                                        >
-                                                            <div>
-                                                                <p className="text-sm font-bold text-slate-800">
-                                                                    {submission?.student?.firstName || "Unknown"} {submission?.student?.lastName || "Student"}
-                                                                </p>
-                                                                <div className="flex flex-wrap items-center gap-2 mt-1">
-                                                                    <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                                                                        ID: {submission?.student?.regNumber || "N/A"}
-                                                                    </span>
-                                                                    <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
-                                                                        <Calendar className="w-3 h-3" />
-                                                                        Submitted: {formatDateTime(submission?.submittedAt || submission?.createdAt)}
-                                                                    </span>
+                                                    {(submissionsByAssignment[assignment._id] || []).map((submission) => {
+                                                        const submittedAt = submission?.submittedAt || submission?.createdAt;
+                                                        const lateStatus =
+                                                            typeof submission?.isLate === "boolean"
+                                                                ? submission.isLate
+                                                                : isLateSubmission(submittedAt, assignment?.dueDate);
+
+                                                        return (
+                                                            <div
+                                                                key={submission._id}
+                                                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:border-slate-300 transition-colors shadow-sm"
+                                                            >
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-slate-800">
+                                                                        {submission?.student?.firstName || "Unknown"} {submission?.student?.lastName || "Student"}
+                                                                    </p>
+                                                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                                        <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                                                            ID: {submission?.student?.regNumber || "N/A"}
+                                                                        </span>
+                                                                        <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                                                                            <Calendar className="w-3 h-3" />
+                                                                            Submitted: {formatDateTime(submittedAt)}
+                                                                        </span>
+                                                                        <span
+                                                                            className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
+                                                                                lateStatus
+                                                                                    ? "text-red-700 bg-red-50 border-red-200"
+                                                                                    : "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                                            }`}
+                                                                        >
+                                                                            {lateStatus ? "Late" : "On Time"}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
+
+                                                                {submission?.fileUrl ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDownload(submission, assignment._id)}
+                                                                        disabled={Boolean(submissionsDownloading[submission._id])}
+                                                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                                                    >
+                                                                        {submissionsDownloading[submission._id] ? (
+                                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                        ) : (
+                                                                            <Download className="w-3.5 h-3.5" />
+                                                                        )}
+                                                                        {submissionsDownloading[submission._id] ? 'Downloading...' : 'Download File'}
+                                                                    </button>
+                                                                ) : (
+                                                                    <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
+                                                                        No File Attached
+                                                                    </span>
+                                                                )}
                                                             </div>
-                                                            
-                                                            {submission?.fileUrl ? (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleDownload(submission, assignment._id)}
-                                                                    disabled={Boolean(submissionsDownloading[submission._id])}
-                                                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                                                                >
-                                                                    {submissionsDownloading[submission._id] ? (
-                                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                                    ) : (
-                                                                        <Download className="w-3.5 h-3.5" />
-                                                                    )}
-                                                                    {submissionsDownloading[submission._id] ? 'Downloading...' : 'Download File'}
-                                                                </button>
-                                                            ) : (
-                                                                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">
-                                                                    No File Attached
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>

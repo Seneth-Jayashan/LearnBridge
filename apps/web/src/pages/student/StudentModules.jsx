@@ -8,18 +8,20 @@ import {
     GraduationCap, 
     BookOpen, 
     FileText, 
-    Video as VideoIcon, 
     Download, 
     PlayCircle, 
-    Video, 
+    Video as VideoIcon, 
     X,
     User,
-    Shield
+    Shield,
+    ChevronLeft,
+    ChevronRight,
+    Calendar
 } from "lucide-react";
 import moduleService from "../../services/ModuleService";
 import lessonService from "../../services/LessonService";
 
-// --- Helpers ---
+// --- Helpers (Unchanged) ---
 const toPublicMediaUrl = (value) => {
     if (!value) return "";
     if (/^https?:\/\//i.test(value) || /^blob:/i.test(value)) return value;
@@ -44,9 +46,7 @@ const triggerBrowserDownload = (url, fileName = "") => {
     if (!url) return;
     const link = document.createElement("a");
     link.href = url;
-    if (fileName) {
-        link.download = fileName;
-    }
+    if (fileName) link.download = fileName;
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
@@ -65,10 +65,7 @@ const downloadFile = async (url, fileName = "", forceBlobDownload = false) => {
         const fileBlob = await response.blob();
         const objectUrl = URL.createObjectURL(fileBlob);
         try {
-            triggerBrowserDownload(
-                objectUrl,
-                fileName || inferFileNameFromUrl(url) || "resource",
-            );
+            triggerBrowserDownload(objectUrl, fileName || inferFileNameFromUrl(url) || "resource");
         } finally {
             URL.revokeObjectURL(objectUrl);
         }
@@ -84,14 +81,15 @@ const StudentModules = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
-    const [visibleVideos, setVisibleVideos] = useState({});
     
-    // UI State for download spinners
+    // UI State
+    const [selectedModule, setSelectedModule] = useState(null); // Controls Master/Detail view
+    const [visibleVideos, setVisibleVideos] = useState({});
     const [downloadingId, setDownloadingId] = useState(null);
 
+    // Fetch initial data
     useEffect(() => {
         let isMounted = true;
-
         const loadModules = async () => {
             try {
                 setIsLoading(true);
@@ -105,39 +103,31 @@ const StudentModules = () => {
                     setLessons(Array.isArray(lessonData) ? lessonData : []);
                 }
             } catch (err) {
-                if (isMounted) {
-                    setError(err?.response?.data?.message || "Failed to load modules. Please refresh the page.");
-                }
+                if (isMounted) setError(err?.response?.data?.message || "Failed to load modules. Please refresh the page.");
             } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
+                if (isMounted) setIsLoading(false);
             }
         };
-
         loadModules();
-
-        return () => {
-            isMounted = false;
-        };
+        return () => { isMounted = false; };
     }, []);
 
-    // Debounced lesson search
+    // Debounced search
     useEffect(() => {
         let isMounted = true;
         const t = setTimeout(async () => {
             try {
                 const lessonData = await lessonService.getAllLessons({ q: searchQuery });
-                if (isMounted) setLessons(Array.isArray(lessonData) ? lessonData : []);
+                if (isMounted) {
+                    setLessons(Array.isArray(lessonData) ? lessonData : []);
+                    // Optional: Reset to grid view if they search while in a module
+                    if (searchQuery.trim() !== "") setSelectedModule(null);
+                }
             } catch (err) {
-                if (isMounted) setError(err?.response?.data?.message || "Failed to search lessons.");
+                if (isMounted) setError("Failed to search lessons.");
             }
         }, 300);
-
-        return () => {
-            isMounted = false;
-            clearTimeout(t);
-        };
+        return () => { isMounted = false; clearTimeout(t); };
     }, [searchQuery]);
 
     const hasModules = useMemo(() => modules.length > 0, [modules]);
@@ -146,11 +136,8 @@ const StudentModules = () => {
         return lessons.reduce((acc, lesson) => {
             const moduleId = lesson?.module?._id || lesson?.module;
             if (!moduleId) return acc;
-
             const key = String(moduleId);
-            if (!acc[key]) {
-                acc[key] = [];
-            }
+            if (!acc[key]) acc[key] = [];
             acc[key].push(lesson);
             return acc;
         }, {});
@@ -160,12 +147,9 @@ const StudentModules = () => {
         if (!searchQuery || String(searchQuery).trim() === "") return modules;
         const q = String(searchQuery).trim();
         const re = new RegExp(q, "i");
-
-        // modules that have matching lessons
         const moduleIdsFromLessons = new Set(
             lessons.map((l) => String(l?.module?._id || l?.module)).filter(Boolean),
         );
-
         return modules.filter((m) => {
             if (!m) return false;
             if (moduleIdsFromLessons.has(String(m._id))) return true;
@@ -186,11 +170,7 @@ const StudentModules = () => {
         }
         try {
             const { downloadUrl: signedUrl, fileName } = await lessonService.getMaterialDownloadUrl(lesson._id);
-            await downloadFile(
-                signedUrl || fallbackUrl,
-                fileName || inferFileNameFromUrl(signedUrl || fallbackUrl),
-                true,
-            );
+            await downloadFile(signedUrl || fallbackUrl, fileName || inferFileNameFromUrl(signedUrl || fallbackUrl), true);
         } catch {
             setError("Failed to download lesson material.");
         } finally {
@@ -210,10 +190,7 @@ const StudentModules = () => {
         try {
             const { downloadUrl: signedUrl, fileName } = await lessonService.getVideoDownloadUrl(lesson._id);
             const resolvedVideoUrl = toPublicMediaUrl(signedUrl || fallbackUrl);
-            await downloadFile(
-                resolvedVideoUrl,
-                fileName || inferFileNameFromUrl(resolvedVideoUrl),
-            );
+            await downloadFile(resolvedVideoUrl, fileName || inferFileNameFromUrl(resolvedVideoUrl));
         } catch {
             setError("Failed to download lesson video.");
         } finally {
@@ -223,29 +200,36 @@ const StudentModules = () => {
 
     return (
         <section className="max-w-6xl mx-auto py-8 px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-6">
-                <div>
-                    <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">My Learning Modules</h2>
-                    <p className="text-slate-500 mt-2 text-sm md:text-base">
-                        Explore subjects, access materials, and watch lesson recordings for your grade.
-                    </p>
-                </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60 mb-6 relative z-10">
-                <div className="relative w-full md:max-w-md group">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                        <Search className="w-4 h-4" />
+            
+            {/* Header & Search Area */}
+            <div className="mb-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
+                            {selectedModule ? "Module Details" : "My Learning Modules"}
+                        </h2>
+                        <p className="text-slate-500 mt-2 text-sm md:text-base">
+                            {selectedModule 
+                                ? `Viewing lessons for ${selectedModule.name}` 
+                                : "Explore subjects, access materials, and watch lesson recordings."}
+                        </p>
                     </div>
-                    <input
-                        type="search"
-                        placeholder="Search subjects or specific lessons..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#207D86]/20 focus:border-[#207D86] transition-all"
-                    />
+
+                    {/* Only show search on the main grid view */}
+                    {!selectedModule && (
+                        <div className="relative w-full md:max-w-md group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                <Search className="w-4 h-4" />
+                            </div>
+                            <input
+                                type="search"
+                                placeholder="Search subjects or specific lessons..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm text-sm text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#207D86]/20 focus:border-[#207D86] transition-all"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -257,7 +241,6 @@ const StudentModules = () => {
                 </div>
             )}
 
-            {/* Main Content Area */}
             {isLoading ? (
                 <div className="py-20 flex flex-col items-center justify-center space-y-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
                     <div className="p-4 bg-slate-50 rounded-full border border-slate-100">
@@ -265,14 +248,171 @@ const StudentModules = () => {
                     </div>
                     <p className="text-slate-500 font-medium animate-pulse">Loading your curriculum...</p>
                 </div>
+            ) : selectedModule ? (
+                /* ========================================================= */
+                /* DETAIL VIEW: Specific Module & Its Lessons                */
+                /* ========================================================= */
+                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                    {/* Back Button & Module Info Card */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-[#207D86]"></div>
+                        <button 
+                            onClick={() => setSelectedModule(null)}
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-[#207D86] transition-colors mb-4"
+                        >
+                            <ChevronLeft className="w-4 h-4" /> Back to Modules
+                        </button>
+                        <h3 className="text-2xl font-extrabold text-slate-800 mb-2">{selectedModule.name}</h3>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600">
+                                <GraduationCap className="w-3.5 h-3.5 text-slate-400" /> {selectedModule?.grade?.name || "N/A"}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600">
+                                <Layers className="w-3.5 h-3.5 text-slate-400" /> {selectedModule?.level?.name || "N/A"}
+                            </span>
+                        </div>
+                        <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+                            {selectedModule.description || "No specific description provided for this module."}
+                        </p>
+                    </div>
+
+                    {/* Lesson List */}
+                    <div className="space-y-4">
+                        <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2 px-1">
+                            <BookOpen className="w-5 h-5 text-[#207D86]" /> Assigned Lessons
+                        </h4>
+
+                        {(lessonsByModule[String(selectedModule._id)] || []).length === 0 ? (
+                            <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-white">
+                                <p className="text-slate-500">No lessons have been uploaded to this module yet.</p>
+                            </div>
+                        ) : (
+                            (lessonsByModule[String(selectedModule._id)] || []).map((lesson, index) => (
+                                <div key={lesson._id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:border-[#207D86]/30 transition-all">
+                                    <div className="p-5 sm:p-6 md:flex gap-6 justify-between items-start">
+                                        
+                                        {/* Lesson Info */}
+                                        <div className="flex-1 mb-4 md:mb-0">
+                                            <div className="flex items-center gap-2 mb-1.5">
+                                                <span className="bg-[#207D86]/10 text-[#207D86] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                                                    Lesson {index + 1}
+                                                </span>
+                                                <span className="text-xs text-slate-400 flex items-center gap-1">
+                                                    <Calendar className="w-3 h-3" /> Updated recently
+                                                </span>
+                                            </div>
+                                            <h5 className="text-lg font-bold text-slate-800">{lesson.title}</h5>
+                                            {lesson.description && (
+                                                <p className="mt-2 text-sm text-slate-500 leading-relaxed max-w-3xl">
+                                                    {lesson.description}
+                                                </p>
+                                            )}
+                                            
+                                            {/* Meta Tags */}
+                                            <div className="flex flex-wrap gap-3 mt-4">
+                                                {lesson.createdBy && (
+                                                    <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">
+                                                        <User className="w-3.5 h-3.5 text-slate-400" />
+                                                        {lesson.createdBy.firstName} {lesson.createdBy.lastName}
+                                                    </span>
+                                                )}
+                                                {lesson.school === null && (
+                                                    <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-100">
+                                                        <Shield className="w-3.5 h-3.5" /> Independent Resource
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex flex-wrap sm:flex-col gap-2 shrink-0 md:w-48">
+                                            {lesson.onlineMeeting?.joinUrl && (
+                                                <a
+                                                    href={lesson.onlineMeeting.joinUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                                                >
+                                                    <PlayCircle className="w-4 h-4" /> Join Live Class
+                                                </a>
+                                            )}
+
+                                            {lesson.videoUrl && (
+                                                <button
+                                                    onClick={() => setVisibleVideos((s) => ({ ...s, [lesson._id]: !s[lesson._id] }))}
+                                                    className={`w-full inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition-colors ${
+                                                        visibleVideos[lesson._id] 
+                                                            ? "bg-slate-100 text-slate-700 border-slate-200" 
+                                                            : "bg-white text-[#207D86] border-[#207D86]/30 hover:bg-[#207D86]/5"
+                                                    }`}
+                                                >
+                                                    <VideoIcon className="w-4 h-4" /> 
+                                                    {visibleVideos[lesson._id] ? "Close Video" : "Watch Recording"}
+                                                </button>
+                                            )}
+
+                                            <div className="flex gap-2 w-full">
+                                                {lesson.materialUrl && (
+                                                    <button
+                                                        onClick={() => handleMaterialDownload(lesson)}
+                                                        disabled={downloadingId === `material-${lesson._id}`}
+                                                        className="flex-1 inline-flex justify-center items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-60"
+                                                    >
+                                                        {downloadingId === `material-${lesson._id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                                        Notes
+                                                    </button>
+                                                )}
+                                                {lesson.videoUrl && (
+                                                    <button
+                                                        onClick={() => handleVideoDownload(lesson)}
+                                                        disabled={downloadingId === `video-${lesson._id}`}
+                                                        className="flex-1 inline-flex justify-center items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-60"
+                                                    >
+                                                        {downloadingId === `video-${lesson._id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                                                        Video
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Video Player Drawer */}
+                                    {lesson.videoUrl && visibleVideos[lesson._id] && (
+                                        <div className="border-t border-slate-100 bg-slate-900 animate-in slide-in-from-top-2 duration-300">
+                                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+                                                <span className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                                    Now Playing: {lesson.title}
+                                                </span>
+                                                <button
+                                                    onClick={() => setVisibleVideos((s) => ({ ...s, [lesson._id]: false }))}
+                                                    className="text-slate-400 hover:text-white transition-colors p-1"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            <div className="relative pt-[56.25%] w-full bg-black">
+                                                <video
+                                                    controls
+                                                    className="absolute top-0 left-0 w-full h-full"
+                                                    src={toPublicMediaUrl(lesson.videoUrl)}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
             ) : !hasModules ? (
+                /* Empty States */
                 <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-slate-100 shadow-sm">
                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-200">
                         <Library className="w-10 h-10 text-slate-300" />
                     </div>
                     <h4 className="text-xl font-bold text-slate-700 mb-2">No modules available</h4>
                     <p className="text-slate-500 max-w-md">
-                        It looks like there are no learning modules assigned to your current grade level yet. Please check back later.
+                        It looks like there are no learning modules assigned to your current grade level yet.
                     </p>
                 </div>
             ) : displayedModules.length === 0 ? (
@@ -282,172 +422,63 @@ const StudentModules = () => {
                     </div>
                     <h4 className="text-xl font-bold text-slate-700 mb-2">No matches found</h4>
                     <p className="text-slate-500 max-w-md">
-                        We couldn't find any modules or lessons matching "{searchQuery}". Try adjusting your search keywords.
+                        We couldn't find any modules matching "{searchQuery}".
                     </p>
                     <button 
                         onClick={() => setSearchQuery("")}
-                        className="mt-4 text-sm font-semibold text-[#207D86] hover:text-[#18646b] hover:underline"
+                        className="mt-4 text-sm font-semibold text-[#207D86] hover:underline"
                     >
                         Clear search
                     </button>
                 </div>
             ) : (
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 items-start">
-                    {displayedModules.map((module) => (
-                        <article
-                            key={module._id}
-                            className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#207D86]/30 transition-all duration-300 flex flex-col overflow-hidden"
-                        >
-                            {/* Module Header */}
-                            <div className="p-5 border-b border-slate-100 bg-slate-50/50">
-                                <h3 className="text-xl font-extrabold text-[#0E2A47] line-clamp-1 mb-3" title={module.name}>
-                                    {module.name}
-                                </h3>
+                /* ========================================================= */
+                /* MASTER VIEW: Clean Grid of Modules                        */
+                /* ========================================================= */
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {displayedModules.map((module) => {
+                        const moduleLessons = lessonsByModule[String(module._id)] || [];
+                        
+                        return (
+                            <button
+                                key={module._id}
+                                onClick={() => setSelectedModule(module)}
+                                className="group flex flex-col text-left bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#207D86]/40 transition-all duration-300 overflow-hidden"
+                            >
+                                <div className="p-6 flex-1">
+                                    <div className="w-12 h-12 bg-[#207D86]/10 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                        <Library className="w-6 h-6 text-[#207D86]" />
+                                    </div>
+                                    <h3 className="text-xl font-extrabold text-[#0E2A47] mb-2 line-clamp-2">
+                                        {module.name}
+                                    </h3>
+                                    
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        <span className="text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                                            {module?.grade?.name || "No Grade"}
+                                        </span>
+                                        <span className="text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                                            {module?.level?.name || "No Level"}
+                                        </span>
+                                    </div>
+
+                                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">
+                                        {module.description || "Click to view curriculum details and lessons."}
+                                    </p>
+                                </div>
                                 
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">
-                                        <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
-                                        {module?.grade?.name || "N/A"}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">
-                                        <Layers className="w-3.5 h-3.5 text-slate-400" />
-                                        {module?.level?.name || "N/A"}
+                                <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between w-full group-hover:bg-[#207D86]/5 transition-colors">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                                        <BookOpen className="w-4 h-4 text-[#207D86]" />
+                                        {moduleLessons.length} {moduleLessons.length === 1 ? 'Lesson' : 'Lessons'}
+                                    </div>
+                                    <span className="flex items-center text-sm font-bold text-[#207D86] group-hover:translate-x-1 transition-transform">
+                                        Enter <ChevronRight className="w-4 h-4 ml-1" />
                                     </span>
                                 </div>
-
-                                {module.description ? (
-                                    <p className="text-sm text-slate-500 line-clamp-2" title={module.description}>
-                                        {module.description}
-                                    </p>
-                                ) : (
-                                    <p className="text-sm text-slate-400 italic">No description provided.</p>
-                                )}
-                            </div>
-
-                            {/* Lessons List */}
-                            <div className="p-5 bg-white flex-1">
-                                <h4 className="text-sm font-extrabold text-slate-800 flex items-center gap-2 mb-4">
-                                    <BookOpen className="w-4 h-4 text-[#207D86]" /> 
-                                    Assigned Lessons
-                                </h4>
-
-                                {(lessonsByModule[String(module._id)] || []).length === 0 ? (
-                                    <div className="text-center py-6 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                                        <p className="text-sm font-medium text-slate-500">No lessons available yet.</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {(lessonsByModule[String(module._id)] || []).map((lesson) => (
-                                            <div key={lesson._id} className="rounded-xl border border-slate-200 bg-white p-4 hover:border-slate-300 transition-colors shadow-sm">
-                                                
-                                                {/* Lesson Header */}
-                                                <div className="mb-2">
-                                                    <p className="text-base font-bold text-slate-800">{lesson.title}</p>
-                                                    {lesson.description && (
-                                                        <p className="mt-1 text-sm text-slate-500 line-clamp-2">{lesson.description}</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Meta Info */}
-                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-slate-500 font-medium">
-                                                    {lesson.createdBy && (
-                                                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                                                            <User className="w-3 h-3" />
-                                                            {lesson.createdBy.firstName} {lesson.createdBy.lastName}
-                                                        </span>
-                                                    )}
-                                                    {lesson.school === null && (
-                                                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                                                            <Shield className="w-3 h-3" />
-                                                            Independent Resource
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Actions / Downloads */}
-                                                <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-slate-100">
-                                                    
-                                                    {lesson.materialUrl && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleMaterialDownload(lesson)}
-                                                            disabled={downloadingId === `material-${lesson._id}`}
-                                                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60 disabled:cursor-wait"
-                                                        >
-                                                            {downloadingId === `material-${lesson._id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
-                                                            PDF / Doc
-                                                        </button>
-                                                    )}
-
-                                                    {lesson.videoUrl && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleVideoDownload(lesson)}
-                                                            disabled={downloadingId === `video-${lesson._id}`}
-                                                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-60 disabled:cursor-wait"
-                                                        >
-                                                            {downloadingId === `video-${lesson._id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                                                            Video
-                                                        </button>
-                                                    )}
-
-                                                    {lesson.videoUrl && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setVisibleVideos((s) => ({ ...s, [lesson._id]: !s[lesson._id] }))}
-                                                            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors focus:outline-none focus:ring-2 ${
-                                                                visibleVideos[lesson._id] 
-                                                                    ? "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200" 
-                                                                    : "bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20 hover:bg-[#207D86]/20 focus:ring-[#207D86]/30"
-                                                            }`}
-                                                        >
-                                                            <VideoIcon className="w-3.5 h-3.5" />
-                                                            {visibleVideos[lesson._id] ? "Close Video" : "Watch"}
-                                                        </button>
-                                                    )}
-
-                                                    {lesson?.onlineMeeting?.joinUrl && (
-                                                        <a
-                                                            href={lesson.onlineMeeting.joinUrl}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-200 shadow-sm"
-                                                        >
-                                                            <PlayCircle className="w-3.5 h-3.5" />
-                                                            Join Live Zoom
-                                                        </a>
-                                                    )}
-                                                </div>
-
-                                                {/* Expandable Video Player */}
-                                                {lesson.videoUrl && visibleVideos[lesson._id] && (
-                                                    <div className="mt-4 rounded-xl border border-slate-200 overflow-hidden shadow-lg animate-in fade-in slide-in-from-top-2">
-                                                        <div className="flex items-center justify-between bg-slate-900 px-4 py-2.5">
-                                                            <span className="text-xs font-bold text-white flex items-center gap-2">
-                                                                <VideoIcon className="w-4 h-4" /> Video Preview
-                                                            </span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setVisibleVideos((s) => ({ ...s, [lesson._id]: false }))}
-                                                                className="text-slate-400 hover:text-white transition-colors"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-                                                        <video
-                                                            controls
-                                                            className="w-full max-h-[400px] bg-black"
-                                                            src={toPublicMediaUrl(lesson.videoUrl)}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </article>
-                    ))}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </section>

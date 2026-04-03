@@ -15,6 +15,7 @@ const assignmentSubmissionSchema = new mongoose.Schema(
     fileUrl: { type: String, required: true, trim: true },
     notes: { type: String, trim: true, default: "" },
     submittedAt: { type: Date, default: Date.now },
+    isLate: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

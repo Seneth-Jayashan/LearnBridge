@@ -12,7 +12,8 @@ import {
     X,
     Layers,
     GraduationCap,
-    Download
+    Download,
+    BookOpen
 } from "lucide-react";
 import assignmentService from "../../../services/AssignmentService";
 import moduleService from "../../../services/ModuleService";
@@ -23,6 +24,34 @@ const initialForm = {
     module: "",
     dueDate: "",
     materialUrl: "",
+};
+
+const parseGradeNumber = (value) => {
+    const match = String(value || "").match(/\d+/);
+    if (!match) return null;
+    const parsed = Number.parseInt(match[0], 10);
+    return Number.isNaN(parsed) ? null : parsed;
+};
+
+const isAdvancedLevelName = (value) => {
+    const normalized = String(value || "").toLowerCase();
+    return normalized.includes("advanced") || normalized.includes("a/l");
+};
+
+const isAdvancedModule = (module) => {
+    if (!module) return false;
+    const gradeNumber = parseGradeNumber(module?.grade?.name || module?.grade);
+    if (gradeNumber !== null) return gradeNumber >= 12;
+    return isAdvancedLevelName(module?.level?.name || module?.level);
+};
+
+const getModuleStream = (module) => String(module?.subjectStream || module?.stream || "").trim();
+
+const getModuleOptionLabel = (module) => {
+    const gradeLabel = module?.grade?.name || module?.grade;
+    const stream = getModuleStream(module);
+    const streamPrefix = isAdvancedModule(module) && stream ? `${stream} - ` : "";
+    return `${streamPrefix}${module?.name || ""}${gradeLabel ? ` — ${gradeLabel}` : ""}`;
 };
 
 const toDateTimeLocalValue = (value) => {
@@ -79,6 +108,11 @@ const AssignmentsEdit = () => {
         if (!formData.module) return null;
         return modules.find((item) => String(item._id) === String(formData.module)) || null;
     }, [modules, formData.module]);
+
+    const selectedModuleStream = getModuleStream(selectedModule);
+    const showSelectedModuleStream = Boolean(
+        selectedModule && isAdvancedModule(selectedModule) && selectedModuleStream,
+    );
 
     useEffect(() => {
         const loadData = async () => {
@@ -223,7 +257,7 @@ const AssignmentsEdit = () => {
                                         <option value="">Select module...</option>
                                         {modules.map((item) => (
                                             <option key={item._id} value={item._id}>
-                                                {item.name} {item?.grade?.name ? `— ${item.grade.name}` : ""}
+                                                {getModuleOptionLabel(item)}
                                             </option>
                                         ))}
                                     </select>
@@ -239,6 +273,12 @@ const AssignmentsEdit = () => {
                                             <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
                                             <span className="text-slate-400">Grade:</span> {selectedModule?.grade?.name || "N/A"}
                                         </span>
+                                        {showSelectedModuleStream && (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-xs font-medium text-indigo-700 border border-indigo-100 shadow-sm">
+                                                <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                                                <span className="text-indigo-500">Stream:</span> {selectedModuleStream}
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>

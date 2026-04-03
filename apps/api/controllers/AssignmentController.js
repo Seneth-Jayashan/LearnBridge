@@ -374,6 +374,8 @@ export const submitAssignment = async (req, res) => {
 
     const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
     const submissionUrl = uploadedSubmission.secure_url || "";
+    const submittedAt = new Date();
+    const isLate = Boolean(assignment.dueDate && submittedAt > new Date(assignment.dueDate));
 
     if (!submissionUrl) {
       return res.status(400).json({ message: "Failed to upload assignment submission" });
@@ -401,7 +403,8 @@ export const submitAssignment = async (req, res) => {
         student: req.user._id,
         fileUrl: submissionUrl,
         notes,
-        submittedAt: new Date(),
+        submittedAt,
+        isLate,
       },
       {
         upsert: true,

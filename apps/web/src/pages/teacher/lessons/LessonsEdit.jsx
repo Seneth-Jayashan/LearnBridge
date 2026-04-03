@@ -12,7 +12,10 @@ import {
     Save, 
     X, 
     Radio,
-    Download
+    Download,
+    Layers,
+    GraduationCap,
+    BookOpen
 } from "lucide-react";
 import lessonService from "../../../services/LessonService";
 import moduleService from "../../../services/ModuleService";
@@ -88,6 +91,43 @@ const toDateTimeLocalValue = (value) => {
     return localDate.toISOString().slice(0, 16);
 };
 
+const parseGradeNumber = (value) => {
+    const match = String(value || "").match(/\d+/);
+    if (!match) return null;
+    const parsed = Number.parseInt(match[0], 10);
+    return Number.isNaN(parsed) ? null : parsed;
+};
+
+const isAdvancedLevelName = (value) => {
+    const normalized = String(value || "").toLowerCase();
+    return normalized.includes("advanced") || normalized.includes("a/l");
+};
+
+const isAdvancedModule = (module) => {
+    if (!module) return false;
+    const gradeNumber = parseGradeNumber(module?.grade?.name || module?.grade);
+    if (gradeNumber !== null) return gradeNumber >= 12;
+    return isAdvancedLevelName(module?.level?.name || module?.level);
+};
+
+const getModuleStream = (module) => String(module?.subjectStream || module?.stream || "").trim();
+
+const getGradeLabel = (module) => {
+    const rawGrade = module?.grade?.name || module?.grade;
+    if (!rawGrade) return "";
+    const gradeText = String(rawGrade);
+    if (/grade/i.test(gradeText)) return gradeText;
+    if (/\d/.test(gradeText)) return `Grade - ${gradeText}`;
+    return gradeText;
+};
+
+const getModuleOptionLabel = (module) => {
+    const stream = getModuleStream(module);
+    const streamPrefix = isAdvancedModule(module) && stream ? `${stream} - ` : "";
+    const gradeLabel = getGradeLabel(module);
+    return `${streamPrefix}${module?.name || ""}${gradeLabel ? ` — ${gradeLabel}` : ""}`;
+};
+
 const LessonsEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -98,6 +138,16 @@ const LessonsEdit = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     const [error, setError] = useState("");
+
+    const selectedModule = useMemo(() => {
+        if (!formData.module) return null;
+        return modules.find((item) => String(item._id) === String(formData.module)) || null;
+    }, [modules, formData.module]);
+
+    const selectedModuleStream = getModuleStream(selectedModule);
+    const showSelectedModuleStream = Boolean(
+        selectedModule && isAdvancedModule(selectedModule) && selectedModuleStream,
+    );
 
     useEffect(() => {
         const loadData = async () => {
@@ -304,16 +354,29 @@ const LessonsEdit = () => {
                                         <option value="">Select module...</option>
                                         {modules.map((item) => (
                                             <option key={item._id} value={item._id}>
-                                                {item.name} {" "}
-                                                {item?.grade?.name ? (
-                                                    <>— {/grade/i.test(item.grade.name) ? item.grade.name : `${/\d/.test(item.grade.name) ? `Grade - ${item.grade.name}` : item.grade.name}`}</>
-                                                ) : item?.grade ? (
-                                                    <>— {/grade/i.test(String(item.grade)) ? item.grade : `${/\d/.test(String(item.grade)) ? `Grade - ${item.grade}` : item.grade}`}</>
-                                                ) : null}
+                                                {getModuleOptionLabel(item)}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
+                                {selectedModule && (
+                                    <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200">
+                                            <Layers className="w-3.5 h-3.5 text-slate-400" />
+                                            <span className="text-slate-400">Level:</span> {selectedModule?.level?.name || selectedModule?.level || "N/A"}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200">
+                                            <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+                                            <span className="text-slate-400">Grade:</span> {selectedModule?.grade?.name || selectedModule?.grade || "N/A"}
+                                        </span>
+                                        {showSelectedModuleStream && (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-xs font-medium text-indigo-700 border border-indigo-100">
+                                                <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                                                <span className="text-indigo-500">Stream:</span> {selectedModuleStream}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Title Input */}
