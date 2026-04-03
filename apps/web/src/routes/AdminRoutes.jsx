@@ -11,10 +11,14 @@ import GradeManage from "../pages/admin/Grades/GradeManage";
 import AddGrade from "../pages/admin/Grades/AddGrade";
 import EditGrade from "../pages/admin/Grades/EditGrade";
 
-const adminRoutes = () => {
+import Users from "../pages/admin/users/Users";
+import CreateUser from "../pages/admin/users/Create";
+import Schools from "../pages/admin/schools/Schools";
+import CreateSchool from "../pages/admin/schools/Create";
+
+const AdminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
   
-  // 1. Move the expand/shrink state HERE
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -31,6 +35,14 @@ const adminRoutes = () => {
       <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          {/* User Routes */}
+          <Route path="users" element={<Users />} />
+          <Route path="users/create" element={<CreateUser />} />
+          {/* <Route path="users/edit/:id" element={<EditUser />} /> */}
+          
+          {/* School Routes */}
+          <Route path="schools" element={<Schools />} />
+          <Route path="schools/create" element={<CreateSchool />} />
           <Route path="modules" element={<Navigate to="manage" replace />} />
           <Route path="modules/manage" element={<ModulesManage />} />
           <Route path="modules/add" element={<AddModules />} />
@@ -50,4 +62,4 @@ const adminRoutes = () => {
   );
 };
 
-export default adminRoutes;
+export default AdminRoutes;

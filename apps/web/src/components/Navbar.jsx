@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { FiMenu, FiX, FiLogOut, FiUser, FiGrid, FiSettings } from "react-icons/fi";
+import { 
+  FiMenu, FiX, FiLogOut, FiUser, FiGrid, FiSettings, FiAlertCircle 
+} from "react-icons/fi";
 import LogoImage from "../assets/Learn Bridge Logo 2.png";
 
 const Navbar = () => {
-  const { user, logout, isAuthenticated, isadmin, isTeacher } = useAuth();
+  const { 
+    user, logout, isAuthenticated, 
+    isSuperAdmin, isSchoolAdmin, isTeacher, isDonor, isStudent 
+  } = useAuth();
+  
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Handle Scroll Effect
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
@@ -26,8 +31,10 @@ const Navbar = () => {
     <Link
       to={to}
       onClick={() => setMobileMenuOpen(false)}
-      className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors rounded-lg hover:bg-[#207D86]/5 ${
-        location.pathname === to ? "text-[#207D86] bg-[#207D86]/5" : "text-slate-600 hover:text-[#207D86]"
+      className={`flex items-center gap-2 px-4 py-2 font-medium transition-all rounded-lg ${
+        location.pathname.includes(to) && to !== "/"
+          ? "text-[#207D86] bg-[#207D86]/5" 
+          : "text-slate-600 hover:text-[#207D86] hover:bg-slate-50"
       }`}
     >
       {Icon && <Icon className="w-4 h-4" />}
@@ -36,22 +43,18 @@ const Navbar = () => {
   );
 
   return (
-    <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+    <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
       <nav
-        className={`w-full max-w-5xl transition-all duration-300 ease-in-out bg-white/90 backdrop-blur-md border border-white/20 rounded-2xl ${
-          isScrolled ? "shadow-lg shadow-black/5 py-3" : "shadow-md py-4"
+        className={`w-full max-w-6xl transition-all duration-500 ease-in-out bg-white/80 backdrop-blur-lg border border-white/40 rounded-2xl pointer-events-auto ${
+          isScrolled ? "shadow-xl shadow-black/5 py-2" : "shadow-lg py-4"
         }`}
       >
         <div className="px-6 flex justify-between items-center">
           
           {/* --- Logo --- */}
           <Link to="/" className="flex items-center gap-3 group">
-            <img 
-              src={LogoImage} 
-              alt="Logo" 
-              className="w-10 h-10 rounded-lg object-cover group-hover:scale-105 transition-transform duration-300" 
-            />
-            <span className="text-xl font-bold bg-gradient-to-r from-[#0E2A47] to-[#207D86] bg-clip-text text-transparent">
+            <img src={LogoImage} alt="Logo" className="w-9 h-9 rounded-lg object-cover group-hover:rotate-6 transition-transform" />
+            <span className="text-xl font-extrabold tracking-tight bg-linear-to-r from-[#0E2A47] to-[#207D86] bg-clip-text text-transparent">
               LearnBridge
             </span>
           </Link>
@@ -65,21 +68,29 @@ const Navbar = () => {
               <>
                 <NavLink to="/dashboard" icon={FiGrid}>Dashboard</NavLink>
                 
-                {isadmin && <NavLink to="/admin" icon={FiSettings}>admin</NavLink>}
-                {(isTeacher || isadmin) && <NavLink to="/grades">Grades</NavLink>}
+                {/* Conditional Admin Links */}
+                {isSuperAdmin && <NavLink to="/admin" icon={FiSettings}>Super Admin</NavLink>}
+                {isSchoolAdmin && <NavLink to="/school" icon={FiSettings}>School Management</NavLink>}
                 
-                <div className="h-6 w-px bg-slate-200 mx-2"></div>
+                <div className="h-6 w-px bg-slate-200 mx-3"></div>
                 
-                <div className="flex items-center gap-3 ml-2">
-                  <Link to="/profile" className="flex items-center gap-2 text-sm font-semibold text-[#0E2A47]">
-                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white text-xs shadow-sm">
-                        {user?.firstName?.[0]}{user?.lastName?.[0]}
-                     </div>
-                     <span className="hidden lg:block">{user?.firstName}</span>
+                <div className="flex items-center gap-3">
+                  {/* Teacher Verification Badge */}
+                  {isTeacher && !user?.isSchoolVerified && (
+                    <div className="flex items-center gap-1 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-amber-100">
+                      <FiAlertCircle /> Pending
+                    </div>
+                  )}
+
+                  <Link to="/profile" className="flex items-center gap-2 group">
+                    <div className="w-9 h-9 rounded-full bg-linear-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm group-hover:scale-110 transition-transform uppercase">
+                      {user?.firstName?.[0]}{user?.lastName?.[0]}
+                    </div>
                   </Link>
+                  
                   <button 
                     onClick={handleLogout}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                     title="Logout"
                   >
                     <FiLogOut className="w-5 h-5" />
@@ -87,54 +98,44 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <>
-                <NavLink to="/login">Login</NavLink>
+              <div className="flex items-center gap-4 ml-4">
                 <Link 
-                  to="/register-donor" 
-                  className="ml-2 px-5 py-2.5 bg-[#0E2A47] hover:bg-[#207D86] text-white text-sm font-semibold rounded-xl shadow-lg shadow-[#0E2A47]/20 transition-all hover:-translate-y-0.5"
+                  to="/login" 
+                  className="px-6 py-2.5 bg-[#0E2A47] hover:bg-[#207D86] text-white text-sm font-bold rounded-xl shadow-lg shadow-[#0E2A47]/20 transition-all hover:-translate-y-0.5"
                 >
-                  Join as Donor
+                  Sign In
+                  
                 </Link>
-              </>
+              </div>
             )}
           </div>
 
-          {/* --- Mobile Menu Button --- */}
-          <button 
-            className="md:hidden p-2 text-slate-600"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          {/* --- Mobile Button --- */}
+          <button className="md:hidden p-2 text-slate-600" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>
         </div>
 
         {/* --- Mobile Dropdown --- */}
         {mobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 mt-2 mx-2 p-4 bg-white rounded-2xl shadow-xl border border-slate-100 flex flex-col gap-2">
+          <div className="md:hidden absolute top-full left-0 right-0 mt-3 p-4 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 flex flex-col gap-2 animate-in slide-in-from-top-4 duration-300">
             <NavLink to="/">Home</NavLink>
             <NavLink to="/knowledge-base">Knowledge Base</NavLink>
             
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" icon={FiGrid}>Dashboard</NavLink>
-                {isadmin && <NavLink to="/admin" icon={FiSettings}>admin Panel</NavLink>}
-                {(isTeacher || isadmin) && <NavLink to="/grades">Manage Grades</NavLink>}
-                <NavLink to="/profile" icon={FiUser}>My Profile</NavLink>
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 font-medium rounded-lg w-full text-left"
-                >
-                  <FiLogOut className="w-4 h-4" /> Logout
+                {isSuperAdmin && <NavLink to="/admin" icon={FiSettings}>Super Admin</NavLink>}
+                {isSchoolAdmin && <NavLink to="/school" icon={FiSettings}>School Admin</NavLink>}
+                <NavLink to="/profile" icon={FiUser}>Profile Settings</NavLink>
+                <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 text-red-500 bg-red-50 font-bold rounded-xl w-full mt-2">
+                  <FiLogOut /> Logout Account
                 </button>
               </>
             ) : (
               <>
-                <NavLink to="/login">Login</NavLink>
-                <Link 
-                  to="/register-donor" 
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center mt-2 px-5 py-3 bg-[#0E2A47] text-white font-semibold rounded-xl"
-                >
+                <NavLink to="/login">Sign In</NavLink>
+                <Link to="/register-donor" onClick={() => setMobileMenuOpen(false)} className="w-full text-center mt-2 px-5 py-4 bg-[#0E2A47] text-white font-bold rounded-xl">
                   Join as Donor
                 </Link>
               </>
