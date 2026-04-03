@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
+import Level from "../models/Level.js";
 import { sendAccountCreationSms } from "../utils/templates/SMS.js";
 import { accountCreationEmail } from "../utils/templates/Email.js";
 // ==========================================
@@ -8,7 +9,7 @@ import { accountCreationEmail } from "../utils/templates/Email.js";
 
 export const createUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, phoneNumber, password, role, address, grade, level } = req.body;
+        const { firstName, lastName, email, phoneNumber, password, role, address, grade, level, stream } = req.body;
         const targetRole = role || "student";
 
         if (targetRole !== "student") {
@@ -24,6 +25,10 @@ export const createUser = async (req, res) => {
             return res.status(400).json({ message: "Grade is required when creating a Student account." });
         }
 
+        if (targetRole === "student" && !level) {
+            return res.status(400).json({ message: "Level is required when creating a Student account." });
+        }
+
         const newUser = new User({
             firstName,
             lastName,
@@ -32,6 +37,8 @@ export const createUser = async (req, res) => {
             password,
             role: targetRole,
             grade: targetRole === "student" ? grade : undefined,
+            level: targetRole === "student" ? level : undefined,
+            stream: targetRole === "student" ? stream : undefined,
             address,
             requiresPasswordChange: true
         });
