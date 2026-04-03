@@ -18,6 +18,7 @@ import {
     ChevronRight,
     Calendar
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 import moduleService from "../../services/ModuleService";
 import lessonService from "../../services/LessonService";
 
@@ -76,6 +77,7 @@ const downloadFile = async (url, fileName = "", forceBlobDownload = false) => {
 
 // --- Main Component ---
 const StudentModules = () => {
+    const { user } = useAuth();
     const [modules, setModules] = useState([]);
     const [lessons, setLessons] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -144,20 +146,31 @@ const StudentModules = () => {
     }, [lessons]);
 
     const displayedModules = useMemo(() => {
-        if (!searchQuery || String(searchQuery).trim() === "") return modules;
+        let filtered = modules;
+
+        // Filter by stream if student is in advanced level
+        const isAdvancedLevel = user?.level && 
+            (String(user.level.name || "").toLowerCase().includes("advanced") || 
+             String(user.level.name || "").toLowerCase().includes("a/l"));
+        
+        if (isAdvancedLevel && user?.stream) {
+            filtered = filtered.filter(m => m.subjectStream === user.stream);
+        }
+
+        if (!searchQuery || String(searchQuery).trim() === "") return filtered;
         const q = String(searchQuery).trim();
         const re = new RegExp(q, "i");
         const moduleIdsFromLessons = new Set(
             lessons.map((l) => String(l?.module?._id || l?.module)).filter(Boolean),
         );
-        return modules.filter((m) => {
+        return filtered.filter((m) => {
             if (!m) return false;
             if (moduleIdsFromLessons.has(String(m._id))) return true;
             if (re.test(m.name || "")) return true;
             if (m.grade && (m.grade.name && re.test(m.grade.name))) return true;
             return false;
         });
-    }, [modules, lessons, searchQuery]);
+    }, [modules, lessons, searchQuery, user]);
 
     const handleMaterialDownload = async (lesson) => {
         if (!lesson?.materialUrl) return;

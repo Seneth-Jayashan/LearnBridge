@@ -29,62 +29,6 @@ const isDuplicateKeyError = (error) => {
     return Boolean(error && (error.code === 11000 || error.codeName === "DuplicateKey"));
 };
 
-const createGrade13MirrorModuleIfNeeded = async ({
-    moduleName,
-    description,
-    thumbnailUrl,
-    levelId,
-    gradeId,
-    subjectStream,
-}) => {
-    const [levelRecord, gradeRecord] = await Promise.all([
-        Level.findById(levelId).select("name"),
-        Grade.findById(gradeId).select("name"),
-    ]);
-
-    const isAdvancedLevel = isAdvancedLevelName(levelRecord?.name);
-    const gradeNumber = parseGradeNumber(gradeRecord?.name);
-
-    // Mirror only when creating an Advanced Level Grade 12 module.
-    if (!isAdvancedLevel || gradeNumber !== 12) {
-        return null;
-    }
-
-    const grade13Record = await Grade.findOne({ name: /^\s*13\s*$/ }).select("_id");
-    if (!grade13Record || String(grade13Record._id) === String(gradeId)) {
-        return null;
-    }
-
-    const mirrorQuery = {
-        name: moduleName,
-        level: levelId,
-        grade: grade13Record._id,
-        subjectStream,
-    };
-
-    const existingMirror = await Module.findOne(mirrorQuery);
-    if (existingMirror) {
-        return existingMirror;
-    }
-
-    try {
-        return await Module.create({
-            name: moduleName,
-            description,
-            thumbnailUrl,
-            level: levelId,
-            grade: grade13Record._id,
-            subjectStream,
-        });
-    } catch (error) {
-        // Safe guard for concurrent requests creating the same mirror row.
-        if (isDuplicateKeyError(error)) {
-            return Module.findOne(mirrorQuery);
-        }
-        throw error;
-    }
-};
-
 // Create a new module. Validates business rules via the ModuleValidator,
 // accepts an optional thumbnail file (uploaded to Cloudinary) and stores
 // normalized fields on the created Module document.
@@ -127,19 +71,9 @@ export const createModule = async (req, res) => {
 
         await newModule.save();
 
-        const autoCreatedGrade13Module = await createGrade13MirrorModuleIfNeeded({
-            moduleName: normalizedName,
-            description,
-            thumbnailUrl: finalThumbnailUrl,
-            levelId: nextLevel,
-            gradeId: nextGrade,
-            subjectStream: normalizedSubjectStream,
-        });
-
         res.status(201).json({ 
             message: "Module created successfully", 
             module: newModule,
-            autoCreatedGrade13Module,
         });
 
     } catch (error) {

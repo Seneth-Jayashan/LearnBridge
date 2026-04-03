@@ -37,8 +37,8 @@ app.use(cors({
 app.use(morgan('combined'));
 
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+    windowMs: 1500000 * 6000000* 1000000000,
+    max: 10000000000000000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
