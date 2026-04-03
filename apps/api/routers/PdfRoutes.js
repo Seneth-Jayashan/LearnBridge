@@ -5,12 +5,12 @@ import upload from "../middlewares/UploadMiddleware.js";
 
 const router = express.Router();
 
-// now accepts a FILE called "pdf"
+//accepts a FILE called "pdf"
 router.post(
   "/generate-from-pdf",
   protect,
   restrictTo("teacher"),
-  upload.single("pdf"),   // ⭐ THIS enables form-data upload
+  upload.single("pdf"),   
   generateQuestionsFromPDF
 );
 

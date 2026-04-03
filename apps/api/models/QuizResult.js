@@ -5,8 +5,8 @@ const quizResultSchema = new mongoose.Schema(
     quizId:    { type: mongoose.Schema.Types.ObjectId, ref: "Quiz", required: true },
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    answers:          [{ type: Number }], // student's chosen option index per question
-    flaggedQuestions: [{ type: Number }], // indexes of questions student flagged
+    answers:          [{ type: Number }], 
+    flaggedQuestions: [{ type: Number }], 
 
     score:          { type: Number },
     totalQuestions: { type: Number },
