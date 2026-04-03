@@ -1,0 +1,262 @@
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import lessonService from "../../../services/LessonService";
+import moduleService from "../../../services/ModuleService";
+
+const initialForm = {
+  title: "",
+  description: "",
+  module: "",
+  materialUrl: "",
+  videoUrl: "",
+  zoomStartTime: "",
+  isLive: false,
+};
+
+const toPublicMediaUrl = (value) => {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value) || /^blob:/i.test(value)) return value;
+  const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+  const origin = apiBase.replace(/\/api\/v1\/?$/i, "");
+  return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
+const LessonsAdd = () => {
+  const navigate = useNavigate();
+  const [modules, setModules] = useState([]);
+  const [formData, setFormData] = useState(initialForm);
+  const selectedModule = useMemo(() => {
+    if (!formData.module) return null;
+    return modules.find((m) => String(m._id) === String(formData.module)) || null;
+  }, [modules, formData.module]);
+  const [mediaFiles, setMediaFiles] = useState({ material: null, video: null });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadModules = async () => {
+      try {
+        setError("");
+        const moduleData = await moduleService.getAllModules();
+        setModules(Array.isArray(moduleData) ? moduleData : []);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load modules");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadModules();
+  }, []);
+
+  const handleInputChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleFileChange = (event) => {
+    const { name, files } = event.target;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const objectUrl = URL.createObjectURL(file);
+
+    if (name === "materialUrl") {
+      setMediaFiles((prev) => ({ ...prev, material: file }));
+      setFormData((prev) => ({ ...prev, materialUrl: objectUrl }));
+      return;
+    }
+
+    if (name === "videoUrl") {
+      setMediaFiles((prev) => ({ ...prev, video: file }));
+      setFormData((prev) => ({ ...prev, videoUrl: objectUrl }));
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!formData.title.trim()) return setError("Lesson title is required");
+    if (!formData.module.trim()) return setError("Please select a module");
+    if (formData.isLive) {
+      if (!formData.materialUrl && !mediaFiles.material) {
+        return setError("Live sessions require a lesson material (PDF/Word)");
+      }
+    } else {
+      if (!formData.materialUrl && !formData.videoUrl && !mediaFiles.material && !mediaFiles.video) {
+        return setError("Please add at least one lesson resource (document or video)");
+      }
+    }
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const payload = new FormData();
+      payload.append("title", formData.title.trim());
+      payload.append("description", formData.description.trim());
+      payload.append("module", formData.module);
+      payload.append("createZoomMeeting", String(Boolean(formData.isLive)));
+
+      if (formData.isLive && formData.zoomStartTime) {
+        payload.append("zoomStartTime", new Date(formData.zoomStartTime).toISOString());
+      }
+
+      if (mediaFiles.material) {
+        payload.append("material", mediaFiles.material);
+      } else if (formData.materialUrl && /^https?:\/\//i.test(formData.materialUrl)) {
+        payload.append("materialUrl", formData.materialUrl.trim());
+      }
+
+      if (!formData.isLive) {
+        if (mediaFiles.video) {
+          payload.append("video", mediaFiles.video);
+        } else if (formData.videoUrl && /^https?:\/\//i.test(formData.videoUrl)) {
+          payload.append("videoUrl", formData.videoUrl.trim());
+        }
+      }
+
+      await lessonService.createLesson(payload);
+      navigate("/teacher/lessons/manage");
+    } catch (err) {
+      const firstValidationMessage = err.response?.data?.errors?.[0]?.message;
+      const backendError = err.response?.data?.error;
+      setError(firstValidationMessage || err.response?.data?.message || backendError || "Failed to save lesson");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="max-w-5xl mx-auto space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-[#0E2A47]">Add Lesson</h2>
+        <p className="text-slate-600 mt-1">Upload lesson materials and videos under your modules.</p>
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 text-slate-600">Loading modules...</div>
+      ) : (
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="module" className="block text-sm font-semibold text-slate-700 mb-1">Module</label>
+              <select id="module" name="module" value={formData.module} onChange={handleInputChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]">
+                <option value="">Select module</option>
+                {modules.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}{" "}
+                    {item?.grade?.name ? (
+                      <>— {/grade/i.test(item.grade.name) ? item.grade.name : `${/\d/.test(item.grade.name) ? `Grade - ${item.grade.name}` : item.grade.name}`}</>
+                    ) : item?.grade ? (
+                      <>— {/grade/i.test(String(item.grade)) ? item.grade : `${/\d/.test(String(item.grade)) ? `Grade - ${item.grade}` : item.grade}`}</>
+                    ) : null}
+                  </option>
+                ))}
+              </select>
+              {selectedModule ? (
+                <div className="mt-2 text-xs text-slate-600">
+                  <div>
+                    <span className="font-medium">Grade:</span>{" "}
+                    {selectedModule?.grade?.name || selectedModule?.grade || "N/A"}
+                  </div>
+                  <div>
+                    <span className="font-medium">Level:</span>{" "}
+                    {selectedModule?.level?.name || selectedModule?.level || "N/A"}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div>
+              <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-1">Lesson Title</label>
+              <input id="title" name="title" value={formData.title} onChange={handleInputChange} placeholder="Introduction to Algebra" className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]" />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input id="isLive" name="isLive" type="checkbox" checked={formData.isLive} onChange={handleInputChange} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-2 peer-focus:ring-offset-2 peer-focus:ring-[#207D86] peer-checked:bg-[#207D86] transition-colors duration-200 ease-in-out" />
+                <span className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transform translate-x-0 transition-transform duration-200 ease-in-out peer-checked:translate-x-5`} />
+              </label>
+              <div>
+                <div className="text-sm font-semibold text-slate-700">Online live (Zoom) session</div>
+                <div className={formData.isLive ? "text-xs font-medium text-green-600" : "text-xs font-medium text-slate-500"}>
+                  {formData.isLive ? "Online — a Zoom meeting will be created" : "Not live — upload video/material"}
+                </div>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+              <textarea id="description" name="description" rows={3} value={formData.description} onChange={handleInputChange} placeholder="Short summary of this lesson" className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]" />
+            </div>
+
+            {formData.isLive && (
+              <div className="md:col-span-2 rounded-lg border border-slate-200 p-4 bg-slate-50">
+                <label htmlFor="zoomStartTime" className="block text-sm font-semibold text-slate-700 mb-1">
+                  Zoom Meeting Date & Time (required for live sessions)
+                </label>
+                <input
+                  id="zoomStartTime"
+                  name="zoomStartTime"
+                  type="datetime-local"
+                  value={formData.zoomStartTime}
+                  onChange={handleInputChange}
+                  className="w-full max-w-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
+                />
+                <p className="text-xs text-slate-600 mt-2">If set, a Zoom meeting link is created automatically using lesson title and description.</p>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="materialUrl" className="block text-sm font-semibold text-slate-700 mb-1">Lesson Material (PDF/Word)</label>
+              <input id="materialUrl" name="materialUrl" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" />
+              {formData.materialUrl && (
+                <a href={toPublicMediaUrl(formData.materialUrl)} target="_blank" rel="noopener noreferrer" download className="inline-flex mt-2 text-sm text-[#207D86] font-semibold hover:text-[#14555B]">
+                  Download current material
+                </a>
+              )}
+            </div>
+
+            {!formData.isLive && (
+              <div>
+                <label htmlFor="videoUrl" className="block text-sm font-semibold text-slate-700 mb-1">Lesson Video (watchable + downloadable)</label>
+                <input id="videoUrl" name="videoUrl" type="file" accept="video/*" onChange={handleFileChange} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white" />
+                {formData.videoUrl && (
+                  <a href={toPublicMediaUrl(formData.videoUrl)} target="_blank" rel="noopener noreferrer" download className="inline-flex mt-2 text-sm text-[#207D86] font-semibold hover:text-[#14555B]">
+                    Download current video
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {!formData.isLive && formData.videoUrl && (
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-2">Video Preview</p>
+              <video controls className="w-full max-h-72 rounded-lg border border-slate-300 bg-black" src={toPublicMediaUrl(formData.videoUrl)} />
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={isSubmitting} className="inline-flex items-center px-4 py-2 rounded-lg bg-[#207D86] text-white font-semibold hover:bg-[#14555B] disabled:opacity-60">
+              {isSubmitting ? "Saving..." : "Create Lesson"}
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+};
+
+export default LessonsAdd;

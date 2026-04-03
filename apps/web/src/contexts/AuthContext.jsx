@@ -42,12 +42,11 @@ export const AuthProvider = ({ children }) => {
     }
 }, []);
 
-    // Run on Mount
     useEffect(() => {
         checkSession();
     }, [checkSession]);
 
-    // 2. Login Action
+    // 2️⃣ Login
     const login = async (identifier, password) => {
         setLoading(true);
         setError(null);
@@ -61,6 +60,11 @@ export const AuthProvider = ({ children }) => {
             console.log("Login successful. User data:", data);
             
             setUser(data.user);
+
+            if (data.accessToken) {
+                localStorage.setItem("accessToken", data.accessToken);
+            }
+
             return { success: true };
         } catch (err) {
             const msg = err.response?.data?.message || "Login failed";
@@ -71,12 +75,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 3. Logout Action
+    // 3️⃣ NEW: Register Donor
+    const registerDonor = async (formData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await authService.registerDonor(formData);
+            return { success: true };
+        } catch (err) {
+            const msg = err.response?.data?.message || "Registration failed";
+            setError(msg);
+            return { success: false, message: msg };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 4️⃣ Logout
     const logout = async () => {
         try {
             await authService.logout(); // Backend clears the cookie
             setAccessToken(null);       // Clear memory
             setUser(null);
+            localStorage.removeItem("accessToken");
         } catch (err) {
             console.error("Logout failed", err);
             setAccessToken(null);

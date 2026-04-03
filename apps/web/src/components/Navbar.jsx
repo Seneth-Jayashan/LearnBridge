@@ -62,6 +62,7 @@ const Navbar = () => {
           {/* --- Desktop Menu --- */}
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/">Home</NavLink>
+            <NavLink to="/knowledge-base">Knowledge Base</NavLink>
             
             {isAuthenticated ? (
               <>
@@ -119,6 +120,8 @@ const Navbar = () => {
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 mt-3 p-4 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 flex flex-col gap-2 animate-in slide-in-from-top-4 duration-300">
             <NavLink to="/">Home</NavLink>
+            <NavLink to="/knowledge-base">Knowledge Base</NavLink>
+            
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" icon={FiGrid}>Dashboard</NavLink>
