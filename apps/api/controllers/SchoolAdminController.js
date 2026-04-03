@@ -62,6 +62,11 @@ export const createStudentForSchool = async (req, res) => {
             return res.status(400).json({ message: "Grade is required when creating a Student." });
         }
 
+        if (!studentData.level) {
+            return res.status(400).json({ message: "Level is required when creating a Student." });
+        }
+
+
         const newStudent = new User({
             ...studentData,
             email: studentData.email ? studentData.email.toLowerCase() : undefined,
@@ -69,6 +74,8 @@ export const createStudentForSchool = async (req, res) => {
             school: schoolId, 
             isSchoolVerified: true,
             grade: studentData.grade,
+            level: studentData.level,
+            stream: studentData.stream || null,
             requiresPasswordChange: true
         });
 
@@ -94,7 +101,7 @@ export const getSchoolStudents = async (req, res) => {
             school: req.user.school, 
             role: "student",
             isDeleted: false
-        }).populate("grade", "name");
+        }).populate("grade", "name").populate("level", "name");
 
         res.status(200).json(students);
     } catch (error) {
@@ -109,7 +116,7 @@ export const updateSchoolStudent = async (req, res) => {
 
         if (!student) return res.status(404).json({ message: "Student not found in your school." });
 
-        const { firstName, lastName, email, phoneNumber, grade, level, address } = req.body;
+        const { firstName, lastName, email, phoneNumber, grade, level, address, stream } = req.body;
 
         if (grade === null || grade === "") {
             return res.status(400).json({ message: "Student must have a grade. You cannot remove it." });
@@ -122,6 +129,7 @@ export const updateSchoolStudent = async (req, res) => {
         
         if (grade) student.grade = grade;
         if (level) student.level = level;
+        if (stream) student.stream = stream;
         
         if (address) student.address = { ...student.address, ...address };
 
