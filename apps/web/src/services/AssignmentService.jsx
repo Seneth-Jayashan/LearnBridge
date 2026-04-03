@@ -92,7 +92,7 @@ const assignmentService = {
     const response = await api.get(`${assignmentPath(id)}/my-submission`, {
       headers: getAuthHeaders(),
     });
-    return response.data;
+    return response.data?.submission || null;
   },
 
   async getAssignmentSubmissions(id) {
