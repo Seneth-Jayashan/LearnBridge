@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import moduleService from "../../services/ModuleService";
 import lessonService from "../../services/LessonService";
+import { useAuth } from "../../contexts/AuthContext";
 
 // --- Helpers (Unchanged) ---
 const toPublicMediaUrl = (value) => {
@@ -76,6 +77,7 @@ const downloadFile = async (url, fileName = "", forceBlobDownload = false) => {
 
 // --- Main Component ---
 const StudentModules = () => {
+    const { user } = useAuth();
     const [modules, setModules] = useState([]);
     const [lessons, setLessons] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -144,20 +146,26 @@ const StudentModules = () => {
     }, [lessons]);
 
     const displayedModules = useMemo(() => {
-        if (!searchQuery || String(searchQuery).trim() === "") return modules;
+        // First filter by stream if student has a stream
+        let streamFiltered = modules;
+        if (user?.stream) {
+            streamFiltered = modules.filter((m) => m.subjectStream === null || m.subjectStream === user.stream);
+        }
+
+        if (!searchQuery || String(searchQuery).trim() === "") return streamFiltered;
         const q = String(searchQuery).trim();
         const re = new RegExp(q, "i");
         const moduleIdsFromLessons = new Set(
             lessons.map((l) => String(l?.module?._id || l?.module)).filter(Boolean),
         );
-        return modules.filter((m) => {
+        return streamFiltered.filter((m) => {
             if (!m) return false;
             if (moduleIdsFromLessons.has(String(m._id))) return true;
             if (re.test(m.name || "")) return true;
             if (m.grade && (m.grade.name && re.test(m.grade.name))) return true;
             return false;
         });
-    }, [modules, lessons, searchQuery]);
+    }, [modules, lessons, searchQuery, user?.stream]);
 
     const handleMaterialDownload = async (lesson) => {
         if (!lesson?.materialUrl) return;
