@@ -104,7 +104,14 @@ const knowledgeBaseService = {
   },
 
   async createEntry(payload) {
-    // If payload contains attachment file(s), send FormData
+    // If payload is already a FormData instance, send it as-is
+    const isFormDataPayload = typeof FormData !== "undefined" && payload instanceof FormData;
+    if (isFormDataPayload) {
+      const response = await api.post(kbPath(), payload, buildRequestConfig(payload));
+      return mapEntry(response.data?.entry || {});
+    }
+
+    // If payload contains attachment file(s) as regular object properties, build FormData
     if (payload && (payload.attachment instanceof File || Array.isArray(payload.attachment))) {
       const form = new FormData();
       const data = buildPayload(payload);
@@ -125,6 +132,13 @@ const knowledgeBaseService = {
   },
 
   async updateEntry(id, payload) {
+    // If payload is already a FormData instance, send it as-is
+    const isFormDataPayload = typeof FormData !== "undefined" && payload instanceof FormData;
+    if (isFormDataPayload) {
+      const response = await api.put(`${kbPath()}/${id}`, payload, buildRequestConfig(payload));
+      return mapEntry(response.data?.entry || {});
+    }
+
     if (payload && (payload.attachment instanceof File || Array.isArray(payload.attachment))) {
       const form = new FormData();
       const data = buildPayload(payload);
