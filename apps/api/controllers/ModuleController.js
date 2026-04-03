@@ -2,6 +2,8 @@ import Module from "../models/Module.js";
 import Lesson from "../models/Lesson.js";
 import Assignment from "../models/Assignment.js";
 import AssignmentSubmission from "../models/AssignmentSubmission.js";
+import Grade from "../models/Grade.js";
+import Level from "../models/Level.js";
 import mongoose from "mongoose";
 import { uploadFileToCloudinary, deleteCloudinaryAssetFromUrl } from "../services/CloudinaryService.js";
 import {
@@ -12,6 +14,76 @@ import {
 
 // Escape a value for regex-based searching.
 const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const parseGradeNumber = (gradeName) => {
+    const parsed = Number.parseInt(String(gradeName || "").trim(), 10);
+    return Number.isNaN(parsed) ? null : parsed;
+};
+
+const isAdvancedLevelName = (levelName) => {
+    const normalized = String(levelName || "").toLowerCase();
+    return normalized.includes("advanced") || normalized.includes("a/l");
+};
+
+const isDuplicateKeyError = (error) => {
+    return Boolean(error && (error.code === 11000 || error.codeName === "DuplicateKey"));
+};
+
+const createGrade13MirrorModuleIfNeeded = async ({
+    moduleName,
+    description,
+    thumbnailUrl,
+    levelId,
+    gradeId,
+    subjectStream,
+}) => {
+    const [levelRecord, gradeRecord] = await Promise.all([
+        Level.findById(levelId).select("name"),
+        Grade.findById(gradeId).select("name"),
+    ]);
+
+    const isAdvancedLevel = isAdvancedLevelName(levelRecord?.name);
+    const gradeNumber = parseGradeNumber(gradeRecord?.name);
+
+    // Mirror only when creating an Advanced Level Grade 12 module.
+    if (!isAdvancedLevel || gradeNumber !== 12) {
+        return null;
+    }
+
+    const grade13Record = await Grade.findOne({ name: /^\s*13\s*$/ }).select("_id");
+    if (!grade13Record || String(grade13Record._id) === String(gradeId)) {
+        return null;
+    }
+
+    const mirrorQuery = {
+        name: moduleName,
+        level: levelId,
+        grade: grade13Record._id,
+        subjectStream,
+    };
+
+    const existingMirror = await Module.findOne(mirrorQuery);
+    if (existingMirror) {
+        return existingMirror;
+    }
+
+    try {
+        return await Module.create({
+            name: moduleName,
+            description,
+            thumbnailUrl,
+            level: levelId,
+            grade: grade13Record._id,
+            subjectStream,
+        });
+    } catch (error) {
+        // Safe guard for concurrent requests creating the same mirror row.
+        if (isDuplicateKeyError(error)) {
+            return Module.findOne(mirrorQuery);
+        }
+        throw error;
+    }
+};
 
 // Create a new module. Validates business rules via the ModuleValidator,
 // accepts an optional thumbnail file (uploaded to Cloudinary) and stores
@@ -55,14 +127,29 @@ export const createModule = async (req, res) => {
 
         await newModule.save();
 
+        const autoCreatedGrade13Module = await createGrade13MirrorModuleIfNeeded({
+            moduleName: normalizedName,
+            description,
+            thumbnailUrl: finalThumbnailUrl,
+            levelId: nextLevel,
+            gradeId: nextGrade,
+            subjectStream: normalizedSubjectStream,
+        });
+
         res.status(201).json({ 
             message: "Module created successfully", 
-            module: newModule 
+            module: newModule,
+            autoCreatedGrade13Module,
         });
 
     } catch (error) {
         if (error instanceof ModuleValidationError) {
             return res.status(400).json({ message: error.message });
+        }
+        if (isDuplicateKeyError(error)) {
+            return res.status(400).json({
+                message: "Module with this name already exists for selected level/grade/stream.",
+            });
         }
         res.status(500).json({ message: "Server error", error: error.message });
     }
@@ -195,6 +282,11 @@ export const updateModule = async (req, res) => {
     } catch (error) {
         if (error instanceof ModuleValidationError) {
             return res.status(400).json({ message: error.message });
+        }
+        if (isDuplicateKeyError(error)) {
+            return res.status(400).json({
+                message: "Module with this name already exists for selected level/grade/stream.",
+            });
         }
         res.status(500).json({ message: "Server error", error: error.message });
     }

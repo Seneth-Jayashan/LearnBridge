@@ -19,6 +19,7 @@ import withReactContent from "sweetalert2-react-content";
 import moduleService from "../../../services/ModuleService";
 import gradeService from "../../../services/GradeService";
 import levelService from "../../../services/LevelService";
+import { parseGradeNumber } from "./moduleFormConfig";
 
 const MySwal = withReactContent(Swal);
 
@@ -272,11 +273,14 @@ const ModulesManage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {filteredModules.map((item) => (
-                                <article 
-                                    key={item._id} 
-                                    className="group flex flex-col bg-white rounded-xl border border-slate-200 hover:border-[#207D86]/30 hover:shadow-lg hover:shadow-[#207D86]/5 transition-all duration-300 overflow-hidden"
-                                >
+                            {filteredModules.map((item) => {
+                                const gradeNumber = parseGradeNumber(item.grade?.name);
+                                const showStream = gradeNumber !== null && gradeNumber >= 12 && item.subjectStream;
+                                return (
+                            <article 
+                                key={item._id} 
+                                className="group flex flex-col bg-white rounded-xl border border-slate-200 hover:border-[#207D86]/30 hover:shadow-lg hover:shadow-[#207D86]/5 transition-all duration-300 overflow-hidden"
+                            >
                                     {/* Card Header & Thumbnail */}
                                     <div className="relative h-36 bg-slate-100 border-b border-slate-100 overflow-hidden flex items-center justify-center">
                                         {item.thumbnailUrl ? (
@@ -292,8 +296,8 @@ const ModulesManage = () => {
                                             </div>
                                         )}
                                         
-                                        {/* Stream Badge overlay */}
-                                        {item.subjectStream && (
+                                        {/* Stream Badge overlay (show only for A/L) */}
+                                        {showStream && (
                                             <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-md text-[10px] font-bold text-indigo-700 shadow-sm border border-indigo-100">
                                                 {item.subjectStream}
                                             </div>
@@ -315,6 +319,12 @@ const ModulesManage = () => {
                                                 <GraduationCap className="w-3 h-3 text-slate-400" />
                                                 <span className="truncate max-w-[80px]" title={item.grade?.name}>{item.grade?.name || "N/A"}</span>
                                             </div>
+
+                                            {showStream && (
+                                                <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-50 text-xs font-medium text-indigo-700 border border-indigo-100">
+                                                    <span className="truncate max-w-[120px]" title={item.subjectStream}>{item.subjectStream}</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <p className="text-sm text-slate-500 line-clamp-2 mt-auto mb-4 min-h-[40px]">
@@ -342,7 +352,7 @@ const ModulesManage = () => {
                                         </div>
                                     </div>
                                 </article>
-                            ))}
+                            )})}
                         </div>
                     )}
                 </div>
