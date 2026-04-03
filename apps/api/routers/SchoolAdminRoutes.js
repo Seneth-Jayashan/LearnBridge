@@ -1,6 +1,16 @@
 import express from "express";
 import { 
     createStudentForSchool, 
+    createTeacherForSchool,
+    getSchoolStudents,
+    updateSchoolStudent,
+    deactivateStudent,
+    getPendingTeachers,
+    createNeed,
+    getMyPostedNeeds,
+    updateNeed,
+    deleteNeed,
+    getVerifiedTeachers,
     verifySchoolTeacher,
     getPendingTeachers,
     getMySchoolDetails
@@ -31,5 +41,11 @@ router.post(
 // Teacher Verification Flow
 router.get("/teachers/pending", getPendingTeachers); // View list
 router.patch("/teachers/verify/:teacherId", verifySchoolTeacher); // Approve specific teacher
+
+// ── School Admin Routes (Needs Registry CRUD) ──────────────────
+router.post("/needs", protect, restrictTo("school_admin"), createNeed);
+router.get("/school/my-needs", protect, restrictTo("school_admin"), getMyPostedNeeds);
+router.put("/school/:id", protect, restrictTo("school_admin"), updateNeed);
+router.delete("/school/:id", protect, restrictTo("school_admin"), deleteNeed);
 
 export default router;

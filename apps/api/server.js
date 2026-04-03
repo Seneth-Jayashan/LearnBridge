@@ -1,5 +1,5 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import "./config/env.js"; 
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -13,7 +13,6 @@ import connectDB from './config/Database.js';
 
 import routes from './routes.js';
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -36,20 +35,44 @@ app.use(cors({
 
 app.use(morgan('combined'));
 
+// ── Rate Limiters ─────────────────────────────────────────────────────
+
+// General limiter for all routes
 const limiter = rateLimit({
-    windowMs: 1500000 * 6000000* 1000000000,
-    max: 10000000000000000,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
 });
-app.use(limiter);
+// Only enable rate limiting in production
+if (process.env.NODE_ENV === "production") {
+   app.use(limiter);
+}
 
+// Relaxed limiter specifically for PDF generation (large payloads + slow AI processing)
+const pdfLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many PDF generation requests. Please wait before trying again." }
+});
+
+// ── Body Parsers ──────────────────────────────────────────────────────
+
+// Large limit for PDF base64 uploads
+app.use('/api/v1/pdf', express.json({ limit: '50mb' }));
+app.use('/api/v1/pdf', express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/api/v1/pdf', pdfLimiter);
+
+// Standard limit for all other routes
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Mongo Sanitize ────────────────────────────────────────────────────
 app.use((req, res, next) => {
   // Sanitize the Body (where the user data is)
   if (req.body) {
@@ -69,6 +92,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1', routes);
 
+// ── Base Routes ───────────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'LearnBridge API is running secure & fast!' });
 });

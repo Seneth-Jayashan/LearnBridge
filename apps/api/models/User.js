@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema(
     regNumber: { type: String, unique: true, sparse: true, trim: true },
     grade: { type: mongoose.Schema.Types.ObjectId, ref: "Grade" },
     level: { type: mongoose.Schema.Types.ObjectId, ref: "Level" },
+    stream: {
+      type: String,
+      enum: ["Mathematics Stream", "Biology Stream", "Commerce Stream", "Arts Stream", "Technology Stream", null],
+      default: null,
+    },
     address: {
       street: { type: String },
       city: { type: String },

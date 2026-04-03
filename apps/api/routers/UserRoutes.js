@@ -4,8 +4,8 @@ import {
     updateUserProfile, 
     updateUserPassword, 
     deleteUserProfile, 
-    restoreUserProfile 
-} from "../controllers/UserController.js"; 
+    restoreUserProfile,
+} from "../controllers/UserController.js";
 
 import { protect } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";

@@ -1,17 +1,27 @@
 import multer from "multer";
 
-// Use memory storage because files are immediately uploaded to Cloudinary
-// from buffers; no local disk persistence is needed.
+// store file in RAM (not disk) → needed for pdf2json
 const storage = multer.memoryStorage();
 
-/*
-  Lesson uploads
-  - Accepts either direct file fields (`material`, `video`) or fallback
-	fields that carry pre-uploaded URLs (`materialUrl`, `videoUrl`).
-  - Allowed document types: PDF and Word documents. Videos must have
-	a `video/*` mime type.
-  - Limit: 200 MB per file (chosen to allow large video uploads).
-*/
+const upload = multer({
+  storage: storage,
+
+  // limit file size (20MB)
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+  },
+
+  // allow only PDFs
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files are allowed"));
+    }
+  },
+});
+
+
 const lessonFileFilter = (_req, file, cb) => {
 	const isMaterialField =
 		file.fieldname === "material" || file.fieldname === "materialUrl";
@@ -206,3 +216,6 @@ export const uploadAssignmentFiles = (req, res, next) => {
 		return res.status(400).json({ message: err.message || "File upload failed" });
 	});
 };
+
+export default upload;
+

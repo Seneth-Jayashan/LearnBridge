@@ -21,6 +21,7 @@ export const createStudentSchema = z.object({
   // Grade and Level IDs (Mongo ObjectIDs)
   grade: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Grade ID").optional(),
   level: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid Level ID").optional(),
+  stream: z.enum(["Mathematics Stream", "Biology Stream", "Commerce Stream", "Arts Stream", "Technology Stream",null]).optional(),
   
   address: addressSchema.optional(),
 });

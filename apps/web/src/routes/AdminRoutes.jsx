@@ -27,6 +27,14 @@ const adminRoutes = () => {
       <div className={`transition-all duration-300`}>
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          {/* User Routes */}
+          <Route path="users" element={<Users />} />
+          <Route path="users/create" element={<CreateUser />} />
+          {/* <Route path="users/edit/:id" element={<EditUser />} /> */}
+          
+          {/* School Routes */}
+          <Route path="schools" element={<Schools />} />
+          <Route path="schools/create" element={<CreateSchool />} />
           <Route path="modules" element={<Navigate to="manage" replace />} />
           <Route path="modules/manage" element={<ModulesManage />} />
           <Route path="modules/add" element={<AddModules />} />
