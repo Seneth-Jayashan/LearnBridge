@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import TeacherSidebar from "../components/sidebar/TeacherSidebar";
 import TeacherDashboard from "../pages/teacher/Dashboard";
@@ -13,10 +12,7 @@ import KnowledgeBaseManage from "../pages/teacher/knowledge-base/KnowledgeBaseMa
 import KnowledgeBaseEdit from "../pages/teacher/knowledge-base/KnowledgeBaseEdit";
 
 const TeacherRoutes = () => {
-  const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
-  
-  // 1. Move the expand/shrink state HERE
-  const [isExpanded, setIsExpanded] = useState(true);
+  const { isMobileMenuOpen, setIsMobileMenuOpen, isExpanded, setIsExpanded } = useOutletContext();
 
   return (
     <>
@@ -28,8 +24,8 @@ const TeacherRoutes = () => {
         setIsExpanded={setIsExpanded}
       />
       
-      {/* 3. Make the padding dynamic based on the isExpanded state! */}
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
+      {/* 3. Content area (DashboardLayout now offsets for fixed sidebar) */}
+      <div className="w-full transition-all duration-300">
         <Routes>
           <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="lessons" element={<Navigate to="manage" replace />} />
