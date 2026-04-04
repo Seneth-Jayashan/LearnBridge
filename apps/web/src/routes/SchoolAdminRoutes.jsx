@@ -1,10 +1,7 @@
+import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import SchoolSidebar from "../components/sidebar/SchoolSidebar";
 import NeedsRegistry from "../pages/SchoolAdmin/NeedsRegistry";
-
-const adminRoutes = () => {
-  const { isMobileMenuOpen, setIsMobileMenuOpen, isExpanded, setIsExpanded } = useOutletContext();
-// --- Import Pages ---
 import Students from "../pages/school/students/Students";
 import CreateStudent from "../pages/school/students/Create";
 import Teachers from "../pages/school/teachers/Teachers";
@@ -25,21 +22,21 @@ const SchoolAdminRoutes = () => {
       
       {/* 3. Content area (DashboardLayout now offsets for fixed sidebar) */}
       <div className="w-full transition-all duration-300">
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
-        <Routes>
-          <Route path="dashboard" element={<div>School Dashboard Content</div>} />
-          <Route path="needsRegistry" element={<NeedsRegistry />} />
-          
-          {/* Student Routes */}
-          <Route path="students" element={<Students />} />
-          <Route path="students/create" element={<CreateStudent />} />
-          {/* <Route path="students/edit/:id" element={<EditStudent />} /> */}
-          
-          {/* Teacher Routes (Placeholders for next steps) */}
-          <Route path="teachers" element={<Teachers />} />
-          <Route path="teachers/create" element={<CreateTeacher />} />
-          
-        </Routes>
+        <div className={`transition-all duration-300 `}>
+          <Routes>
+            <Route path="dashboard" element={<div>School Dashboard Content</div>} />
+            <Route path="needsRegistry" element={<NeedsRegistry />} />
+
+            {/* Student Routes */}
+            <Route path="students" element={<Students />} />
+            <Route path="students/create" element={<CreateStudent />} />
+            {/* <Route path="students/edit/:id" element={<EditStudent />} /> */}
+
+            {/* Teacher Routes */}
+            <Route path="teachers" element={<Teachers />} />
+            <Route path="teachers/create" element={<CreateTeacher />} />
+          </Routes>
+        </div>
       </div>
     </>
   );
