@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { 
   FiHome, FiUsers, FiUserCheck, FiLayout, FiSettings, 
-  FiChevronLeft, FiChevronRight, FiBriefcase, FiLogOut 
+  FiChevronLeft, FiChevronRight, FiBriefcase, FiLogOut,FiClipboard 
 } from "react-icons/fi";
 
 const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
@@ -14,6 +14,7 @@ const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
     { name: "Dashboard", path: "/school/dashboard", icon: FiHome },
     { name: "Manage Students", path: "/school/students", icon: FiUsers },
     { name: "Manage Teachers", path: "/school/teachers", icon: FiUserCheck },
+    { name: "Needs Registry", path: "/school/needsRegistry", icon: FiClipboard },
     { name: "School Profile", path: "/school/profile", icon: FiLayout },
     { name: "Settings", path: "/school/settings", icon: FiSettings },
   ];
@@ -27,7 +28,10 @@ const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 bg-[#0E2A47]/60 z-40 md:hidden backdrop-blur-sm transition-opacity" onClick={close} />
+        <div 
+          className="fixed inset-0 bg-[#0E2A47]/60 z-40 md:hidden backdrop-blur-sm transition-opacity" 
+          onClick={close} 
+        />
       )}
 
       <aside className={`fixed top-0 left-0 h-screen bg-[#0A1D32] text-white z-50 transition-all duration-300 ease-in-out flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.15)]
@@ -47,7 +51,7 @@ const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
         {/* --- Header / Logo Area --- */}
         <div className="h-24 flex items-center px-5 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3 overflow-hidden w-full">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#207D86] to-[#4CAF50] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-[#207D86]/20">
+            <div className="w-10 h-10 bg-linear-to-br from-[#207D86] to-[#4CAF50] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-[#207D86]/20">
               <FiBriefcase className="w-5 h-5 text-white" />
             </div>
             {isExpanded && (
@@ -67,11 +71,11 @@ const SchoolSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
               <Link key={link.name} to={link.path} onClick={close}
                 className={`relative flex items-center gap-4 py-3.5 transition-all duration-200 group outline-none
                   ${isExpanded ? "px-5" : "justify-center px-0"}
-                  ${isActive ? "bg-gradient-to-r from-[#207D86]/20 to-transparent text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}
+                  ${isActive ? "bg-linear-to-r from-[#207D86]/20 to-transparent text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}
                 `}
               >
                 {/* Active Left Border Indicator */}
-                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#4CAF50] to-[#207D86] rounded-r-full shadow-[0_0_10px_rgba(32,125,134,0.5)]" />}
+                {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-linear-to-b from-[#4CAF50] to-[#207D86] rounded-r-full shadow-[0_0_10px_rgba(32,125,134,0.5)]" />}
                 
                 {/* Icon */}
                 <link.icon className={`w-5 h-5 shrink-0 transition-transform duration-200 ${!isActive && "group-hover:scale-110"} ${isActive ? "text-[#4CAF50]" : "text-slate-400 group-hover:text-[#4CAF50]"}`} />

@@ -12,6 +12,15 @@ import EditGrade from "../pages/admin/Grades/EditGrade";
 
 const adminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isExpanded, setIsExpanded } = useOutletContext();
+import Users from "../pages/admin/users/Users";
+import CreateUser from "../pages/admin/users/Create";
+import Schools from "../pages/admin/schools/Schools";
+import CreateSchool from "../pages/admin/schools/Create";
+
+const AdminRoutes = () => {
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
+  
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <>
@@ -27,6 +36,14 @@ const adminRoutes = () => {
       <div className="w-full transition-all duration-300">
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          {/* User Routes */}
+          <Route path="users" element={<Users />} />
+          <Route path="users/create" element={<CreateUser />} />
+          {/* <Route path="users/edit/:id" element={<EditUser />} /> */}
+          
+          {/* School Routes */}
+          <Route path="schools" element={<Schools />} />
+          <Route path="schools/create" element={<CreateSchool />} />
           <Route path="modules" element={<Navigate to="manage" replace />} />
           <Route path="modules/manage" element={<ModulesManage />} />
           <Route path="modules/add" element={<AddModules />} />
@@ -46,4 +63,4 @@ const adminRoutes = () => {
   );
 };
 
-export default adminRoutes;
+export default AdminRoutes;

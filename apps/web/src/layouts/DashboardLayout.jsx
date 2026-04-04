@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { FiMenu } from 'react-icons/fi';
 
@@ -15,13 +15,6 @@ export default function DashboardLayout() {
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
       
-      {/* NOTE: 
-        Your custom role-specific Sidebars will be injected here 
-        by the route components that wrap this layout (or sit inside it).
-        Since you want completely different styles per role, you will handle 
-        the sidebar rendering in files like adminRoutes.jsx.
-      */}
-
       {/* --- Main Content Area --- */}
       <div className={`flex-1 flex flex-col h-screen overflow-hidden w-full transition-all duration-300 ${isExpanded ? 'md:ml-64' : 'md:ml-20'}`}>
         
@@ -39,7 +32,7 @@ export default function DashboardLayout() {
 
           {/* Page Title (Changes dynamically based on role) */}
           <h1 className="hidden md:block text-2xl font-bold text-[#0E2A47] capitalize">
-            {user?.role} Dashboard
+            {user?.role ? user.role.replace("_", " ") : "User"} Dashboard
           </h1>
 
           {/* User Profile Info */}
@@ -49,11 +42,13 @@ export default function DashboardLayout() {
                  {user?.firstName} {user?.lastName}
                </p>
                <p className="text-xs font-medium text-[#207D86] capitalize">
-                 {user?.role}
+                 {user?.role ? user.role.replace("_", " ") : "User"}
                </p>
              </div>
-             <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white font-bold shadow-md border-2 border-white">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
+             
+             {/* Fixed: bg-gradient-to-br instead of bg-linear-to-br */}
+             <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white font-bold shadow-md border-2 border-white uppercase">
+                {user?.firstName?.[0] || ""}{user?.lastName?.[0] || ""}
              </div>
           </div>
         </header>
