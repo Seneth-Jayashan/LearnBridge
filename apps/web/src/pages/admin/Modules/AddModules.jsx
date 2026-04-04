@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { 
+    Layers, 
+    GraduationCap, 
+    BookOpen, 
+    Image as ImageIcon, 
+    AlignLeft, 
+    AlertCircle, 
+    Loader2, 
+    CheckCircle2, 
+    X, 
+    Sparkles,
+    Library
+} from "lucide-react";
 import moduleService from "../../../services/ModuleService";
 import levelService from "../../../services/LevelService";
 import gradeService from "../../../services/GradeService";
@@ -51,9 +64,7 @@ const AddModules = () => {
                 setLevels(Array.isArray(levelData) ? levelData : []);
                 setGrades(Array.isArray(gradeData) ? gradeData : []);
             } catch (err) {
-                setError(
-                    err.response?.data?.message || "Failed to load levels and grades",
-                );
+                setError(err.response?.data?.message || "Failed to load levels and grades.");
             } finally {
                 setIsLoading(false);
             }
@@ -71,6 +82,7 @@ const AddModules = () => {
     const handleSuggestionClick = (subject) => {
         setFormData((prev) => ({ ...prev, name: subject }));
         setSelectedSuggestion(subject);
+        if (error) setError(""); // Clear error when interacting
         const el = document.getElementById("name");
         if (el) el.focus();
     };
@@ -89,6 +101,7 @@ const AddModules = () => {
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
+        if (error) setError(""); // Clear error to improve UX
 
         if (name === "grade") {
             const selected = filteredGrades.find((g) => g._id === value);
@@ -119,6 +132,7 @@ const AddModules = () => {
 
     const handleFileChange = (event) => {
         const { files } = event.target;
+        if (error) setError("");
         if (!files || files.length === 0) return;
 
         const file = files[0];
@@ -129,11 +143,11 @@ const AddModules = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!formData.level) return setError("Level is required");
-        if (!formData.grade) return setError("Grade is required");
+        if (!formData.level) return setError("Level is required.");
+        if (!formData.grade) return setError("Grade is required.");
         if (isAdvanced && !formData.subjectStream)
-            return setError("Subject stream is required for grades 12 and 13");
-        if (!formData.name.trim()) return setError("Module name is required");
+            return setError("Subject stream is required for grades 12 and 13.");
+        if (!formData.name.trim()) return setError("Module name is required.");
 
         setIsSubmitting(true);
         setError("");
@@ -153,7 +167,7 @@ const AddModules = () => {
             await moduleService.createModule(payload);
             navigate("/admin/modules/manage");
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to create module");
+            setError(err.response?.data?.message || "Failed to create module. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -165,206 +179,258 @@ const AddModules = () => {
     );
 
     return (
-        <section className="max-w-6xl mx-auto space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-[#0E2A47]">Add Module</h2>
-                <p className="text-slate-600 mt-1">
-                    Create module by level, grade, and stream rules.
+        <section className="max-w-3xl mx-auto py-8 px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Header Section */}
+            <div className="mb-8">
+                <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
+                    Add New Module
+                </h2>
+                <p className="text-slate-500 mt-2 text-sm md:text-base">
+                    Create a new educational module by selecting level, grade, and stream rules.
                 </p>
             </div>
 
-                {/* Content URL removed */}
+            {/* Main Form Card */}
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+                {/* Error Banner */}
                 {error && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                        {error}
+                    <div className="bg-red-50 border-b border-red-100 px-6 py-4 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
+                        <p className="text-sm font-medium text-red-800">{error}</p>
                     </div>
                 )}
 
-            {isLoading ? (
-                <div className="bg-white border border-slate-200 rounded-xl p-5 text-slate-600">
-                    Loading levels and grades...
-                </div>
-            ) : (
-                <form
-                    onSubmit={handleSubmit}
-                    className="bg-white border border-slate-200 rounded-xl p-5 space-y-4"
-                >
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label
-                                htmlFor="level"
-                                className="block text-sm font-semibold text-slate-700 mb-1"
-                            >
-                                Level
-                            </label>
-                            <select
-                                id="level"
-                                name="level"
-                                value={formData.level}
-                                onChange={handleInputChange}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-                            >
-                                <option value="">Select level</option>
-                                {orderedLevels.map((item) => (
-                                    <option key={item._id} value={item._id}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
+                {isLoading ? (
+                    <div className="p-12 flex flex-col items-center justify-center space-y-4">
+                        <div className="p-4 bg-slate-50 rounded-full">
+                            <Loader2 className="w-8 h-8 text-[#207D86] animate-spin" />
                         </div>
-
-                        <div>
-                            <label
-                                htmlFor="grade"
-                                className="block text-sm font-semibold text-slate-700 mb-1"
-                            >
-                                Grade
-                            </label>
-                            <select
-                                id="grade"
-                                name="grade"
-                                value={formData.grade}
-                                onChange={handleInputChange}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-                            >
-                                <option value="">Select grade</option>
-                                {filteredGrades.map((item) => (
-                                    <option key={item._id} value={item._id}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {isAdvanced && (
-                            <div className="md:col-span-2">
-                                <label
-                                    htmlFor="subjectStream"
-                                    className="block text-sm font-semibold text-slate-700 mb-1"
-                                >
-                                    Subject Stream
-                                </label>
-                                <select
-                                    id="subjectStream"
-                                    name="subjectStream"
-                                    value={formData.subjectStream}
-                                    onChange={handleInputChange}
-                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-                                >
-                                    <option value="">Select subject stream</option>
-                                    {SUBJECT_STREAMS.map((stream) => (
-                                        <option key={stream} value={stream}>
-                                            {stream}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <div>
-                            <label
-                                htmlFor="name"
-                                className="block text-sm font-semibold text-slate-700 mb-1"
-                            >
-                                Module Name
-                            </label>
-                            <input
-                                id="name"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-                                placeholder="Algebra Basics"
-                            />
-                        </div>
-
-                        <div>
-                            <label
-                                htmlFor="thumbnailUrl"
-                                className="block text-sm font-semibold text-slate-700 mb-1"
-                            >
-                                Thumbnail Image
-                            </label>
-                            <input
-                                id="thumbnailUrl"
-                                name="thumbnailUrl"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"
-                            />
-                            {formData.thumbnailUrl && (
-                                <img
-                                    src={toPublicMediaUrl(formData.thumbnailUrl)}
-                                    alt="Module thumbnail preview"
-                                    className="mt-2 h-24 w-24 rounded-md object-cover border border-slate-200"
-                                />
-                            )}
-                        </div>
-
-                        {/* Content URL removed */}
-
-                        <div className="md:col-span-2">
-                            <label
-                                htmlFor="description"
-                                className="block text-sm font-semibold text-slate-700 mb-1"
-                            >
-                                Description
-                            </label>
-                            <textarea
-                                id="description"
-                                name="description"
-                                rows={3}
-                                value={formData.description}
-                                onChange={handleInputChange}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#207D86]"
-                                placeholder="Short module summary"
-                            />
-                        </div>
-
-                        {formData.level && formData.grade && recommendations.length > 0 && (
-                            <div className="md:col-span-2 border border-slate-200 rounded-lg p-4 bg-slate-50">
-                                <p className="text-sm font-semibold text-slate-800 mb-2">
-                                    {getRecommendationTitle(gradeNumber)}
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {recommendations.map((subject) => (
-                                        <span
-                                            key={subject}
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={() => handleSuggestionClick(subject)}
-                                            onKeyDown={(e) =>
-                                                e.key === "Enter" && handleSuggestionClick(subject)
-                                            }
-                                            className="cursor-pointer px-2.5 py-1 rounded-full bg-white border border-slate-300 text-xs text-slate-700 hover:bg-slate-100"
+                        <p className="text-slate-500 font-medium animate-pulse">Loading structure data...</p>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
+                        <div className="space-y-6">
+                            
+                            {/* Level and Grade Grid */}
+                            <div className="grid sm:grid-cols-2 gap-6">
+                                {/* Level Select */}
+                                <div className="space-y-2">
+                                    <label htmlFor="level" className="text-sm font-bold text-slate-700">
+                                        Level <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                            <Layers className="w-5 h-5" />
+                                        </div>
+                                        <select
+                                            id="level"
+                                            name="level"
+                                            value={formData.level}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200 appearance-none"
                                         >
-                                            {subject}
-                                        </span>
-                                    ))}
+                                            <option value="">Select level...</option>
+                                            {orderedLevels.map((item) => (
+                                                <option key={item._id} value={item._id}>
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Grade Select */}
+                                <div className="space-y-2">
+                                    <label htmlFor="grade" className="text-sm font-bold text-slate-700">
+                                        Grade <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                            <GraduationCap className="w-5 h-5" />
+                                        </div>
+                                        <select
+                                            id="grade"
+                                            name="grade"
+                                            value={formData.grade}
+                                            onChange={handleInputChange}
+                                            disabled={!formData.level}
+                                            className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200 appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="">Select grade...</option>
+                                            {filteredGrades.map((item) => (
+                                                <option key={item._id} value={item._id}>
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="inline-flex items-center px-4 py-2 rounded-lg bg-[#207D86] text-white font-semibold hover:bg-[#14555B] disabled:opacity-60"
-                        >
-                            {isSubmitting ? "Saving..." : "Create Module"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => navigate("/admin/modules/manage")}
-                            className="inline-flex items-center px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            )}
+                            {/* Subject Stream (Conditional) */}
+                            {isAdvanced && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <label htmlFor="subjectStream" className="text-sm font-bold text-slate-700">
+                                        Subject Stream <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                            <BookOpen className="w-5 h-5" />
+                                        </div>
+                                        <select
+                                            id="subjectStream"
+                                            name="subjectStream"
+                                            value={formData.subjectStream}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200 appearance-none"
+                                        >
+                                            <option value="">Select subject stream...</option>
+                                            {SUBJECT_STREAMS.map((stream) => (
+                                                <option key={stream} value={stream}>
+                                                    {stream}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Recommendations / Suggestions Block */}
+                            {formData.level && formData.grade && recommendations.length > 0 && (
+                                <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl animate-in fade-in slide-in-from-top-2">
+                                    <p className="text-sm font-bold text-indigo-900 flex items-center gap-1.5 mb-3">
+                                        <Sparkles className="w-4 h-4 text-indigo-600" />
+                                        {getRecommendationTitle(gradeNumber)}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {recommendations.map((subject) => (
+                                            <button
+                                                type="button"
+                                                key={subject}
+                                                onClick={() => handleSuggestionClick(subject)}
+                                                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all active:scale-95 ${
+                                                    selectedSuggestion === subject
+                                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200"
+                                                        : "bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300"
+                                                }`}
+                                            >
+                                                {subject}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Module Name Input */}
+                            <div className="space-y-2">
+                                <label htmlFor="name" className="text-sm font-bold text-slate-700">
+                                    Module Name <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                        <Library className="w-5 h-5" />
+                                    </div>
+                                    <input
+                                        id="name"
+                                        name="name"
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={handleInputChange}
+                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200"
+                                        placeholder="e.g., Algebra Basics"
+                                        autoComplete="off"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Description Input */}
+                            <div className="space-y-2">
+                                <label htmlFor="description" className="text-sm font-bold text-slate-700">
+                                    Description <span className="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute top-3.5 left-0 pl-3.5 flex items-start pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                        <AlignLeft className="w-5 h-5" />
+                                    </div>
+                                    <textarea
+                                        id="description"
+                                        name="description"
+                                        rows={3}
+                                        value={formData.description}
+                                        onChange={handleInputChange}
+                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200 resize-none"
+                                        placeholder="A short summary of what this module covers..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Thumbnail File Input */}
+                            <div className="space-y-2 border border-slate-200 rounded-xl p-4 bg-slate-50">
+                                <label htmlFor="thumbnailUrl" className="text-sm font-bold text-slate-700 block mb-3">
+                                    Thumbnail Image <span className="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                    <div className="relative group flex-1">
+                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
+                                            <ImageIcon className="w-5 h-5" />
+                                        </div>
+                                        <input
+                                            id="thumbnailUrl"
+                                            name="thumbnailUrl"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all file:mr-4 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#207D86]/10 file:text-[#207D86] hover:file:bg-[#207D86]/20 cursor-pointer"
+                                        />
+                                    </div>
+                                    
+                                    {/* Thumbnail Preview */}
+                                    {formData.thumbnailUrl && (
+                                        <div className="shrink-0 p-1.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                            <img
+                                                src={toPublicMediaUrl(formData.thumbnailUrl)}
+                                                alt="Module preview"
+                                                className="h-16 w-16 object-cover rounded-md border border-slate-100"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="pt-4 flex flex-col-reverse sm:flex-row items-center gap-3 border-t border-slate-100">
+                            <button
+                                type="button"
+                                onClick={() => navigate("/admin/modules/manage")}
+                                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-6 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all active:scale-[0.98]"
+                            >
+                                <X className="w-5 h-5" />
+                                Cancel
+                            </button>
+                            
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full sm:w-auto sm:ml-auto inline-flex justify-center items-center gap-2 px-6 py-3 rounded-xl bg-[#207D86] text-white font-semibold shadow-lg shadow-[#207D86]/30 hover:bg-[#18646b] hover:shadow-xl hover:shadow-[#207D86]/40 focus:outline-none focus:ring-4 focus:ring-[#207D86]/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="w-5 h-5" />
+                                        Create Module
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
         </section>
     );
 };

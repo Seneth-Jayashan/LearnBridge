@@ -19,19 +19,22 @@ const StudentRoutes = () => {
         isExpanded={isExpanded}
         setIsExpanded={setIsExpanded}
       />
+      
+      {/* 3. Content area (DashboardLayout now offsets for fixed sidebar) */}
+      <div className="w-full transition-all duration-300">
+        <div className={`transition-all duration-300`}>
+          <Routes>
+            <Route path="dashboard" element={<div>Dashboard Content</div>} />
 
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-72" : "md:pl-32"}`}>
-        <Routes>
-          <Route path="dashboard" element={<div>Dashboard Content</div>} />
-
-          {/* ── Quiz Routes ── */}
-          <Route path="quizzes/:courseId" element={<QuizList />} />
-          <Route path="quiz/:id" element={<TakeQuiz />} />
-          <Route path="results" element={<QuizResults />} />
-          <Route path="modules" element={<StudentModules />} />
-          <Route path="assignments" element={<StudentAssignments />} />
-          {/* ... Add other student routes here ... */}
-        </Routes>
+            {/* Quiz Routes */}
+            <Route path="quizzes/:courseId" element={<QuizList />} />
+            <Route path="quiz/:id" element={<TakeQuiz />} />
+            <Route path="results" element={<QuizResults />} />
+            <Route path="modules" element={<StudentModules />} />
+            <Route path="assignments" element={<StudentAssignments />} />
+            {/* ... Add other student routes here ... */}
+          </Routes>
+        </div>
       </div>
     </>
   );

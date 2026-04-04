@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import AdminSidebar from "../components/sidebar/AdminSidebar";
+import Users from "../pages/admin/users/Users";
+import CreateUser from "../pages/admin/users/Create";
+import Schools from "../pages/admin/schools/Schools";
+import CreateSchool from "../pages/admin/schools/Create";
 import ModulesManage from "../pages/admin/Modules/ModulesManage";
 import AddModules from "../pages/admin/Modules/AddModules";
 import EditModules from "../pages/admin/Modules/EditModules";
@@ -11,14 +15,9 @@ import GradeManage from "../pages/admin/Grades/GradeManage";
 import AddGrade from "../pages/admin/Grades/AddGrade";
 import EditGrade from "../pages/admin/Grades/EditGrade";
 
-import Users from "../pages/admin/users/Users";
-import CreateUser from "../pages/admin/users/Create";
-import Schools from "../pages/admin/schools/Schools";
-import CreateSchool from "../pages/admin/schools/Create";
-
 const AdminRoutes = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
-  
+
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -31,8 +30,8 @@ const AdminRoutes = () => {
         setIsExpanded={setIsExpanded}
       />
       
-      {/* 3. Make the padding dynamic! */}
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
+      {/* 3. Content area (DashboardLayout now offsets for fixed sidebar) */}
+      <div className="w-full transition-all duration-300">
         <Routes>
           <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
           {/* User Routes */}
