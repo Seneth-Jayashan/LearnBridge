@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import authService from "../services/AuthService";
-import { setAccessToken } from "../api/Axios"; // Import the setter
+import { setAccessToken } from "../api/Axios"; 
 
 const AuthContext = createContext();
 
@@ -11,71 +11,89 @@ export const AuthProvider = ({ children }) => {
 
     // 1. Check Session (The "Silent Refresh")
     const checkSession = useCallback(async () => {
-    setLoading(true);
-    try {
-        console.log("🔄 checkSession: Attempting to restore session...");
-        
-        // DIRECT CALL: Skip authService to verify raw API response
-        // Using the same 'api' instance ensures 'withCredentials: true' is sent
-        const data  = await authService.refresh(); // This will attempt to refresh the token using the cookie
-        
-        console.log("✅ checkSession: Refresh Success!", data);
-        
-        // 1. Set Token
-        setAccessToken(data.accessToken);
+        setLoading(true);
+        try {
+            const data  = await authService.refresh(); 
+            
+            setAccessToken(data.accessToken);
+            const userRes = await authService.getCurrentUser(); 
+            setUser(userRes.user);
 
-        // 2. Fetch User
-        const userRes = await authService.getCurrentUser(); // This should now succeed with the new token
-        console.log("👤 checkSession: User Loaded", userRes);
-        
-        setUser(userRes.user);
-
-    } catch (err) {
-        console.error("❌ checkSession: Failed", err.response?.data || err.message);
-        
-        // If this fails, it means the Cookie is missing or invalid.
-        // We must clear everything to be safe.
-        setUser(null);
-        setAccessToken(null);
-    } finally {
-        setLoading(false);
-    }
-}, []);
+        } catch (err) {
+            setUser(null);
+            setAccessToken(null);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         checkSession();
     }, [checkSession]);
 
-    // 2️⃣ Login
+// 2️⃣ Login (REMOVED setLoading)
     const login = async (identifier, password) => {
-        setLoading(true);
         setError(null);
         try {
             const data = await authService.login(identifier, password);
             
-            // Save Access Token to Memory
+            if (data.requiresOtpVerification) {
+                return { 
+                    success: true, 
+                    requiresOtpVerification: true, 
+                    userId: data.userId,
+                    message: data.message
+                };
+            }
+
             if (data.accessToken) {
                 setAccessToken(data.accessToken);
-            }
-            console.log("Login successful. User data:", data);
-            
-            setUser(data.user);
-
-            if (data.accessToken) {
                 localStorage.setItem("accessToken", data.accessToken);
             }
-
+            setUser(data.user);
             return { success: true };
+
         } catch (err) {
             const msg = err.response?.data?.message || "Login failed";
             setError(msg);
             return { success: false, message: msg };
-        } finally {
-            setLoading(false);
         }
     };
 
-    // 3️⃣ NEW: Register Donor
+    // 3️⃣ Verify First Login OTP (REMOVED setLoading)
+    const verifyFirstLoginOtp = async (userId, otp) => {
+        setError(null);
+        try {
+            const data = await authService.verifyFirstLoginOtp(userId, otp);
+            return { success: true, resetToken: data.resetToken, message: data.message };
+        } catch (err) {
+            const msg = err.response?.data?.message || "OTP verification failed";
+            setError(msg);
+            return { success: false, message: msg };
+        }
+    };
+
+    // 4️⃣ Complete First Login (REMOVED setLoading)
+    const completeFirstLogin = async (resetToken, newPassword) => {
+        setError(null);
+        try {
+            const data = await authService.setupNewPassword(resetToken, newPassword);
+            
+            if (data.accessToken) {
+                setAccessToken(data.accessToken);
+                localStorage.setItem("accessToken", data.accessToken);
+            }
+            
+            setUser(data.user);
+            return { success: true, message: data.message };
+        } catch (err) {
+            const msg = err.response?.data?.message || "Failed to set up new password";
+            setError(msg);
+            return { success: false, message: msg };
+        }
+    };
+    
+    // 5️⃣ Register Donor
     const registerDonor = async (formData) => {
         setLoading(true);
         setError(null);
@@ -91,11 +109,11 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 4️⃣ Logout
+    // 6️⃣ Logout
     const logout = async () => {
         try {
-            await authService.logout(); // Backend clears the cookie
-            setAccessToken(null);       // Clear memory
+            await authService.logout(); 
+            setAccessToken(null);       
             setUser(null);
             localStorage.removeItem("accessToken");
         } catch (err) {
@@ -106,10 +124,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const refreshUser = async () => {
-        // Just re-fetching the profile is enough if the token is still valid
         try {
              const userData = await authService.getCurrentUser();
-             console.log("User data refreshed:", userData);
              setUser(userData.user);
         } catch (err) {
              console.error("Refresh user failed", err);
@@ -123,6 +139,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         refreshUser,
+        verifyFirstLoginOtp, // Added
+        completeFirstLogin,  // Added
         
         isAuthenticated: !!user,
         isSuperAdmin: user?.role === "super_admin",

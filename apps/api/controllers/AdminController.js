@@ -44,8 +44,10 @@ export const createUser = async (req, res) => {
         });
 
         await newUser.save();
-        await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
-        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
+        await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, targetRole !== "student" ? email : newUser.regNumber,  password);
+        await accountCreationEmail(`${firstName} ${lastName}`,targetRole !== "student" ? email : newUser.regNumber, password, email);
+
+        console.log(`Account creation email sent to ${email} with password: ${password}`);
         res.status(201).json({ 
             message: "User created successfully", 
             userId: newUser._id 

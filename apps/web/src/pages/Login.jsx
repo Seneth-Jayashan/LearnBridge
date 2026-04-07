@@ -23,8 +23,19 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await login(formData.identifier, formData.password);
+    
     if (result.success) {
-      navigate(from, { replace: true });
+      // --- NEW: Intercept First Login ---
+      if (result.requiresOtpVerification) {
+        // Redirect to the new verification page, passing the required data in state
+        navigate("/first-login-verification", { 
+          replace: true,
+          state: { userId: result.userId, message: result.message }
+        });
+      } else {
+        // Normal login, go to dashboard
+        navigate(from, { replace: true });
+      }
     }
   };
 

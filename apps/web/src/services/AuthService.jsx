@@ -23,17 +23,19 @@ const authService = {
   async getCurrentUser() {
     syncAuthHeader();
     const response = await api.get("/auth/me", { headers: getAuthHeaders() });
-    return response.data; // Expecting { user: ... }
+    return response.data; 
   },
 
   async login(identifier, password) {
     const response = await api.post("/auth/login", { identifier, password });
+    
+    // Only set token if it's a normal login (not an OTP interception)
     const accessToken = response.data?.accessToken;
     if (accessToken) {
       localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
       syncAuthHeader();
     }
-    return response.data; // Expecting { user: ..., accessToken: ... }
+    return response.data; 
   },
 
   async refresh() {
@@ -46,6 +48,26 @@ const authService = {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     syncAuthHeader();
     return response;
+  },
+
+  // ==========================================
+  // --- NEW: FIRST LOGIN FLOW ---
+  // ==========================================
+  async verifyFirstLoginOtp(userId, otp) {
+    const response = await api.post("/auth/verify-first-login-otp", { userId, otp });
+    return response.data; 
+  },
+
+  async setupNewPassword(resetToken, newPassword) {
+    const response = await api.post("/auth/setup-new-password", { resetToken, newPassword });
+    
+    // This acts as a login, so save the token
+    const accessToken = response.data?.accessToken;
+    if (accessToken) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      syncAuthHeader();
+    }
+    return response.data; // Expecting { message, accessToken, user }
   },
 
   // --- Registration & Account Management ---

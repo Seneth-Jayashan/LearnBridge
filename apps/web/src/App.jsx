@@ -18,6 +18,7 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 // --- Pages ---
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import FirstLoginVerification from "./pages/FirstLoginVerification"; // New page for OTP verification
 import RegisterDonor from "./pages/RegisterDonor";
 import RegisterTeacher from "./pages/RegisterTeacher"; // Added
 import NotFound from "./pages/NotFound";
@@ -70,6 +71,7 @@ const AppContent = () => {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/first-login-verification" element={<FirstLoginVerification />} />
         <Route path="/register-donor" element={<RegisterDonor />} />
         <Route path="/register-teacher" element={<RegisterTeacher />} />
         <Route path="/knowledge-base" element={<KnowledgeBasePublic />} />

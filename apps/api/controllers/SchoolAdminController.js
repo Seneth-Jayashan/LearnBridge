@@ -81,8 +81,8 @@ export const createStudentForSchool = async (req, res) => {
         });
 
         await newStudent.save();
-        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, studentData.email, studentData.password);
-        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,studentData.email, studentData.password);
+        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, newStudent.regNumber, studentData.password, );
+        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,newStudent.regNumber, studentData.password, studentData.email);
 
         await School.findByIdAndUpdate(schoolId, { $push: { students: newStudent._id } });
 
