@@ -12,6 +12,11 @@ import {
 
 const escapeRegExp = (value = "") => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const toNullableObjectId = (value) => {
+    if (!value) return null;
+    return mongoose.Types.ObjectId.isValid(value) ? new mongoose.Types.ObjectId(value) : null;
+};
+
 // --- Create a New Module ---
 export const createModule = async (req, res) => {
     try {
@@ -76,6 +81,20 @@ export const getAllModules = async (req, res) => {
                 return res.status(200).json([]);
             }
             match.grade = new mongoose.Types.ObjectId(req.user.grade);
+            if (req.user.stream) {
+                match.$or = [{ subjectStream: req.user.stream }, { subjectStream: null }];
+            }
+
+            const studentSchoolId = toNullableObjectId(req.user.school);
+            const visibleLessonModuleIds = await Lesson.distinct("module", {
+                school: studentSchoolId,
+            });
+
+            if (!visibleLessonModuleIds.length) {
+                return res.status(200).json([]);
+            }
+
+            match._id = { $in: visibleLessonModuleIds };
         }
 
         // Optional filters from query params (admin/others can use)
