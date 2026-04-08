@@ -52,8 +52,16 @@ export default function TakeQuiz() {
   // ── Countdown Timer ────────────────────────────────────────────────
   useEffect(() => {
     if (timeLeft === null || submitted) return;
-    if (timeLeft === 0) { handleSubmit(); return; }
-    const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+    if (timeLeft <= 0) {
+      setTimeLeft(0);
+      handleSubmit();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft((t) => Math.max((t ?? 0) - 1, 0));
+    }, 1000);
+
     return () => clearTimeout(timer);
   }, [timeLeft, submitted, handleSubmit]);
 
