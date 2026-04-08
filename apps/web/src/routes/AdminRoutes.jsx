@@ -5,6 +5,7 @@ import CreateUser from "../pages/admin/users/Create";
 import Update from "../pages/admin/users/Update";
 import Schools from "../pages/admin/schools/Schools";
 import CreateSchool from "../pages/admin/schools/Create";
+import EditSchool from "../pages/admin/schools/Update";
 import ModulesManage from "../pages/admin/Modules/ModulesManage";
 import AddModules from "../pages/admin/Modules/AddModules";
 import EditModules from "../pages/admin/Modules/EditModules";
@@ -46,6 +47,7 @@ const AdminRoutes = () => {
           {/* School Routes */}
           <Route path="schools" element={<Schools />} />
           <Route path="schools/create" element={<CreateSchool />} />
+          <Route path="schools/edit/:id" element={<EditSchool />} />
           
           {/* Module Routes */}
           <Route path="modules" element={<Navigate to="manage" replace />} />

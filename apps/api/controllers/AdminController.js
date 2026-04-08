@@ -275,11 +275,30 @@ export const updateSchool = async (req, res) => {
         if (name) school.name = name;
         if (contactEmail) school.contactEmail = contactEmail;
         if (contactPhone) school.contactPhone = contactPhone;
-        if (logoUrl) school.logoUrl = logoUrl;
         if (isActive !== undefined) school.isActive = isActive;
         
         if (address) {
             school.address = { ...school.address, ...address };
+        }
+
+        if (req.file) {
+            /* Because you are using multer.memoryStorage(), the file is in req.file.buffer.
+              Ideally, you upload this buffer to AWS S3, Cloudinary, or Firebase here.
+              
+              Example (Cloudinary):
+              const result = await uploadBufferToCloudinary(req.file.buffer);
+              school.logoUrl = result.secureUrl;
+            */
+
+            // Temporary Fallback: Convert buffer to Base64 data URL directly 
+            // (Use this if you don't have a cloud storage provider set up yet)
+            const b64 = Buffer.from(req.file.buffer).toString('base64');
+            const mimeType = req.file.mimetype;
+            school.logoUrl = `data:${mimeType};base64,${b64}`;
+            
+        } else if (logoUrl) {
+            // Allow manual text URL override if sent
+            school.logoUrl = logoUrl;
         }
 
         await school.save();

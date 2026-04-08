@@ -1,8 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiLoader } from "react-icons/fi"; // Import a spinner icon
-
 
 // --- Context Providers ---
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -18,9 +16,9 @@ import ProtectedRoutes from "./components/ProtectedRoutes";
 // --- Pages ---
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import FirstLoginVerification from "./pages/FirstLoginVerification"; // New page for OTP verification
+import FirstLoginVerification from "./pages/FirstLoginVerification";
 import RegisterDonor from "./pages/RegisterDonor";
-import RegisterTeacher from "./pages/RegisterTeacher"; // Added
+import RegisterTeacher from "./pages/RegisterTeacher"; 
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import KnowledgeBasePublic from "./pages/KnowledgeBase/KnowledgeBasePublic";
@@ -36,10 +34,11 @@ import StudentRoutes from "./routes/StudentRoutes";
 import DonorRoutes from "./routes/DonorRoutes";
 
 const RoleBasedRedirect = () => {
-  const { user, isSuperAdmin, isSchoolAdmin, isTeacher, isStudent, isDonor } =
-    useAuth();
+  const { user, isSuperAdmin, isSchoolAdmin, isTeacher, isStudent, isDonor } = useAuth();
+  
   if (!user) return <Navigate to="/login" replace />;
 
+  // Redirect explicitly to the dashboard paths
   if (isSuperAdmin) return <Navigate to="/admin/dashboard" replace />;
   if (isSchoolAdmin) return <Navigate to="/school/dashboard" replace />;
   if (isTeacher) return <Navigate to="/teacher/dashboard" replace />;
@@ -48,11 +47,9 @@ const RoleBasedRedirect = () => {
 
   return <Navigate to="/unauthorized" replace />;
 };
-
 const AppContent = () => {
   const { loading } = useAuth();
 
-  // 1. THE FIX: Show a spinner while checking the cookie
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -66,7 +63,6 @@ const AppContent = () => {
     );
   }
 
-  // 2. Render Routes only when loading is false
   return (
     <Routes>
       {/* 1. PUBLIC ROUTES */}
@@ -99,13 +95,7 @@ const AppContent = () => {
           <Route path="/school/*" element={<SchoolAdminRoutes />} />
         </Route>
 
-        <Route
-          element={
-            <ProtectedRoutes
-              allowedRoles={["teacher", "school_admin", "super_admin"]}
-            />
-          }
-        >
+        <Route element={<ProtectedRoutes allowedRoles={["teacher"]} />}>
           <Route path="/teacher/*" element={<TeacherRoutes />} />
         </Route>
 
