@@ -1,14 +1,32 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Library, GitBranch } from "lucide-react";
 import quizService from "../../services/QuizService.jsx";
 import triviaService from "../../services/TriviaService.jsx";
 import pdfService from "../../services/PdfService.jsx";
+import moduleService from "../../services/ModuleService";
 
 const emptyQuestion = () => ({
   questionText: "",
   options: ["", "", "", ""],
   correctAnswer: 0,
 });
+
+// ── Helpers (mirrored from LessonsAdd) ───────────────────────────────
+const getGradeNumber = (gradeName) => {
+  const match = String(gradeName || "").match(/\d+/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const isAdvancedModule = (moduleItem) => {
+  const levelName = String(moduleItem?.level?.name || moduleItem?.level || "").toLowerCase();
+  if (levelName.includes("advanced")) return true;
+  const gradeName = moduleItem?.grade?.name || moduleItem?.grade;
+  const gradeNumber = getGradeNumber(gradeName);
+  return gradeNumber !== null && gradeNumber >= 12;
+};
 
 // ── Toast ─────────────────────────────────────────────────────────────
 const Toast = ({ message, type }) => {
@@ -36,7 +54,6 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
 
   return (
     <div className="flex flex-col">
-      {/* Preview Header */}
       <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between flex-shrink-0">
         <div>
           <h2 className="text-sm font-bold text-white">Review Generated Questions</h2>
@@ -50,7 +67,6 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
         </button>
       </div>
 
-      {/* Questions List */}
       <div className="overflow-y-auto p-4 space-y-3" style={{ maxHeight: "380px" }}>
         {questions.map((q, i) => {
           const isSelected = selected.has(i);
@@ -97,7 +113,6 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
         })}
       </div>
 
-      {/* Preview Actions */}
       <div className="px-6 py-4 border-t border-white/5 flex gap-3 flex-shrink-0">
         <button
           onClick={onBack}
@@ -121,7 +136,6 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
 const ImportModal = ({ onClose, onImport }) => {
   const [activeTab, setActiveTab] = useState("pdf");
 
-  // ── PDF State ──────────────────────────────────────────────────────
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfConfig, setPdfConfig] = useState({ amount: 10, difficulty: "medium" });
   const [generating, setGenerating] = useState(false);
@@ -129,7 +143,6 @@ const ImportModal = ({ onClose, onImport }) => {
   const [pdfError, setPdfError] = useState("");
   const fileInputRef = useRef(null);
 
-  // ── Trivia State ───────────────────────────────────────────────────
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(false);
   const [triviaImporting, setTriviaImporting] = useState(false);
@@ -147,7 +160,6 @@ const ImportModal = ({ onClose, onImport }) => {
     }
   }, [activeTab]);
 
-  // ── PDF Handlers ───────────────────────────────────────────────────
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type === "application/pdf") {
@@ -171,49 +183,26 @@ const ImportModal = ({ onClose, onImport }) => {
     }
   };
 
-  // ── Uses PdfService instead of direct Anthropic fetch ─────────────
- // ── Generate Questions From PDF (CORRECT MULTER VERSION) ─────────────
-const generateFromPDF = async () => {
-  if (!pdfFile) {
-    setPdfError("Please upload a PDF first.");
-    return;
-  }
-
-  setPdfError("");
-  setGenerating(true);
-
-  try {
-    // Send actual file instead of base64
-    const { questions } = await pdfService.generateQuestionsFromPDF(
-      pdfFile,
-      pdfConfig.amount,
-      pdfConfig.difficulty
-    );
-
-    if (!questions || questions.length === 0) {
-      throw new Error("No questions were generated. Try a different PDF.");
+  const generateFromPDF = async () => {
+    if (!pdfFile) { setPdfError("Please upload a PDF first."); return; }
+    setPdfError("");
+    setGenerating(true);
+    try {
+      const { questions } = await pdfService.generateQuestionsFromPDF(pdfFile, pdfConfig.amount, pdfConfig.difficulty);
+      if (!questions || questions.length === 0) throw new Error("No questions were generated. Try a different PDF.");
+      setGeneratedQuestions(questions);
+    } catch (err) {
+      setPdfError(err?.response?.data?.message || err?.message || "Failed to generate questions.");
+    } finally {
+      setGenerating(false);
     }
-
-    setGeneratedQuestions(questions);
-  } catch (err) {
-    console.error("PDF generation error:", err);
-
-    setPdfError(
-      err?.response?.data?.message ||
-      err?.message ||
-      "Failed to generate questions."
-    );
-  } finally {
-    setGenerating(false);
-  }
-};
+  };
 
   const handlePDFConfirm = (selectedQuestions) => {
     onImport({ questions: selectedQuestions, mode: "import", source: "pdf" });
     onClose();
   };
 
-  // ── Trivia Handler ─────────────────────────────────────────────────
   const handleTriviaImport = async () => {
     setTriviaError("");
     setTriviaImporting(true);
@@ -232,210 +221,135 @@ const generateFromPDF = async () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-[#0A1D32] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg" style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-
-        {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
           <h2 className="text-sm font-bold text-white">Import Questions</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition text-lg leading-none">✕</button>
         </div>
 
-        {/* Tabs — hidden during preview */}
         {!generatedQuestions && (
           <div className="flex border-b border-white/5 flex-shrink-0">
-            <button
-              onClick={() => setActiveTab("pdf")}
-              className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2
-                ${activeTab === "pdf"
-                  ? "text-[#4CAF50] border-b-2 border-[#4CAF50]"
-                  : "text-slate-500 hover:text-slate-300"}`}
-            >
-              📄 From PDF
-            </button>
-            <button
-              onClick={() => setActiveTab("trivia")}
-              className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2
-                ${activeTab === "trivia"
-                  ? "text-[#4CAF50] border-b-2 border-[#4CAF50]"
-                  : "text-slate-500 hover:text-slate-300"}`}
-            >
-              🌐 Trivia DB
-            </button>
+            {["pdf", "trivia"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2
+                  ${activeTab === tab ? "text-[#4CAF50] border-b-2 border-[#4CAF50]" : "text-slate-500 hover:text-slate-300"}`}
+              >
+                {tab === "pdf" ? "📄 From PDF" : "🌐 Trivia DB"}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* ── PDF Preview ────────────────────────────────────────── */}
         {generatedQuestions ? (
-          <PDFQuestionPreview
-            questions={generatedQuestions}
-            onConfirm={handlePDFConfirm}
-            onBack={() => setGeneratedQuestions(null)}
-          />
+          <PDFQuestionPreview questions={generatedQuestions} onConfirm={handlePDFConfirm} onBack={() => setGeneratedQuestions(null)} />
         ) : activeTab === "pdf" ? (
-          // ── PDF Tab ────────────────────────────────────────────
           <div className="p-6 space-y-5 overflow-y-auto">
-
-            {/* Drop Zone */}
             <div
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition
-                ${pdfFile
-                  ? "border-[#4CAF50]/40 bg-[#4CAF50]/5"
-                  : "border-white/10 hover:border-[#207D86]/50 hover:bg-[#207D86]/5"}`}
+                ${pdfFile ? "border-[#4CAF50]/40 bg-[#4CAF50]/5" : "border-white/10 hover:border-[#207D86]/50 hover:bg-[#207D86]/5"}`}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} className="hidden" />
               {pdfFile ? (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-[#4CAF50]/15 border border-[#4CAF50]/30 rounded-xl flex items-center justify-center text-xl">
-                    📄
-                  </div>
+                  <div className="w-12 h-12 bg-[#4CAF50]/15 border border-[#4CAF50]/30 rounded-xl flex items-center justify-center text-xl">📄</div>
                   <p className="text-sm font-semibold text-[#4CAF50] truncate max-w-xs">{pdfFile.name}</p>
                   <p className="text-xs text-slate-500">{(pdfFile.size / 1024).toFixed(0)} KB · Click to change</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl">
-                    📁
-                  </div>
+                  <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl">📁</div>
                   <p className="text-sm font-semibold text-white">Drop your PDF here</p>
                   <p className="text-xs text-slate-500">or click to browse files</p>
                 </div>
               )}
             </div>
 
-            {/* Amount */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                 Questions to generate: <span className="text-[#4CAF50]">{pdfConfig.amount}</span>
               </label>
-              <input
-                type="range" min={1} max={30}
-                value={pdfConfig.amount}
+              <input type="range" min={1} max={30} value={pdfConfig.amount}
                 onChange={(e) => setPdfConfig((p) => ({ ...p, amount: Number(e.target.value) }))}
-                className="w-full accent-[#4CAF50]"
-              />
-              <div className="flex justify-between text-xs text-slate-600 mt-1">
-                <span>1</span><span>30</span>
-              </div>
+                className="w-full accent-[#4CAF50]" />
+              <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1</span><span>30</span></div>
             </div>
 
-            {/* Difficulty */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Difficulty</label>
               <div className="grid grid-cols-3 gap-2">
                 {["easy", "medium", "hard"].map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setPdfConfig((p) => ({ ...p, difficulty: d }))}
+                  <button key={d} onClick={() => setPdfConfig((p) => ({ ...p, difficulty: d }))}
                     className={`py-2 rounded-xl text-xs font-semibold border transition capitalize
                       ${pdfConfig.difficulty === d
-                        ? d === "easy"   ? "bg-green-400/15 border-green-400/30 text-green-400"
+                        ? d === "easy" ? "bg-green-400/15 border-green-400/30 text-green-400"
                           : d === "medium" ? "bg-yellow-400/15 border-yellow-400/30 text-yellow-400"
-                          :                  "bg-red-400/15 border-red-400/30 text-red-400"
+                          : "bg-red-400/15 border-red-400/30 text-red-400"
                         : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
-                  >
-                    {d}
-                  </button>
+                  >{d}</button>
                 ))}
               </div>
             </div>
 
             {pdfError && (
               <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
-                {pdfError}
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />{pdfError}
               </div>
             )}
 
             <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={generateFromPDF}
-                disabled={generating || !pdfFile}
-                className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40"
-              >
+              <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium">Cancel</button>
+              <button onClick={generateFromPDF} disabled={generating || !pdfFile}
+                className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40">
                 {generating ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Generating...
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...
                   </span>
                 ) : `Generate ${pdfConfig.amount} Questions`}
               </button>
             </div>
           </div>
-
         ) : (
-          // ── Trivia Tab ─────────────────────────────────────────
           <div className="p-6 space-y-5 overflow-y-auto">
-
-            {/* Mode Toggle */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Import Mode</p>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setTriviaMode("import")}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition text-left
-                    ${triviaMode === "import"
-                      ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
-                      : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
-                >
-                  <div className="text-base mb-0.5">➕</div>
-                  Add to existing quiz
-                  <div className="text-slate-500 font-normal mt-0.5">Appends questions</div>
-                </button>
-                <button
-                  onClick={() => setTriviaMode("generate")}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition text-left
-                    ${triviaMode === "generate"
-                      ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
-                      : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
-                >
-                  <div className="text-base mb-0.5">⚡</div>
-                  Auto-generate quiz
-                  <div className="text-slate-500 font-normal mt-0.5">Replaces everything</div>
-                </button>
+                {[
+                  { value: "import", icon: "➕", label: "Add to existing quiz", sub: "Appends questions" },
+                  { value: "generate", icon: "⚡", label: "Auto-generate quiz", sub: "Replaces everything" },
+                ].map(({ value, icon, label, sub }) => (
+                  <button key={value} onClick={() => setTriviaMode(value)}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition text-left
+                      ${triviaMode === value ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]" : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}>
+                    <div className="text-base mb-0.5">{icon}</div>
+                    {label}
+                    <div className="text-slate-500 font-normal mt-0.5">{sub}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Amount */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
                 Number of Questions: <span className="text-[#4CAF50]">{triviaConfig.amount}</span>
               </label>
-              <input
-                type="range" min={1} max={50}
-                value={triviaConfig.amount}
+              <input type="range" min={1} max={50} value={triviaConfig.amount}
                 onChange={(e) => setTriviaConfig((p) => ({ ...p, amount: Number(e.target.value) }))}
-                className="w-full accent-[#4CAF50]"
-              />
-              <div className="flex justify-between text-xs text-slate-600 mt-1">
-                <span>1</span><span>50</span>
-              </div>
+                className="w-full accent-[#4CAF50]" />
+              <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1</span><span>50</span></div>
             </div>
 
-            {/* Category */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Category</label>
               {loadingCats ? (
                 <div className="text-xs text-slate-500 animate-pulse">Loading categories...</div>
               ) : (
-                <select
-                  value={triviaConfig.category}
+                <select value={triviaConfig.category}
                   onChange={(e) => setTriviaConfig((p) => ({ ...p, category: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#207D86] transition"
-                >
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#207D86] transition">
                   <option value="">Any Category</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id} className="bg-[#0A1D32]">{cat.name}</option>
@@ -444,22 +358,18 @@ const generateFromPDF = async () => {
               )}
             </div>
 
-            {/* Difficulty */}
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Difficulty</label>
               <div className="grid grid-cols-4 gap-2">
                 {["", "easy", "medium", "hard"].map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setTriviaConfig((p) => ({ ...p, difficulty: d }))}
+                  <button key={d} onClick={() => setTriviaConfig((p) => ({ ...p, difficulty: d }))}
                     className={`py-2 rounded-xl text-xs font-semibold border transition capitalize
                       ${triviaConfig.difficulty === d
-                        ? d === ""       ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
-                          : d === "easy"   ? "bg-green-400/15 border-green-400/30 text-green-400"
+                        ? d === "" ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
+                          : d === "easy" ? "bg-green-400/15 border-green-400/30 text-green-400"
                           : d === "medium" ? "bg-yellow-400/15 border-yellow-400/30 text-yellow-400"
-                          :                  "bg-red-400/15 border-red-400/30 text-red-400"
-                        : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
-                  >
+                          : "bg-red-400/15 border-red-400/30 text-red-400"
+                        : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}>
                     {d === "" ? "Any" : d}
                   </button>
                 ))}
@@ -468,8 +378,7 @@ const generateFromPDF = async () => {
 
             {triviaError && (
               <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
-                {triviaError}
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />{triviaError}
               </div>
             )}
 
@@ -480,20 +389,10 @@ const generateFromPDF = async () => {
             </p>
 
             <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleTriviaImport}
-                disabled={triviaImporting || loadingCats}
-                className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40"
-              >
-                {triviaImporting
-                  ? "Fetching..."
-                  : triviaMode === "import" ? `Import ${triviaConfig.amount} Questions` : "Generate Quiz"}
+              <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium">Cancel</button>
+              <button onClick={handleTriviaImport} disabled={triviaImporting || loadingCats}
+                className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40">
+                {triviaImporting ? "Fetching..." : triviaMode === "import" ? `Import ${triviaConfig.amount} Questions` : "Generate Quiz"}
               </button>
             </div>
           </div>
@@ -517,6 +416,23 @@ export default function CreateQuiz() {
   const [toast, setToast] = useState({ message: "", type: "" });
   const [showImportModal, setShowImportModal] = useState(false);
 
+  // ── Module fetch state ────────────────────────────────────────────
+  const [modules, setModules] = useState([]);
+  const [loadingModules, setLoadingModules] = useState(true);
+  const [moduleError, setModuleError] = useState("");
+
+  const selectedModule = useMemo(
+    () => modules.find((m) => String(m._id) === String(moduleId)) || null,
+    [modules, moduleId]
+  );
+
+  useEffect(() => {
+    moduleService.getAllModules()
+      .then((data) => setModules(Array.isArray(data) ? data : []))
+      .catch(() => setModuleError("Failed to load modules."))
+      .finally(() => setLoadingModules(false));
+  }, []);
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
@@ -530,12 +446,10 @@ export default function CreateQuiz() {
     setError("");
   };
 
-  // ── Unified Import Handler ─────────────────────────────────────────
   const handleImport = ({ questions: imported, mode, category = "", source }) => {
     if (mode === "import") {
       setQuestions((prev) => {
-        const isStarterBlank =
-          prev.length === 1 && !prev[0].questionText && prev[0].options.every((o) => !o);
+        const isStarterBlank = prev.length === 1 && !prev[0].questionText && prev[0].options.every((o) => !o);
         return isStarterBlank ? imported : [...prev, ...imported];
       });
       showToast(
@@ -552,63 +466,30 @@ export default function CreateQuiz() {
     }
   };
 
-  // ── Question helpers ──────────────────────────────────────────────
   const addQuestion = () => setQuestions((prev) => [...prev, emptyQuestion()]);
-
-  const removeQuestion = (qIndex) =>
-    setQuestions((prev) => prev.filter((_, i) => i !== qIndex));
-
+  const removeQuestion = (qIndex) => setQuestions((prev) => prev.filter((_, i) => i !== qIndex));
   const updateQuestionText = (qIndex, value) =>
-    setQuestions((prev) => {
-      const updated = [...prev];
-      updated[qIndex] = { ...updated[qIndex], questionText: value };
-      return updated;
-    });
-
+    setQuestions((prev) => { const u = [...prev]; u[qIndex] = { ...u[qIndex], questionText: value }; return u; });
   const updateOption = (qIndex, oIndex, value) =>
-    setQuestions((prev) => {
-      const updated = [...prev];
-      const opts = [...updated[qIndex].options];
-      opts[oIndex] = value;
-      updated[qIndex] = { ...updated[qIndex], options: opts };
-      return updated;
-    });
-
+    setQuestions((prev) => { const u = [...prev]; const opts = [...u[qIndex].options]; opts[oIndex] = value; u[qIndex] = { ...u[qIndex], options: opts }; return u; });
   const setCorrectAnswer = (qIndex, oIndex) =>
-    setQuestions((prev) => {
-      const updated = [...prev];
-      updated[qIndex] = { ...updated[qIndex], correctAnswer: oIndex };
-      return updated;
-    });
+    setQuestions((prev) => { const u = [...prev]; u[qIndex] = { ...u[qIndex], correctAnswer: oIndex }; return u; });
 
-  // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async (isPublished = false) => {
     setError("");
     if (!title.trim()) return setError("Quiz title is required.");
-    if (!moduleId.trim()) return setError("Module ID is required.");
-    if (!/^[a-fA-F0-9]{24}$/.test(moduleId.trim()))
-      return setError("Module ID is not valid. Please paste a correct MongoDB ObjectId.");
+    if (!moduleId) return setError("Please select a module.");
 
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.questionText.trim()) return setError(`Question ${i + 1} text is empty.`);
-      if (q.options.some((o) => !o.trim()))
-        return setError(`All options in Question ${i + 1} must be filled.`);
+      if (q.options.some((o) => !o.trim())) return setError(`All options in Question ${i + 1} must be filled.`);
     }
 
     try {
       setLoading(true);
-      await quizService.createQuiz({
-        title,
-        moduleId: moduleId.trim(),
-        timeLimit: Number(timeLimit),
-        questions,
-        isPublished,
-      });
-      showToast(
-        isPublished ? "Quiz created & published successfully!" : "Quiz saved as draft successfully!",
-        "success"
-      );
+      await quizService.createQuiz({ title, moduleId, timeLimit: Number(timeLimit), questions, isPublished });
+      showToast(isPublished ? "Quiz created & published successfully!" : "Quiz saved as draft successfully!", "success");
       resetForm();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create quiz.");
@@ -620,49 +501,35 @@ export default function CreateQuiz() {
 
   return (
     <div className="min-h-screen bg-[#0E1E30]">
-
       <Toast message={toast.message} type={toast.type} />
 
       {showImportModal && (
-        <ImportModal
-          onClose={() => setShowImportModal(false)}
-          onImport={handleImport}
-        />
+        <ImportModal onClose={() => setShowImportModal(false)} onImport={handleImport} />
       )}
 
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-lg">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white transition text-sm">
-            ← Back
-          </button>
+          <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white transition text-sm">← Back</button>
           <div className="w-px h-5 bg-white/10" />
           <h1 className="text-lg font-bold text-white tracking-wide">Create New Quiz</h1>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => handleSubmit(false)}
-            disabled={loading}
-            className="px-4 py-2 border border-[#207D86] text-[#4CAF50] rounded-lg hover:bg-[#207D86]/20 transition font-medium text-sm disabled:opacity-40"
-          >
+          <button onClick={() => handleSubmit(false)} disabled={loading}
+            className="px-4 py-2 border border-[#207D86] text-[#4CAF50] rounded-lg hover:bg-[#207D86]/20 transition font-medium text-sm disabled:opacity-40">
             Save as Draft
           </button>
-          <button
-            onClick={() => handleSubmit(true)}
-            disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-lg hover:opacity-90 transition font-medium text-sm disabled:opacity-40 shadow-lg shadow-[#207D86]/30"
-          >
+          <button onClick={() => handleSubmit(true)} disabled={loading}
+            className="px-4 py-2 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-lg hover:opacity-90 transition font-medium text-sm disabled:opacity-40 shadow-lg shadow-[#207D86]/30">
             {loading ? "Saving..." : "Save & Publish"}
           </button>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto p-6 space-y-5">
-
         {error && (
           <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
-            {error}
+            <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />{error}
           </div>
         )}
 
@@ -670,10 +537,8 @@ export default function CreateQuiz() {
         <div className="bg-[#0A1D32] rounded-2xl border border-white/5 p-6 space-y-5 shadow-xl">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
             <h2 className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">Quiz Settings</h2>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#207D86]/15 border border-[#207D86]/30 text-[#4CAF50] rounded-lg hover:bg-[#207D86]/25 transition text-xs font-semibold"
-            >
+            <button onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#207D86]/15 border border-[#207D86]/30 text-[#4CAF50] rounded-lg hover:bg-[#207D86]/25 transition text-xs font-semibold">
               ✨ Import Questions
             </button>
           </div>
@@ -681,40 +546,78 @@ export default function CreateQuiz() {
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1.5">Quiz Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+            <input value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Chapter 3 — Algebra Basics"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition"
-            />
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition" />
           </div>
 
-          {/* Module ID */}
+          {/* ── Module Dropdown (replaces Module ID text input) ── */}
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">
-              Module ID
-              <span className="ml-2 text-xs text-slate-600 font-normal">(MongoDB ObjectId of the module)</span>
-            </label>
-            <input
-              value={moduleId}
-              onChange={(e) => setModuleId(e.target.value)}
-              placeholder="e.g. 6998a9b741f544ca50307646"
-              className={`w-full bg-white/5 border rounded-xl px-4 py-2.5 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:border-transparent transition
-                ${moduleId && !/^[a-fA-F0-9]{24}$/.test(moduleId)
-                  ? "border-red-400/40 focus:ring-red-400"
-                  : "border-white/10 focus:ring-[#207D86]"}`}
-            />
-            {moduleId && !/^[a-fA-F0-9]{24}$/.test(moduleId) && (
-              <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
-                Must be a 24-character MongoDB ObjectId
+            <label className="block text-sm font-medium text-slate-400 mb-1.5">Module</label>
+
+            {moduleError && (
+              <p className="text-xs text-red-400 mb-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />{moduleError}
               </p>
             )}
-            {moduleId && /^[a-fA-F0-9]{24}$/.test(moduleId) && (
-              <p className="text-xs text-[#4CAF50] mt-1.5 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-[#4CAF50] rounded-full" />
-                Valid Module ID
-              </p>
+
+            <div className="relative group">
+              {/* Icon */}
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#207D86] transition-colors">
+                <Library className="w-4 h-4" />
+              </div>
+
+              <select
+                value={moduleId}
+                onChange={(e) => setModuleId(e.target.value)}
+                disabled={loadingModules}
+                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white
+                  focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition
+                  appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="" className="bg-[#0A1D32] text-slate-400">
+                  {loadingModules ? "Loading modules..." : "Select a module..."}
+                </option>
+                {modules.map((item) => (
+                  <option key={item._id} value={item._id} className="bg-[#0A1D32] text-white">
+                    {item.name}
+                    {item?.grade?.name
+                      ? ` — ${/grade/i.test(item.grade.name) ? item.grade.name : (/\d/.test(item.grade.name) ? `Grade ${item.grade.name}` : item.grade.name)}`
+                      : item?.grade
+                        ? ` — ${/grade/i.test(String(item.grade)) ? item.grade : (/\d/.test(String(item.grade)) ? `Grade ${item.grade}` : item.grade)}`
+                        : ""}
+                    {isAdvancedModule(item) && item?.subjectStream ? ` — ${item.subjectStream}` : ""}
+                  </option>
+                ))}
+              </select>
+
+              {/* Custom chevron */}
+              <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Selected module info badges — mirrors LessonsAdd */}
+            {selectedModule && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 px-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-400 border border-white/10">
+                  <span className="text-slate-500">Level:</span>
+                  {selectedModule?.level?.name || selectedModule?.level || "N/A"}
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-400 border border-white/10">
+                  <span className="text-slate-500">Grade:</span>
+                  {selectedModule?.grade?.name || selectedModule?.grade || "N/A"}
+                </span>
+                {isAdvancedModule(selectedModule) && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-400 border border-white/10">
+                    <GitBranch className="w-3 h-3 text-slate-500" />
+                    <span className="text-slate-500">Stream:</span>
+                    {selectedModule?.subjectStream || "N/A"}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -723,30 +626,17 @@ export default function CreateQuiz() {
             <label className="block text-sm font-medium text-slate-400 mb-1.5">
               Time Limit: <span className="text-[#4CAF50] font-semibold">{timeLimit} minutes</span>
             </label>
-            <input
-              type="range" min={5} max={120} step={5}
-              value={timeLimit}
-              onChange={(e) => setTimeLimit(e.target.value)}
-              className="w-full accent-[#4CAF50]"
-            />
-            <div className="flex justify-between text-xs text-slate-600 mt-1">
-              <span>5 min</span><span>120 min</span>
-            </div>
+            <input type="range" min={5} max={120} step={5} value={timeLimit}
+              onChange={(e) => setTimeLimit(e.target.value)} className="w-full accent-[#4CAF50]" />
+            <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 min</span><span>120 min</span></div>
           </div>
         </div>
 
         {/* ── Questions Count Banner ────────────────────────────── */}
         {questions.length > 1 && (
           <div className="flex items-center justify-between px-4 py-2.5 bg-[#207D86]/10 border border-[#207D86]/20 rounded-xl">
-            <span className="text-xs text-[#4CAF50] font-semibold">
-              📋 {questions.length} questions in this quiz
-            </span>
-            <button
-              onClick={() => setQuestions([emptyQuestion()])}
-              className="text-xs text-red-400/50 hover:text-red-400 transition"
-            >
-              Clear all
-            </button>
+            <span className="text-xs text-[#4CAF50] font-semibold">📋 {questions.length} questions in this quiz</span>
+            <button onClick={() => setQuestions([emptyQuestion()])} className="text-xs text-red-400/50 hover:text-red-400 transition">Clear all</button>
           </div>
         )}
 
@@ -758,72 +648,53 @@ export default function CreateQuiz() {
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-xs font-bold text-white">
                   {qIndex + 1}
                 </div>
-                <span className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">
-                  Question {qIndex + 1}
-                </span>
+                <span className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">Question {qIndex + 1}</span>
               </div>
               {questions.length > 1 && (
-                <button onClick={() => removeQuestion(qIndex)} className="text-xs text-red-400/50 hover:text-red-400 transition">
-                  ✕ Remove
-                </button>
+                <button onClick={() => removeQuestion(qIndex)} className="text-xs text-red-400/50 hover:text-red-400 transition">✕ Remove</button>
               )}
             </div>
 
-            <input
-              value={q.questionText}
-              onChange={(e) => updateQuestionText(qIndex, e.target.value)}
+            <input value={q.questionText} onChange={(e) => updateQuestionText(qIndex, e.target.value)}
               placeholder="Enter your question here..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition"
-            />
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition" />
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Options — click ✓ to mark correct answer
-              </p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Options — click ✓ to mark correct answer</p>
               {q.options.map((opt, oIndex) => (
                 <div key={oIndex} className="flex items-center gap-3">
-                  <button
-                    onClick={() => setCorrectAnswer(qIndex, oIndex)}
+                  <button onClick={() => setCorrectAnswer(qIndex, oIndex)}
                     className={`w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition font-bold text-sm
                       ${q.correctAnswer === oIndex
                         ? "bg-[#4CAF50] border-[#4CAF50] text-white shadow-lg shadow-[#4CAF50]/20"
-                        : "border-white/20 text-white/20 hover:border-[#4CAF50]/50 hover:text-[#4CAF50]/50"}`}
-                  >
+                        : "border-white/20 text-white/20 hover:border-[#4CAF50]/50 hover:text-[#4CAF50]/50"}`}>
                     ✓
                   </button>
-                  <input
-                    value={opt}
-                    onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
+                  <input value={opt} onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                     placeholder={`Option ${oIndex + 1}`}
                     className={`flex-1 bg-white/5 border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:border-transparent transition
                       ${q.correctAnswer === oIndex
                         ? "border-[#4CAF50]/40 focus:ring-[#4CAF50] bg-[#4CAF50]/5"
-                        : "border-white/10 focus:ring-[#207D86]"}`}
-                  />
+                        : "border-white/10 focus:ring-[#207D86]"}`} />
                   <span className="text-xs text-slate-600 w-4 font-mono">{String.fromCharCode(65 + oIndex)}</span>
                 </div>
               ))}
             </div>
 
             <p className="text-xs text-slate-500">
-              Correct answer:{" "}
-              <span className="text-[#4CAF50] font-semibold">Option {String.fromCharCode(65 + q.correctAnswer)}</span>
+              Correct answer: <span className="text-[#4CAF50] font-semibold">Option {String.fromCharCode(65 + q.correctAnswer)}</span>
             </p>
           </div>
         ))}
 
         {/* ── Bottom Action Bar ─────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={addQuestion}
-            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm"
-          >
+          <button onClick={addQuestion}
+            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm">
             + Add Question Manually
           </button>
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm flex items-center justify-center gap-2"
-          >
+          <button onClick={() => setShowImportModal(true)}
+            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm flex items-center justify-center gap-2">
             ✨ Import Questions
           </button>
         </div>
