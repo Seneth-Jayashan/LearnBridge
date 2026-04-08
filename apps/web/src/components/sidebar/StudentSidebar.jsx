@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { 
   FiHome, FiPlayCircle, FiCheckSquare, FiAward, 
   FiChevronLeft, FiChevronRight, FiLogOut,
-  FiChevronDown, FiChevronUp, FiList, FiPlay, FiBarChart2
+  FiChevronDown, FiChevronUp, FiList, FiBarChart2
 } from "react-icons/fi";
 
 const StudentSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
@@ -25,7 +25,6 @@ const StudentSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
 
   const quizLinks = [
     { name: "Quiz List",   path: "/student/quizzes",  icon: FiList },
-    { name: "Take Quiz",   path: "/student/quiz",     icon: FiPlay },
     { name: "My Results",  path: "/student/results",  icon: FiBarChart2 },
   ];
 
