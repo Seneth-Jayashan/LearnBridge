@@ -22,132 +22,141 @@ export default function QuizResults() {
     fetchResults();
   }, []);
 
-  const getScoreColor = (score, total) => {
-    const pct = (score / total) * 100;
-    if (pct >= 70) return "text-[#4CAF50] bg-[#4CAF50]/15 border border-[#4CAF50]/20";
-    if (pct >= 40) return "text-yellow-400 bg-yellow-400/10 border border-yellow-400/20";
-    return "text-red-400 bg-red-400/10 border border-red-400/20";
+  const getScoreColor = (pct) => {
+    if (pct >= 70) return "text-emerald-600 bg-emerald-50 border-emerald-100";
+    if (pct >= 40) return "text-amber-600 bg-amber-50 border-amber-100";
+    return "text-red-600 bg-red-50 border-red-100";
   };
 
-  const getScoreLabel = (score, total) => {
-    const pct = (score / total) * 100;
-    if (pct >= 70) return "🎉 Passed";
-    if (pct >= 40) return "📖 Needs Work";
-    return "❌ Failed";
+  const getProgressColor = (pct) => {
+    if (pct >= 70) return "bg-emerald-500";
+    if (pct >= 40) return "bg-amber-500";
+    return "bg-red-500";
   };
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric", month: "short", day: "numeric",
-      hour: "2-digit", minute: "2-digit"
+      month: "short", day: "numeric", year: "numeric"
     });
   };
 
-  // ── Loading ───────────────────────────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen bg-[#0E1E30] flex items-center justify-center">
-      <div className="flex items-center gap-3 text-[#4CAF50] font-medium animate-pulse">
-        <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" />
-        Loading your results...
-      </div>
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center">
+      <div className="w-12 h-12 border-4 border-slate-200 border-t-[#207D86] rounded-full animate-spin mb-4" />
+      <p className="text-[#0E2A47] font-bold animate-pulse">Syncing Results...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0E1E30]">
+    <div className="min-h-screen bg-[#F8FAFC] pb-12">
+      <div className="max-w-5xl mx-auto py-10 px-6">
+        
+        {/* --- HERO SECTION (UNCHANGED) --- */}
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
+              My Quiz Results
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm md:text-base">
+              Track your quiz attempts and performance over time.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all active:scale-[0.98]"
+          >
+            Back
+          </button>
+        </div>
 
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-4 sticky top-0 z-10 shadow-lg">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-sm text-slate-400 hover:text-white transition mb-1 block"
-        >
-          ← Back
-        </button>
-        <h1 className="text-lg font-bold text-white tracking-wide">My Quiz Results</h1>
-      </div>
-
-      <div className="max-w-3xl mx-auto p-6">
-
-        {/* Error Banner */}
         {error && (
-          <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
-            {error}
+          <div className="bg-red-50 text-red-700 p-4 rounded-2xl mb-8 flex items-center gap-3 border border-red-100">
+            <span className="text-xl">⚠️</span>
+            <span className="font-medium text-sm">{error}</span>
           </div>
         )}
 
-        {/* ── Empty State ───────────────────────────────────────── */}
         {results.length === 0 ? (
-          <div className="text-center py-32">
-            <div className="w-16 h-16 bg-[#0A1D32] border border-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-              📊
-            </div>
-            <p className="text-white font-semibold text-lg mb-1">No quiz attempts yet</p>
-            <p className="text-slate-500 text-sm">Complete a quiz to see your results here.</p>
+          <div className="text-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <div className="text-5xl mb-4 text-slate-300">📁</div>
+            <h3 className="text-[#0E2A47] font-bold text-xl">No history found</h3>
+            <p className="text-slate-500 mt-2">Take a quiz to see your achievements here.</p>
           </div>
         ) : (
           <>
-            {/* ── Summary Stats ─────────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="bg-[#0A1D32] rounded-2xl p-4 text-center border border-white/5 shadow-xl">
-                <p className="text-2xl font-black text-white">{results.length}</p>
-                <p className="text-xs text-slate-500 mt-1">Quizzes Taken</p>
+            {/* ── Dashboard Stats ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="bg-[#0E2A47] rounded-3xl p-6 text-white shadow-xl shadow-[#0E2A47]/20">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total Attempts</p>
+                <p className="text-4xl font-black">{results.length}</p>
               </div>
-              <div className="bg-[#0A1D32] rounded-2xl p-4 text-center border border-white/5 shadow-xl">
-                <p className="text-2xl font-black text-[#4CAF50]">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Success Rate</p>
+                <p className="text-4xl font-black text-emerald-600">
                   {results.filter(r => (r.score / r.totalQuestions) >= 0.7).length}
+                  <span className="text-lg text-slate-400 ml-1 font-medium">passed</span>
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Passed</p>
               </div>
-              <div className="bg-[#0A1D32] rounded-2xl p-4 text-center border border-white/5 shadow-xl">
-                <p className="text-2xl font-black text-[#207D86]">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Overall Average</p>
+                <p className="text-4xl font-black text-[#207D86]">
                   {results.length > 0
-                    ? Math.round(
-                        results.reduce((sum, r) => sum + (r.score / r.totalQuestions) * 100, 0) /
-                        results.length
-                      )
+                    ? Math.round(results.reduce((sum, r) => sum + (r.score / r.totalQuestions) * 100, 0) / results.length)
                     : 0}%
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Avg Score</p>
               </div>
             </div>
 
-            {/* ── Results List ──────────────────────────────────── */}
-            <div className="space-y-3">
+            {/* ── Results Cards ── */}
+            <div className="grid grid-cols-1 gap-4">
               {results.map((result) => {
                 const pct = Math.round((result.score / result.totalQuestions) * 100);
                 return (
                   <div
                     key={result._id}
-                    className="bg-[#0A1D32] rounded-2xl border border-white/5 p-5 flex items-center justify-between gap-4 shadow-xl hover:border-[#207D86]/30 transition"
+                    className="group bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
                   >
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-sm font-semibold text-white truncate mb-1">
-                        {result.quizId?.title || "Unknown Quiz"}
-                      </h2>
-                      <p className="text-xs text-slate-500">
-                        📅 {formatDate(result.completedAt)}
-                        {result.flaggedQuestions?.length > 0 && (
-                          <span className="ml-2 text-red-400/70">
-                            🚩 {result.flaggedQuestions.length} flagged
-                          </span>
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getScoreColor(result.score, result.totalQuestions)}`}>
-                        {getScoreLabel(result.score, result.totalQuestions)}
-                      </span>
-                      <div className="text-right">
-                        <p className={`text-xl font-black
-                          ${pct >= 70 ? "text-[#4CAF50]" : pct >= 40 ? "text-yellow-400" : "text-red-400"}`}
-                        >
-                          {pct}%
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      
+                      {/* Left: Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-lg font-bold text-[#0E2A47] group-hover:text-[#207D86] transition-colors">
+                            {result.quizId?.title || "Archived Quiz"}
+                          </h3>
+                          {result.flaggedQuestions?.length > 0 && (
+                            <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded uppercase">
+                              Flagged
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-tight">
+                          Completed on {formatDate(result.completedAt)}
                         </p>
-                        <p className="text-xs text-slate-500">{result.score}/{result.totalQuestions}</p>
                       </div>
+
+                      {/* Middle: Progress Bar (Hidden on tiny screens) */}
+                      <div className="hidden lg:block w-48 bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-1000 ${getProgressColor(pct)}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+
+                      {/* Right: Score */}
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <p className="text-xs text-slate-400 font-bold uppercase">Accuracy</p>
+                          <p className={`text-2xl font-black ${pct >= 70 ? "text-emerald-600" : pct >= 40 ? "text-amber-600" : "text-red-600"}`}>
+                            {pct}%
+                          </p>
+                        </div>
+                        <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border-2 ${getScoreColor(pct)}`}>
+                          <span className="text-sm font-black">{result.score}</span>
+                          <span className="text-[10px] font-bold opacity-70">/{result.totalQuestions}</span>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 );

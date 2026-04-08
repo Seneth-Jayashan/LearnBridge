@@ -12,12 +12,20 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
+<<<<<<< quiz-component
+  // Auto-open quiz dropdown if currently on a quiz page
+  const isOnQuizPage =
+    location.pathname.includes("/teacher/quiz") ||
+    location.pathname.includes("/teacher/quizzes");
+=======
   const isOnQuizPage = location.pathname.includes("/teacher/quiz");
+>>>>>>> dev-01
   const [isQuizOpen, setIsQuizOpen] = useState(isOnQuizPage);
 
   const quizLinks = [
     { name: "Create Quiz", path: "/teacher/quiz/create", icon: FiPlusCircle },
     { name: "My Quizzes",  path: "/teacher/quizzes",     icon: FiList },
+    { name: "Results", path: "/teacher/quiz/results", icon: FiCheckSquare },
   ];
   
   const links = [

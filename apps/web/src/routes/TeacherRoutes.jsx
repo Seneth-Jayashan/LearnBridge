@@ -1,7 +1,9 @@
 import { useOutletContext, Routes, Route, Navigate } from "react-router-dom";
 import TeacherSidebar from "../components/sidebar/TeacherSidebar";
-import CreateQuiz from "../pages/teacher/CreateQuiz";
-import MyQuizzes from "../pages/teacher/MyQuizzes";
+import CreateQuiz from "../pages/teacher/Quiz/CreateQuiz";
+import MyQuizzes from "../pages/teacher/Quiz/MyQuizzes";
+import EditQuiz from "../pages/teacher/Quiz/EditQuiz";
+import QuizResults from "../pages/teacher/Quiz/QuizResults";
 import TeacherDashboard from "../pages/teacher/Dashboard";
 import LessonsAdd from "../pages/teacher/lessons/LessonsAdd";
 import LessonsManage from "../pages/teacher/lessons/LessonsManage";
@@ -40,10 +42,10 @@ const TeacherRoutes = () => {
             {/* Quiz Routes */}
             <Route path="quizzes" element={<MyQuizzes />} />
             <Route path="quiz/create" element={<CreateQuiz />} />
-            
-            {/* Lesson Routes */}
-            {/* ✅ FIX 2: Explicitly state "lessons/manage" so it doesn't redirect to just "/manage" */}
-            <Route path="lessons" element={<Navigate to="lessons/manage" replace />} />
+            <Route path="quiz/edit/:id" element={<EditQuiz />} />
+            <Route path="quiz/results" element={<QuizResults />} />
+            <Route path="quiz/:id/results" element={<QuizResults />} />
+            <Route path="lessons" element={<Navigate to="manage" replace />} />
             <Route path="lessons/add" element={<LessonsAdd />} />
             <Route path="lessons/manage" element={<LessonsManage />} />
             <Route path="lessons/edit/:id" element={<LessonsEdit />} />
