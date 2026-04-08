@@ -83,22 +83,22 @@ export default function TakeQuiz() {
 
   // ── Loading ────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen bg-[#0E1E30] flex items-center justify-center">
-      <div className="flex items-center gap-3 text-[#4CAF50] font-medium animate-pulse">
-        <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="flex items-center gap-3 text-[#207D86] font-medium animate-pulse">
+        <div className="w-2 h-2 bg-[#207D86] rounded-full animate-bounce" />
         Loading quiz...
       </div>
     </div>
   );
 
   if (error && !quiz) return (
-    <div className="min-h-screen bg-[#0E1E30] flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-red-400 text-xl mb-2">⚠️</p>
-        <p className="text-red-400 text-sm">{error}</p>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="text-center bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40 px-8 py-10">
+        <p className="text-red-600 text-xl mb-2">⚠️</p>
+        <p className="text-red-700 text-sm">{error}</p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 text-[#4CAF50] underline text-sm hover:text-[#207D86] transition"
+          className="mt-4 text-[#207D86] underline text-sm hover:text-[#18646b] transition"
         >
           Go back
         </button>
@@ -111,46 +111,61 @@ export default function TakeQuiz() {
   // ═══════════════════════════════════════════════════════════════════
   if (submitted && result) {
     return (
-      <div className="min-h-screen bg-[#0E1E30]">
+      <div className="min-h-screen bg-slate-50">
+        <div className="max-w-3xl mx-auto py-8 px-4 space-y-5">
+          <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
+                Quiz Results
+              </h2>
+              <p className="text-slate-500 mt-2 text-sm md:text-base">
+                {quiz.title}
+              </p>
+            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all active:scale-[0.98]"
+            >
+              Back
+            </button>
+          </div>
 
-        {/* Header */}
-        <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-4 shadow-lg">
-          <h1 className="text-lg font-bold text-white tracking-wide">
-            Quiz Results — {quiz.title}
-          </h1>
-        </div>
-
-        <div className="max-w-3xl mx-auto p-6 space-y-5">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
+              {error}
+            </div>
+          )}
 
           {/* Score Card */}
           <div className={`rounded-2xl p-6 text-center border shadow-xl
             ${percentage >= 70
-              ? "bg-[#4CAF50]/10 border-[#4CAF50]/30"
+              ? "bg-emerald-50 border-emerald-200"
               : percentage >= 40
-                ? "bg-yellow-400/10 border-yellow-400/30"
-                : "bg-red-400/10 border-red-400/30"
+                ? "bg-amber-50 border-amber-200"
+                : "bg-red-50 border-red-200"
             }`}
           >
             <div className={`text-6xl font-black mb-2
-              ${percentage >= 70 ? "text-[#4CAF50]" : percentage >= 40 ? "text-yellow-400" : "text-red-400"}`}
+              ${percentage >= 70 ? "text-emerald-700" : percentage >= 40 ? "text-amber-700" : "text-red-700"}`}
             >
               {percentage}%
             </div>
-            <p className="text-lg font-semibold text-white">
+            <p className="text-lg font-semibold text-slate-800">
               {result.score} out of {result.totalQuestions} correct
             </p>
-            <p className="text-sm text-slate-400 mt-1">
-              {percentage >= 70 ? "🎉 Great work!" : percentage >= 40 ? "📖 Keep studying!" : "💪 Don't give up, try again!"}
+            <p className="text-sm text-slate-500 mt-1">
+              {percentage >= 70 ? "Great work!" : percentage >= 40 ? "Keep studying!" : "Don't give up, try again!"}
             </p>
             {flagged.length > 0 && (
-              <p className="text-sm text-red-400 mt-2">
-                🚩 You flagged {flagged.length} question{flagged.length > 1 ? "s" : ""} for review
+              <p className="text-sm text-red-600 mt-2">
+                You flagged {flagged.length} question{flagged.length > 1 ? "s" : ""} for review
               </p>
             )}
           </div>
 
           {/* Answer Review */}
-          <h2 className="text-sm font-bold text-[#4CAF50] uppercase tracking-widest">
+          <h2 className="text-sm font-bold text-[#207D86] uppercase tracking-widest">
             Answer Review
           </h2>
 
@@ -163,24 +178,24 @@ export default function TakeQuiz() {
             return (
               <div
                 key={i}
-                className={`bg-[#0A1D32] rounded-2xl border p-5 shadow-xl
+                className={`bg-white rounded-2xl border p-5 shadow-xl shadow-slate-200/40
                   ${isFlagged
-                    ? "border-red-400/30"
+                    ? "border-red-200"
                     : isCorrect
-                      ? "border-[#4CAF50]/30"
-                      : "border-red-400/20"
+                      ? "border-emerald-200"
+                      : "border-red-100"
                   }`}
               >
                 <div className="flex items-start gap-2 mb-3">
-                  <span className={`text-sm font-bold flex-shrink-0 mt-0.5
-                    ${isCorrect ? "text-[#4CAF50]" : "text-red-400"}`}
+                  <span className={`text-sm font-bold shrink-0 mt-0.5
+                    ${isCorrect ? "text-emerald-600" : "text-red-600"}`}
                   >
                     {isCorrect ? "✓" : "✗"}
                   </span>
-                  <p className="font-semibold text-white text-sm">
+                  <p className="font-semibold text-slate-800 text-sm">
                     Q{i + 1}: {q.questionText}
                     {isFlagged && (
-                      <span className="ml-2 text-red-400 text-xs">🚩 Flagged</span>
+                      <span className="ml-2 text-red-600 text-xs">Flagged</span>
                     )}
                   </p>
                 </div>
@@ -190,9 +205,9 @@ export default function TakeQuiz() {
                     const isCorrectOpt = oIndex === correctAnswer;
                     const isStudentOpt = oIndex === studentAnswer;
 
-                    let style = "border-white/10 bg-white/5 text-slate-400";
-                    if (isCorrectOpt) style = "border-[#4CAF50]/40 bg-[#4CAF50]/10 text-[#4CAF50] font-semibold";
-                    else if (isStudentOpt && !isCorrect) style = "border-red-400/30 bg-red-400/10 text-red-400";
+                    let style = "border-slate-200 bg-slate-50 text-slate-600";
+                    if (isCorrectOpt) style = "border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold";
+                    else if (isStudentOpt && !isCorrect) style = "border-red-200 bg-red-50 text-red-700";
 
                     return (
                       <div
@@ -204,10 +219,10 @@ export default function TakeQuiz() {
                         </span>
                         <span className="flex-1">{opt}</span>
                         {isCorrectOpt && (
-                          <span className="text-xs text-[#4CAF50]">✓ Correct</span>
+                          <span className="text-xs text-emerald-700">Correct</span>
                         )}
                         {isStudentOpt && !isCorrect && (
-                          <span className="text-xs text-red-400">Your answer</span>
+                          <span className="text-xs text-red-700">Your answer</span>
                         )}
                       </div>
                     );
@@ -221,13 +236,13 @@ export default function TakeQuiz() {
           <div className="flex gap-3 pt-2">
             <button
               onClick={() => navigate(-1)}
-              className="flex-1 py-3 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 hover:text-white transition font-medium text-sm"
+              className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition font-medium text-sm"
             >
-              ← Back to Module
+              Back to Module
             </button>
             <button
               onClick={() => navigate("/student/results")}
-              className="flex-1 py-3 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition font-medium text-sm shadow-lg shadow-[#207D86]/30"
+              className="flex-1 py-3 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition font-medium text-sm shadow-lg shadow-[#207D86]/20"
             >
               View All My Results
             </button>
@@ -241,17 +256,17 @@ export default function TakeQuiz() {
   // QUIZ TAKING SCREEN
   // ═══════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-[#0E1E30]">
+    <div className="min-h-screen bg-slate-50">
 
       {/* ── Sticky Header with Timer ─────────────────────────────── */}
-      <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-3 sticky top-0 z-10 shadow-lg">
+      <div className="bg-white border-b border-slate-100 px-6 py-3 sticky top-0 z-10 shadow-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-bold text-white">{quiz.title}</h1>
+            <h1 className="text-sm font-bold text-slate-800">{quiz.title}</h1>
             <p className="text-xs text-slate-500 mt-0.5">
               {answeredCount}/{quiz.questions.length} answered
               {flagged.length > 0 && (
-                <span className="ml-2 text-red-400">· 🚩 {flagged.length} flagged</span>
+                <span className="ml-2 text-red-600">· {flagged.length} flagged</span>
               )}
             </p>
           </div>
@@ -259,10 +274,10 @@ export default function TakeQuiz() {
           {/* Timer */}
           <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono font-bold text-base
             ${timeLeft < 60
-              ? "bg-red-400/15 text-red-400 border border-red-400/30 animate-pulse"
+              ? "bg-red-50 text-red-700 border border-red-200 animate-pulse"
               : timeLeft < 300
-                ? "bg-yellow-400/10 text-yellow-400 border border-yellow-400/20"
-                : "bg-[#207D86]/20 text-[#4CAF50] border border-[#207D86]/30"
+                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                : "bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20"
             }`}
           >
             ⏱ {formatTime(timeLeft)}
@@ -271,9 +286,9 @@ export default function TakeQuiz() {
 
         {/* Progress Bar */}
         <div className="max-w-3xl mx-auto mt-2">
-          <div className="w-full h-1 bg-white/5 rounded-full">
+          <div className="w-full h-1 bg-slate-200 rounded-full">
             <div
-              className="h-1 bg-gradient-to-r from-[#207D86] to-[#4CAF50] rounded-full transition-all"
+              className="h-1 bg-[#207D86] rounded-full transition-all"
               style={{ width: `${(answeredCount / quiz.questions.length) * 100}%` }}
             />
           </div>
@@ -283,8 +298,8 @@ export default function TakeQuiz() {
       <div className="max-w-3xl mx-auto p-6 space-y-4">
 
         {error && (
-          <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
             {error}
           </div>
         )}
@@ -296,12 +311,12 @@ export default function TakeQuiz() {
               key={i}
               onClick={() => setCurrentQ(i)}
               className={`w-9 h-9 rounded-lg text-xs font-bold transition border
-                ${currentQ === i ? "ring-2 ring-[#4CAF50]/50" : ""}
+                ${currentQ === i ? "ring-2 ring-[#207D86]/50" : ""}
                 ${flagged.includes(i)
-                  ? "bg-red-400/15 border-red-400/30 text-red-400"
+                  ? "bg-red-50 border-red-200 text-red-700"
                   : answers[i] !== null
-                    ? "bg-gradient-to-br from-[#207D86] to-[#4CAF50] border-transparent text-white"
-                    : "bg-white/5 border-white/10 text-slate-400 hover:border-[#207D86]/40"
+                    ? "bg-[#207D86] border-transparent text-white"
+                    : "bg-white border-slate-200 text-slate-600 hover:border-[#207D86]/40"
                 }`}
             >
               {i + 1}
@@ -315,29 +330,29 @@ export default function TakeQuiz() {
           const isFlagged = flagged.includes(currentQ);
 
           return (
-            <div className={`bg-[#0A1D32] rounded-2xl border p-6 shadow-xl transition
-              ${isFlagged ? "border-red-400/30" : "border-white/5"}`}
+            <div className={`bg-white rounded-2xl border p-6 shadow-xl shadow-slate-200/40 transition
+              ${isFlagged ? "border-red-200" : "border-slate-100"}`}
             >
               {/* Question Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <span className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">
+                  <span className="text-xs font-bold text-[#207D86] uppercase tracking-widest">
                     Question {currentQ + 1} of {quiz.questions.length}
                   </span>
-                  <p className="text-sm font-semibold text-white mt-1">{q.questionText}</p>
+                  <p className="text-sm font-semibold text-slate-800 mt-1">{q.questionText}</p>
                 </div>
 
                 {/* Flag Button */}
                 <button
                   onClick={() => toggleFlag(currentQ)}
                   title={isFlagged ? "Remove flag" : "Flag for review"}
-                  className={`ml-4 flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition
+                  className={`ml-4 shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition
                     ${isFlagged
-                      ? "bg-red-400/15 border-red-400/30 text-red-400 hover:bg-red-400/25"
-                      : "bg-white/5 border-white/10 text-slate-500 hover:border-red-400/30 hover:text-red-400"
+                      ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                      : "bg-white border-slate-200 text-slate-500 hover:border-red-200 hover:text-red-600"
                     }`}
                 >
-                  🚩 {isFlagged ? "Flagged" : "Flag"}
+                  {isFlagged ? "Flagged" : "Flag"}
                 </button>
               </div>
 
@@ -349,14 +364,14 @@ export default function TakeQuiz() {
                     onClick={() => selectAnswer(currentQ, oIndex)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition
                       ${answers[currentQ] === oIndex
-                        ? "border-[#4CAF50]/40 bg-[#4CAF50]/10 text-white"
-                        : "border-white/10 bg-white/5 hover:border-[#207D86]/40 hover:bg-[#207D86]/10 text-slate-300"
+                        ? "border-[#207D86]/40 bg-[#207D86]/10 text-slate-800"
+                        : "border-slate-200 bg-slate-50 hover:border-[#207D86]/40 hover:bg-[#207D86]/5 text-slate-700"
                       }`}
                   >
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
                       ${answers[currentQ] === oIndex
-                        ? "bg-[#4CAF50] text-white"
-                        : "bg-white/10 text-slate-400"
+                        ? "bg-[#207D86] text-white"
+                        : "bg-slate-200 text-slate-500"
                       }`}
                     >
                       {String.fromCharCode(65 + oIndex)}
@@ -367,8 +382,8 @@ export default function TakeQuiz() {
               </div>
 
               {isFlagged && (
-                <p className="text-xs text-red-400/70 mt-3">
-                  🚩 This question is flagged for review. You can still change your answer.
+                <p className="text-xs text-red-600/80 mt-3">
+                  This question is flagged for review. You can still change your answer.
                 </p>
               )}
             </div>
@@ -380,7 +395,7 @@ export default function TakeQuiz() {
           <button
             onClick={() => setCurrentQ((q) => Math.max(q - 1, 0))}
             disabled={currentQ === 0}
-            className="px-4 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 hover:text-white transition text-sm font-medium disabled:opacity-30"
+            className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition text-sm font-medium disabled:opacity-30"
           >
             ← Previous
           </button>
@@ -388,7 +403,7 @@ export default function TakeQuiz() {
           {currentQ < quiz.questions.length - 1 ? (
             <button
               onClick={() => setCurrentQ((q) => q + 1)}
-              className="flex-1 py-2.5 bg-[#207D86]/20 text-[#4CAF50] border border-[#207D86]/30 rounded-xl hover:bg-[#207D86]/30 transition text-sm font-medium"
+              className="flex-1 py-2.5 bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20 rounded-xl hover:bg-[#207D86]/20 transition text-sm font-medium"
             >
               Next Question →
             </button>
@@ -396,7 +411,7 @@ export default function TakeQuiz() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40"
+              className="flex-1 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold shadow-lg shadow-[#207D86]/20 disabled:opacity-40"
             >
               {submitting ? "Submitting..." : `Submit Quiz (${answeredCount}/${quiz.questions.length} answered)`}
             </button>
@@ -405,9 +420,9 @@ export default function TakeQuiz() {
 
         {/* Flagged Warning */}
         {flagged.length > 0 && (
-          <div className="bg-red-400/10 border border-red-400/20 rounded-xl p-3 text-sm text-red-400">
-            🚩 <strong>{flagged.length} flagged question{flagged.length > 1 ? "s" : ""}:</strong>{" "}
-            Q{flagged.map((i) => i + 1).join(", Q")} — review these before submitting.
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+            <strong>{flagged.length} flagged question{flagged.length > 1 ? "s" : ""}:</strong>{" "}
+            Q{flagged.map((i) => i + 1).join(", Q")} - review these before submitting.
           </div>
         )}
 

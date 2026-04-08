@@ -24,16 +24,16 @@ export default function QuizResults() {
 
   const getScoreColor = (score, total) => {
     const pct = (score / total) * 100;
-    if (pct >= 70) return "text-[#4CAF50] bg-[#4CAF50]/15 border border-[#4CAF50]/20";
-    if (pct >= 40) return "text-yellow-400 bg-yellow-400/10 border border-yellow-400/20";
-    return "text-red-400 bg-red-400/10 border border-red-400/20";
+    if (pct >= 70) return "text-emerald-700 bg-emerald-50 border border-emerald-200";
+    if (pct >= 40) return "text-amber-700 bg-amber-50 border border-amber-200";
+    return "text-red-700 bg-red-50 border border-red-200";
   };
 
   const getScoreLabel = (score, total) => {
     const pct = (score / total) * 100;
-    if (pct >= 70) return "🎉 Passed";
-    if (pct >= 40) return "📖 Needs Work";
-    return "❌ Failed";
+    if (pct >= 70) return "Passed";
+    if (pct >= 40) return "Needs Work";
+    return "Failed";
   };
 
   const formatDate = (dateStr) => {
@@ -45,62 +45,66 @@ export default function QuizResults() {
 
   // ── Loading ───────────────────────────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen bg-[#0E1E30] flex items-center justify-center">
-      <div className="flex items-center gap-3 text-[#4CAF50] font-medium animate-pulse">
-        <div className="w-2 h-2 bg-[#4CAF50] rounded-full animate-bounce" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="flex items-center gap-3 text-[#207D86] font-medium animate-pulse">
+        <div className="w-2 h-2 bg-[#207D86] rounded-full animate-bounce" />
         Loading your results...
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0E1E30]">
-
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-4 sticky top-0 z-10 shadow-lg">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-sm text-slate-400 hover:text-white transition mb-1 block"
-        >
-          ← Back
-        </button>
-        <h1 className="text-lg font-bold text-white tracking-wide">My Quiz Results</h1>
-      </div>
-
-      <div className="max-w-3xl mx-auto p-6">
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
+              My Quiz Results
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm md:text-base">
+              Track your quiz attempts and performance over time.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all active:scale-[0.98]"
+          >
+            Back
+          </button>
+        </div>
 
         {/* Error Banner */}
         {error && (
-          <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2 mb-4">
+            <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
             {error}
           </div>
         )}
 
         {/* ── Empty State ───────────────────────────────────────── */}
         {results.length === 0 ? (
-          <div className="text-center py-32">
-            <div className="w-16 h-16 bg-[#0A1D32] border border-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+          <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40">
+            <div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
               📊
             </div>
-            <p className="text-white font-semibold text-lg mb-1">No quiz attempts yet</p>
+            <p className="text-slate-800 font-semibold text-lg mb-1">No quiz attempts yet</p>
             <p className="text-slate-500 text-sm">Complete a quiz to see your results here.</p>
           </div>
         ) : (
           <>
             {/* ── Summary Stats ─────────────────────────────────── */}
             <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="bg-[#0A1D32] rounded-2xl p-4 text-center border border-white/5 shadow-xl">
-                <p className="text-2xl font-black text-white">{results.length}</p>
+              <div className="bg-white rounded-2xl p-4 text-center border border-slate-100 shadow-xl shadow-slate-200/40">
+                <p className="text-2xl font-black text-slate-800">{results.length}</p>
                 <p className="text-xs text-slate-500 mt-1">Quizzes Taken</p>
               </div>
-              <div className="bg-[#0A1D32] rounded-2xl p-4 text-center border border-white/5 shadow-xl">
-                <p className="text-2xl font-black text-[#4CAF50]">
+              <div className="bg-white rounded-2xl p-4 text-center border border-slate-100 shadow-xl shadow-slate-200/40">
+                <p className="text-2xl font-black text-emerald-700">
                   {results.filter(r => (r.score / r.totalQuestions) >= 0.7).length}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">Passed</p>
               </div>
-              <div className="bg-[#0A1D32] rounded-2xl p-4 text-center border border-white/5 shadow-xl">
+              <div className="bg-white rounded-2xl p-4 text-center border border-slate-100 shadow-xl shadow-slate-200/40">
                 <p className="text-2xl font-black text-[#207D86]">
                   {results.length > 0
                     ? Math.round(
@@ -120,29 +124,29 @@ export default function QuizResults() {
                 return (
                   <div
                     key={result._id}
-                    className="bg-[#0A1D32] rounded-2xl border border-white/5 p-5 flex items-center justify-between gap-4 shadow-xl hover:border-[#207D86]/30 transition"
+                    className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center justify-between gap-4 shadow-xl shadow-slate-200/40 hover:border-[#207D86]/30 transition"
                   >
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-sm font-semibold text-white truncate mb-1">
+                      <h2 className="text-sm font-semibold text-slate-800 truncate mb-1">
                         {result.quizId?.title || "Unknown Quiz"}
                       </h2>
                       <p className="text-xs text-slate-500">
                         📅 {formatDate(result.completedAt)}
                         {result.flaggedQuestions?.length > 0 && (
-                          <span className="ml-2 text-red-400/70">
+                          <span className="ml-2 text-red-600/80">
                             🚩 {result.flaggedQuestions.length} flagged
                           </span>
                         )}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getScoreColor(result.score, result.totalQuestions)}`}>
                         {getScoreLabel(result.score, result.totalQuestions)}
                       </span>
                       <div className="text-right">
                         <p className={`text-xl font-black
-                          ${pct >= 70 ? "text-[#4CAF50]" : pct >= 40 ? "text-yellow-400" : "text-red-400"}`}
+                          ${pct >= 70 ? "text-emerald-700" : pct >= 40 ? "text-amber-700" : "text-red-700"}`}
                         >
                           {pct}%
                         </p>

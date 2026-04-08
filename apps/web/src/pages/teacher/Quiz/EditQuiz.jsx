@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Library, GitBranch } from "lucide-react";
-import quizService from "../../services/QuizService.jsx";
-import moduleService from "../../services/ModuleService";
+import quizService from "../../../services/QuizService.jsx";
+import moduleService from "../../../services/ModuleService";
 
 const emptyQuestion = () => ({
 	questionText: "",

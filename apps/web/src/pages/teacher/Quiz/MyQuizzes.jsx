@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import quizService from "../../services/QuizService.jsx";
+import quizService from "../../../services/QuizService.jsx";
 
 // ── Toast Component ───────────────────────────────────────────────────
 const Toast = ({ message, type }) => {
@@ -35,7 +35,13 @@ export default function MyQuizzes() {
   const fetchQuizzes = async () => {
     try {
       const data = await quizService.getTeacherQuizzes();
-      setQuizzes(Array.isArray(data) ? data : data.quizzes || []);
+      const quizList = Array.isArray(data) ? data : data.quizzes || [];
+      const sortedByNewest = [...quizList].sort((a, b) => {
+        const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+      setQuizzes(sortedByNewest);
     } catch {
       setError("Failed to load quizzes.");
     } finally {
@@ -157,6 +163,12 @@ export default function MyQuizzes() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => navigate(`/teacher/quiz/${quiz._id}/results`)}
+                    className="text-xs px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition font-medium"
+                  >
+                    Results
+                  </button>
                   {!quiz.isPublished && (
                     <button
                       onClick={() => handlePublish(quiz._id)}

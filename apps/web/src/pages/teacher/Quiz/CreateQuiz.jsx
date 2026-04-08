@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Library, GitBranch } from "lucide-react";
-import quizService from "../../services/QuizService.jsx";
-import triviaService from "../../services/TriviaService.jsx";
-import pdfService from "../../services/PdfService.jsx";
-import moduleService from "../../services/ModuleService";
+import quizService from "../../../services/QuizService.jsx";
+import triviaService from "../../../services/TriviaService.jsx";
+import pdfService from "../../../services/PdfService.jsx";
+import moduleService from "../../../services/ModuleService";
 
 const emptyQuestion = () => ({
   questionText: "",

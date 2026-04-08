@@ -27,7 +27,7 @@ const StudentRoutes = () => {
             <Route path="dashboard" element={<div>Dashboard Content</div>} />
 
             {/* Quiz Routes */}
-            <Route path="quizzes/:courseId" element={<QuizList />} />
+            <Route path="quizzes/:courseId?" element={<QuizList />} />
             <Route path="quiz/:id" element={<TakeQuiz />} />
             <Route path="results" element={<QuizResults />} />
             <Route path="modules" element={<StudentModules />} />
