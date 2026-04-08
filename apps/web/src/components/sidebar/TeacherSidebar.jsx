@@ -19,7 +19,7 @@ const TeacherSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
 
   const quizLinks = [
     { name: "Create Quiz", path: "/teacher/quiz/create", icon: FiPlusCircle },
-    { name: "My Quizzes",  path: "/teacher/quizzes",     icon: FiList },
+    { name: "My Quizzes",  path: "/teacher/quizzes",     icon: FiList },]
 
   const links = [
     { name: "Overview", path: "/teacher/dashboard", icon: FiHome },

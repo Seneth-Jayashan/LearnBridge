@@ -1,6 +1,5 @@
 import express from "express";
 import { 
-    getMySchoolDetails,
     updateSchoolProfile,
     createStudentForSchool, 
     createTeacherForSchool,
@@ -12,7 +11,7 @@ import {
     createNeed,
     getMyPostedNeeds,
     updateNeed,
-    deleteNeed
+    deleteNeed,
     getVerifiedTeachers,
     verifySchoolTeacher,
     removeTeacherFromSchool
