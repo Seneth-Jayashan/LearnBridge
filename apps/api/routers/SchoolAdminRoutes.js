@@ -1,6 +1,5 @@
 import express from "express";
 import { 
-    getMySchoolDetails,
     updateSchoolProfile,
     createStudentForSchool, 
     createTeacherForSchool,
