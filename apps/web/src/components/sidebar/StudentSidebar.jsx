@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-<<<<<<< quiz-component
 import { 
   FiHome, FiPlayCircle, FiCheckSquare, FiAward, 
   FiChevronLeft, FiChevronRight, FiLogOut,
-  FiChevronDown, FiChevronUp, FiList, FiBarChart2
+  FiChevronDown, FiChevronUp, FiList, FiBarChart2, FiSettings
 } from "react-icons/fi";
-=======
-import { FiHome, FiPlayCircle, FiCheckSquare, FiAward, FiChevronLeft, FiChevronRight, FiLogOut, FiChevronDown, FiChevronUp, FiList, FiPlay, FiBarChart2, FiSettings } from "react-icons/fi";
->>>>>>> dev-01
 
 const StudentSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const location = useLocation();
@@ -28,14 +24,8 @@ const StudentSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   ];
 
   const quizLinks = [
-<<<<<<< quiz-component
     { name: "Quiz List",   path: "/student/quizzes",  icon: FiList },
     { name: "My Results",  path: "/student/results",  icon: FiBarChart2 },
-=======
-    { name: "Quiz List", path: "/student/quizzes", icon: FiList },
-    { name: "Take Quiz", path: "/student/quiz", icon: FiPlay },
-    { name: "My Results", path: "/student/results", icon: FiBarChart2 },
->>>>>>> dev-01
   ];
 
   const handleLogout = async () => {
