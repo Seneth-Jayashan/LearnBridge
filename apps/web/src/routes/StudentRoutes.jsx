@@ -3,6 +3,7 @@ import StudentSidebar from "../components/sidebar/StudentSidebar";
 import QuizList from "../pages/student/QuizList";
 import TakeQuiz from "../pages/student/TakeQuiz";
 import QuizResults from "../pages/student/QuizResult";
+import StudentDashboard from "../pages/student/Dashboard";
 import StudentModules from "../pages/student/StudentModules";
 import StudentAssignments from "../pages/student/StudentAssignments";
 import ProfileSettings from "../pages/ProfileSettings";
@@ -29,7 +30,7 @@ const StudentRoutes = () => {
       <div className="w-full transition-all duration-300">
         <div className={`transition-all duration-300`}>
           <Routes>
-            <Route path="dashboard" element={<div>Dashboard Content</div>} />
+            <Route path="dashboard" element={<StudentDashboard />} />
 
             {/* Quiz Routes */}
             <Route path="quizzes/:courseId?" element={<QuizList />} />
