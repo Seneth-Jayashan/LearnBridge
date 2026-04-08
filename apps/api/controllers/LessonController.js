@@ -33,12 +33,16 @@ const canViewLesson = (user, lesson) => {
   if (user.role === "student") {
     const studentSchoolId = toNullableObjectId(user.school);
     const lessonSchoolId = toNullableObjectId(lesson.school);
+    const moduleStream = lesson?.module?.subjectStream || null;
+    const hasStreamAccess = !user.stream || !moduleStream || user.stream === moduleStream;
+    const hasSchoolAccess = !lessonSchoolId || String(studentSchoolId) === String(lessonSchoolId);
 
     return (
       Boolean(user.grade) &&
       Boolean(lesson?.module?.grade) &&
       user.grade.toString() === lesson.module.grade.toString() &&
-      String(studentSchoolId) === String(lessonSchoolId)
+      hasStreamAccess &&
+      hasSchoolAccess
     );
   }
 
@@ -209,11 +213,14 @@ export const getAllLessons = async (req, res) => {
         return res.status(200).json([]);
       }
 
-      // Include lessons belonging to matching modules. Also include lessons
-      // only for the student's school to avoid cross-school data exposure.
+      // Include lessons in matching modules for the student's grade/stream.
+      // School-specific lessons stay scoped to that school, while school-less
+      // lessons created by standalone teachers remain visible.
       query.module = { $in: moduleIds };
       const studentSchoolId = toNullableObjectId(req.user.school);
-      query.school = studentSchoolId;
+      query.$or = studentSchoolId
+        ? [{ school: studentSchoolId }, { school: null }]
+        : [{ school: null }];
     }
 
     if (requestedModuleId && req.user.role !== "student") {
@@ -223,7 +230,7 @@ export const getAllLessons = async (req, res) => {
     const lessons = await Lesson.find(query)
       .populate({
         path: "module",
-        select: "name description thumbnailUrl grade",
+        select: "name description thumbnailUrl grade subjectStream",
         populate: { path: "grade", select: "name" },
       })
       .populate("createdBy", "firstName lastName role")
@@ -277,7 +284,7 @@ export const getLessonById = async (req, res) => {
     const lesson = await Lesson.findById(req.params.id)
       .populate({
         path: "module",
-        select: "name description thumbnailUrl grade",
+        select: "name description thumbnailUrl grade subjectStream",
         populate: { path: "grade", select: "name" },
       })
       .populate("createdBy", "firstName lastName role");
@@ -305,7 +312,7 @@ export const getLessonById = async (req, res) => {
 
 export const getLessonMaterialDownloadUrl = async (req, res) => {
   try {
-    const lesson = await Lesson.findById(req.params.id).populate("module", "grade");
+    const lesson = await Lesson.findById(req.params.id).populate("module", "grade subjectStream");
 
     if (!lesson) {
       return res.status(404).json({ message: "Lesson not found" });
@@ -335,7 +342,7 @@ export const getLessonMaterialDownloadUrl = async (req, res) => {
 
 export const getLessonVideoDownloadUrl = async (req, res) => {
   try {
-    const lesson = await Lesson.findById(req.params.id).populate("module", "grade");
+    const lesson = await Lesson.findById(req.params.id).populate("module", "grade subjectStream");
 
     if (!lesson) {
       return res.status(404).json({ message: "Lesson not found" });
