@@ -32,12 +32,12 @@ const isAdvancedModule = (moduleItem) => {
 const Toast = ({ message, type }) => {
   if (!message) return null;
   return (
-    <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-3 duration-300
+    <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium animate-in fade-in slide-in-from-top-3 duration-300
       ${type === "success"
-        ? "bg-[#0A1D32] border border-[#4CAF50]/40 text-white"
-        : "bg-[#0A1D32] border border-red-400/40 text-white"}`}
+        ? "bg-white border border-emerald-200 text-emerald-700"
+        : "bg-white border border-red-200 text-red-700"}`}
     >
-      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${type === "success" ? "bg-[#4CAF50]" : "bg-red-400"}`} />
+      <span className={`w-2 h-2 rounded-full shrink-0 ${type === "success" ? "bg-emerald-500" : "bg-red-500"}`} />
       {message}
     </div>
   );
@@ -54,14 +54,14 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
 
   return (
     <div className="flex flex-col">
-      <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between flex-shrink-0">
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-sm font-bold text-white">Review Generated Questions</h2>
+          <h2 className="text-sm font-bold text-slate-800">Review Generated Questions</h2>
           <p className="text-xs text-slate-500 mt-0.5">{selected.size} of {questions.length} selected</p>
         </div>
         <button
           onClick={toggleAll}
-          className="text-xs px-3 py-1.5 border border-white/10 text-slate-400 rounded-lg hover:bg-white/5 transition"
+          className="text-xs px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition"
         >
           {selected.size === questions.length ? "Deselect All" : "Select All"}
         </button>
@@ -80,25 +80,25 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
               }}
               className={`p-4 rounded-xl border cursor-pointer transition
                 ${isSelected
-                  ? "bg-[#207D86]/10 border-[#207D86]/40"
-                  : "bg-white/3 border-white/5 opacity-50"}`}
+                  ? "bg-[#207D86]/10 border-[#207D86]/30"
+                  : "bg-slate-50 border-slate-200 opacity-60"}`}
             >
               <div className="flex items-start gap-3">
-                <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition
-                  ${isSelected ? "bg-[#4CAF50] border-[#4CAF50]" : "border-white/20"}`}
+                <div className={`w-5 h-5 rounded-md border-2 shrink-0 mt-0.5 flex items-center justify-center transition
+                  ${isSelected ? "bg-[#207D86] border-[#207D86]" : "border-slate-300"}`}
                 >
                   {isSelected && <span className="text-white text-xs font-bold">✓</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-white mb-2">{q.questionText}</p>
+                  <p className="text-xs font-semibold text-slate-800 mb-2">{q.questionText}</p>
                   <div className="space-y-1">
                     {q.options.map((opt, oIdx) => (
                       <div
                         key={oIdx}
                         className={`text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-2
                           ${oIdx === q.correctAnswer
-                            ? "bg-[#4CAF50]/15 text-[#4CAF50] border border-[#4CAF50]/20"
-                            : "text-slate-400"}`}
+                            ? "bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20"
+                            : "text-slate-500"}`}
                       >
                         <span className="font-bold w-4">{String.fromCharCode(65 + oIdx)}.</span>
                         {opt}
@@ -113,17 +113,17 @@ const PDFQuestionPreview = ({ questions, onConfirm, onBack }) => {
         })}
       </div>
 
-      <div className="px-6 py-4 border-t border-white/5 flex gap-3 flex-shrink-0">
+      <div className="px-6 py-4 border-t border-slate-100 flex gap-3 shrink-0">
         <button
           onClick={onBack}
-          className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium"
+          className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition text-sm font-medium"
         >
           ← Back
         </button>
         <button
           onClick={() => onConfirm(questions.filter((_, i) => selected.has(i)))}
           disabled={selected.size === 0}
-          className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold disabled:opacity-40"
+          className="flex-1 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold disabled:opacity-40"
         >
           Add {selected.size} Question{selected.size !== 1 ? "s" : ""}
         </button>
@@ -219,21 +219,21 @@ const ImportModal = ({ onClose, onImport }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#0A1D32] border border-white/10 rounded-2xl shadow-2xl w-full max-w-lg" style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
-          <h2 className="text-sm font-bold text-white">Import Questions</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition text-lg leading-none">✕</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl w-full max-w-lg" style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+          <h2 className="text-sm font-bold text-slate-800">Import Questions</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-800 transition text-lg leading-none">✕</button>
         </div>
 
         {!generatedQuestions && (
-          <div className="flex border-b border-white/5 flex-shrink-0">
+          <div className="flex border-b border-slate-100 shrink-0">
             {["pdf", "trivia"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-3 text-xs font-bold uppercase tracking-widest transition flex items-center justify-center gap-2
-                  ${activeTab === tab ? "text-[#4CAF50] border-b-2 border-[#4CAF50]" : "text-slate-500 hover:text-slate-300"}`}
+                  ${activeTab === tab ? "text-[#207D86] border-b-2 border-[#207D86]" : "text-slate-500 hover:text-slate-700"}`}
               >
                 {tab === "pdf" ? "📄 From PDF" : "🌐 Trivia DB"}
               </button>
@@ -250,19 +250,19 @@ const ImportModal = ({ onClose, onImport }) => {
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition
-                ${pdfFile ? "border-[#4CAF50]/40 bg-[#4CAF50]/5" : "border-white/10 hover:border-[#207D86]/50 hover:bg-[#207D86]/5"}`}
+                ${pdfFile ? "border-[#207D86]/40 bg-[#207D86]/5" : "border-slate-300 hover:border-[#207D86]/50 hover:bg-[#207D86]/5"}`}
             >
               <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handleFileChange} className="hidden" />
               {pdfFile ? (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-[#4CAF50]/15 border border-[#4CAF50]/30 rounded-xl flex items-center justify-center text-xl">📄</div>
-                  <p className="text-sm font-semibold text-[#4CAF50] truncate max-w-xs">{pdfFile.name}</p>
+                  <div className="w-12 h-12 bg-[#207D86]/10 border border-[#207D86]/30 rounded-xl flex items-center justify-center text-xl">📄</div>
+                  <p className="text-sm font-semibold text-[#207D86] truncate max-w-xs">{pdfFile.name}</p>
                   <p className="text-xs text-slate-500">{(pdfFile.size / 1024).toFixed(0)} KB · Click to change</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xl">📁</div>
-                  <p className="text-sm font-semibold text-white">Drop your PDF here</p>
+                  <div className="w-12 h-12 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-xl">📁</div>
+                  <p className="text-sm font-semibold text-slate-800">Drop your PDF here</p>
                   <p className="text-xs text-slate-500">or click to browse files</p>
                 </div>
               )}
@@ -270,11 +270,11 @@ const ImportModal = ({ onClose, onImport }) => {
 
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                Questions to generate: <span className="text-[#4CAF50]">{pdfConfig.amount}</span>
+                Questions to generate: <span className="text-[#207D86]">{pdfConfig.amount}</span>
               </label>
               <input type="range" min={1} max={30} value={pdfConfig.amount}
                 onChange={(e) => setPdfConfig((p) => ({ ...p, amount: Number(e.target.value) }))}
-                className="w-full accent-[#4CAF50]" />
+                className="w-full accent-[#207D86]" />
               <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1</span><span>30</span></div>
             </div>
 
@@ -285,10 +285,10 @@ const ImportModal = ({ onClose, onImport }) => {
                   <button key={d} onClick={() => setPdfConfig((p) => ({ ...p, difficulty: d }))}
                     className={`py-2 rounded-xl text-xs font-semibold border transition capitalize
                       ${pdfConfig.difficulty === d
-                        ? d === "easy" ? "bg-green-400/15 border-green-400/30 text-green-400"
-                          : d === "medium" ? "bg-yellow-400/15 border-yellow-400/30 text-yellow-400"
-                          : "bg-red-400/15 border-red-400/30 text-red-400"
-                        : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}
+                        ? d === "easy" ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                          : d === "medium" ? "bg-amber-50 border-amber-200 text-amber-700"
+                          : "bg-red-50 border-red-200 text-red-700"
+                        : "bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300"}`}
                   >{d}</button>
                 ))}
               </div>
@@ -296,14 +296,14 @@ const ImportModal = ({ onClose, onImport }) => {
 
             {pdfError && (
               <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />{pdfError}
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full shrink-0" />{pdfError}
               </div>
             )}
 
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium">Cancel</button>
+              <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition text-sm font-medium">Cancel</button>
               <button onClick={generateFromPDF} disabled={generating || !pdfFile}
-                className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40">
+                className="flex-1 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold shadow-lg shadow-[#207D86]/20 disabled:opacity-40">
                 {generating ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating...
@@ -323,7 +323,7 @@ const ImportModal = ({ onClose, onImport }) => {
                 ].map(({ value, icon, label, sub }) => (
                   <button key={value} onClick={() => setTriviaMode(value)}
                     className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition text-left
-                      ${triviaMode === value ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]" : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}>
+                      ${triviaMode === value ? "bg-[#207D86]/10 border-[#207D86]/40 text-[#207D86]" : "bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300"}`}>
                     <div className="text-base mb-0.5">{icon}</div>
                     {label}
                     <div className="text-slate-500 font-normal mt-0.5">{sub}</div>
@@ -334,11 +334,11 @@ const ImportModal = ({ onClose, onImport }) => {
 
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                Number of Questions: <span className="text-[#4CAF50]">{triviaConfig.amount}</span>
+                Number of Questions: <span className="text-[#207D86]">{triviaConfig.amount}</span>
               </label>
               <input type="range" min={1} max={50} value={triviaConfig.amount}
                 onChange={(e) => setTriviaConfig((p) => ({ ...p, amount: Number(e.target.value) }))}
-                className="w-full accent-[#4CAF50]" />
+                className="w-full accent-[#207D86]" />
               <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1</span><span>50</span></div>
             </div>
 
@@ -349,10 +349,10 @@ const ImportModal = ({ onClose, onImport }) => {
               ) : (
                 <select value={triviaConfig.category}
                   onChange={(e) => setTriviaConfig((p) => ({ ...p, category: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#207D86] transition">
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition">
                   <option value="">Any Category</option>
                   {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id} className="bg-[#0A1D32]">{cat.name}</option>
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
               )}
@@ -365,11 +365,11 @@ const ImportModal = ({ onClose, onImport }) => {
                   <button key={d} onClick={() => setTriviaConfig((p) => ({ ...p, difficulty: d }))}
                     className={`py-2 rounded-xl text-xs font-semibold border transition capitalize
                       ${triviaConfig.difficulty === d
-                        ? d === "" ? "bg-[#207D86]/20 border-[#207D86]/50 text-[#4CAF50]"
-                          : d === "easy" ? "bg-green-400/15 border-green-400/30 text-green-400"
-                          : d === "medium" ? "bg-yellow-400/15 border-yellow-400/30 text-yellow-400"
-                          : "bg-red-400/15 border-red-400/30 text-red-400"
-                        : "bg-white/5 border-white/10 text-slate-400 hover:border-white/20"}`}>
+                        ? d === "" ? "bg-[#207D86]/10 border-[#207D86]/40 text-[#207D86]"
+                          : d === "easy" ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                          : d === "medium" ? "bg-amber-50 border-amber-200 text-amber-700"
+                          : "bg-red-50 border-red-200 text-red-700"
+                        : "bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300"}`}>
                     {d === "" ? "Any" : d}
                   </button>
                 ))}
@@ -378,7 +378,7 @@ const ImportModal = ({ onClose, onImport }) => {
 
             {triviaError && (
               <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />{triviaError}
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full shrink-0" />{triviaError}
               </div>
             )}
 
@@ -389,9 +389,9 @@ const ImportModal = ({ onClose, onImport }) => {
             </p>
 
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 py-2.5 border border-white/10 text-slate-400 rounded-xl hover:bg-white/5 transition text-sm font-medium">Cancel</button>
+              <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition text-sm font-medium">Cancel</button>
               <button onClick={handleTriviaImport} disabled={triviaImporting || loadingCats}
-                className="flex-1 py-2.5 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-xl hover:opacity-90 transition text-sm font-semibold shadow-lg shadow-[#207D86]/30 disabled:opacity-40">
+                className="flex-1 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold shadow-lg shadow-[#207D86]/20 disabled:opacity-40">
                 {triviaImporting ? "Fetching..." : triviaMode === "import" ? `Import ${triviaConfig.amount} Questions` : "Generate Quiz"}
               </button>
             </div>
@@ -500,60 +500,70 @@ export default function CreateQuiz() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0E1E30]">
+    <div className="min-h-screen bg-slate-50">
       <Toast message={toast.message} type={toast.type} />
 
       {showImportModal && (
         <ImportModal onClose={() => setShowImportModal(false)} onImport={handleImport} />
       )}
 
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="bg-[#0A1D32] border-b border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-lg">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-slate-400 hover:text-white transition text-sm">← Back</button>
-          <div className="w-px h-5 bg-white/10" />
-          <h1 className="text-lg font-bold text-white tracking-wide">Create New Quiz</h1>
+      <div className="max-w-3xl mx-auto py-8 px-4 space-y-5">
+        {/* Header Section */}
+        <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
+              Create New Quiz
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm md:text-base">
+              Build quiz questions manually or import them from PDF and Trivia DB.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 self-start">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all active:scale-[0.98]"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubmit(true)}
+              disabled={loading}
+              className="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-[#207D86] text-white font-semibold shadow-lg shadow-[#207D86]/30 hover:bg-[#18646b] hover:shadow-xl hover:shadow-[#207D86]/40 focus:outline-none focus:ring-4 focus:ring-[#207D86]/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => handleSubmit(false)} disabled={loading}
-            className="px-4 py-2 border border-[#207D86] text-[#4CAF50] rounded-lg hover:bg-[#207D86]/20 transition font-medium text-sm disabled:opacity-40">
-            Save as Draft
-          </button>
-          <button onClick={() => handleSubmit(true)} disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white rounded-lg hover:opacity-90 transition font-medium text-sm disabled:opacity-40 shadow-lg shadow-[#207D86]/30">
-            {loading ? "Saving..." : "Save & Publish"}
-          </button>
-        </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto p-6 space-y-5">
         {error && (
-          <div className="bg-red-500/10 border border-red-400/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />{error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />{error}
           </div>
         )}
 
         {/* ── Quiz Settings ─────────────────────────────────────── */}
-        <div className="bg-[#0A1D32] rounded-2xl border border-white/5 p-6 space-y-5 shadow-xl">
-          <div className="flex items-center justify-between border-b border-white/5 pb-3">
-            <h2 className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">Quiz Settings</h2>
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5 shadow-xl shadow-slate-200/40">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-xs font-bold text-[#207D86] uppercase tracking-widest">Quiz Settings</h2>
             <button onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#207D86]/15 border border-[#207D86]/30 text-[#4CAF50] rounded-lg hover:bg-[#207D86]/25 transition text-xs font-semibold">
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#207D86]/10 border border-[#207D86]/20 text-[#207D86] rounded-lg hover:bg-[#207D86]/20 transition text-xs font-semibold">
               ✨ Import Questions
             </button>
           </div>
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">Quiz Title</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Quiz Title</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Chapter 3 — Algebra Basics"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition" />
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition" />
           </div>
 
           {/* ── Module Dropdown (replaces Module ID text input) ── */}
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">Module</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Module</label>
 
             {moduleError && (
               <p className="text-xs text-red-400 mb-2 flex items-center gap-1.5">
@@ -563,7 +573,7 @@ export default function CreateQuiz() {
 
             <div className="relative group">
               {/* Icon */}
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-[#207D86] transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
                 <Library className="w-4 h-4" />
               </div>
 
@@ -571,15 +581,15 @@ export default function CreateQuiz() {
                 value={moduleId}
                 onChange={(e) => setModuleId(e.target.value)}
                 disabled={loadingModules}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white
-                  focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800
+                  focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition
                   appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="" className="bg-[#0A1D32] text-slate-400">
+                <option value="">
                   {loadingModules ? "Loading modules..." : "Select a module..."}
                 </option>
                 {modules.map((item) => (
-                  <option key={item._id} value={item._id} className="bg-[#0A1D32] text-white">
+                  <option key={item._id} value={item._id}>
                     {item.name}
                     {item?.grade?.name
                       ? ` — ${/grade/i.test(item.grade.name) ? item.grade.name : (/\d/.test(item.grade.name) ? `Grade ${item.grade.name}` : item.grade.name)}`
@@ -592,7 +602,7 @@ export default function CreateQuiz() {
               </select>
 
               {/* Custom chevron */}
-              <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
+              <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -602,18 +612,18 @@ export default function CreateQuiz() {
             {/* Selected module info badges — mirrors LessonsAdd */}
             {selectedModule && (
               <div className="mt-2.5 flex flex-wrap items-center gap-2 px-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-400 border border-white/10">
-                  <span className="text-slate-500">Level:</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200">
+                  <span className="text-slate-400">Level:</span>
                   {selectedModule?.level?.name || selectedModule?.level || "N/A"}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-400 border border-white/10">
-                  <span className="text-slate-500">Grade:</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200">
+                  <span className="text-slate-400">Grade:</span>
                   {selectedModule?.grade?.name || selectedModule?.grade || "N/A"}
                 </span>
                 {isAdvancedModule(selectedModule) && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 text-xs font-medium text-slate-400 border border-white/10">
-                    <GitBranch className="w-3 h-3 text-slate-500" />
-                    <span className="text-slate-500">Stream:</span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200">
+                    <GitBranch className="w-3 h-3 text-slate-400" />
+                    <span className="text-slate-400">Stream:</span>
                     {selectedModule?.subjectStream || "N/A"}
                   </span>
                 )}
@@ -623,11 +633,11 @@ export default function CreateQuiz() {
 
           {/* Time Limit */}
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1.5">
-              Time Limit: <span className="text-[#4CAF50] font-semibold">{timeLimit} minutes</span>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Time Limit: <span className="text-[#207D86] font-semibold">{timeLimit} minutes</span>
             </label>
             <input type="range" min={5} max={120} step={5} value={timeLimit}
-              onChange={(e) => setTimeLimit(e.target.value)} className="w-full accent-[#4CAF50]" />
+              onChange={(e) => setTimeLimit(e.target.value)} className="w-full accent-[#207D86]" />
             <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 min</span><span>120 min</span></div>
           </div>
         </div>
@@ -635,54 +645,54 @@ export default function CreateQuiz() {
         {/* ── Questions Count Banner ────────────────────────────── */}
         {questions.length > 1 && (
           <div className="flex items-center justify-between px-4 py-2.5 bg-[#207D86]/10 border border-[#207D86]/20 rounded-xl">
-            <span className="text-xs text-[#4CAF50] font-semibold">📋 {questions.length} questions in this quiz</span>
-            <button onClick={() => setQuestions([emptyQuestion()])} className="text-xs text-red-400/50 hover:text-red-400 transition">Clear all</button>
+            <span className="text-xs text-[#207D86] font-semibold">📋 {questions.length} questions in this quiz</span>
+            <button onClick={() => setQuestions([emptyQuestion()])} className="text-xs text-red-500/70 hover:text-red-600 transition">Clear all</button>
           </div>
         )}
 
         {/* ── Questions ─────────────────────────────────────────── */}
         {questions.map((q, qIndex) => (
-          <div key={qIndex} className="bg-[#0A1D32] rounded-2xl border border-white/5 p-6 space-y-4 shadow-xl">
+          <div key={qIndex} className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4 shadow-xl shadow-slate-200/40">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-xs font-bold text-white">
+                <div className="w-6 h-6 rounded-full bg-[#207D86] flex items-center justify-center text-xs font-bold text-white">
                   {qIndex + 1}
                 </div>
-                <span className="text-xs font-bold text-[#4CAF50] uppercase tracking-widest">Question {qIndex + 1}</span>
+                <span className="text-xs font-bold text-[#207D86] uppercase tracking-widest">Question {qIndex + 1}</span>
               </div>
               {questions.length > 1 && (
-                <button onClick={() => removeQuestion(qIndex)} className="text-xs text-red-400/50 hover:text-red-400 transition">✕ Remove</button>
+                <button onClick={() => removeQuestion(qIndex)} className="text-xs text-red-500/70 hover:text-red-600 transition">✕ Remove</button>
               )}
             </div>
 
             <input value={q.questionText} onChange={(e) => updateQuestionText(qIndex, e.target.value)}
               placeholder="Enter your question here..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-[#207D86] focus:border-transparent transition" />
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition" />
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Options — click ✓ to mark correct answer</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Options - click ✓ to mark correct answer</p>
               {q.options.map((opt, oIndex) => (
                 <div key={oIndex} className="flex items-center gap-3">
                   <button onClick={() => setCorrectAnswer(qIndex, oIndex)}
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition font-bold text-sm
+                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition font-bold text-sm
                       ${q.correctAnswer === oIndex
-                        ? "bg-[#4CAF50] border-[#4CAF50] text-white shadow-lg shadow-[#4CAF50]/20"
-                        : "border-white/20 text-white/20 hover:border-[#4CAF50]/50 hover:text-[#4CAF50]/50"}`}>
+                        ? "bg-[#207D86] border-[#207D86] text-white shadow-lg shadow-[#207D86]/20"
+                        : "border-slate-300 text-slate-400 hover:border-[#207D86]/50 hover:text-[#207D86]/70"}`}>
                     ✓
                   </button>
                   <input value={opt} onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
                     placeholder={`Option ${oIndex + 1}`}
-                    className={`flex-1 bg-white/5 border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:border-transparent transition
+                    className={`flex-1 bg-slate-50 border rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:border-[#207D86] transition
                       ${q.correctAnswer === oIndex
-                        ? "border-[#4CAF50]/40 focus:ring-[#4CAF50] bg-[#4CAF50]/5"
-                        : "border-white/10 focus:ring-[#207D86]"}`} />
-                  <span className="text-xs text-slate-600 w-4 font-mono">{String.fromCharCode(65 + oIndex)}</span>
+                        ? "border-[#207D86]/40 focus:ring-[#207D86]/10 bg-[#207D86]/5"
+                        : "border-slate-200 focus:ring-[#207D86]/10"}`} />
+                  <span className="text-xs text-slate-500 w-4 font-mono">{String.fromCharCode(65 + oIndex)}</span>
                 </div>
               ))}
             </div>
 
             <p className="text-xs text-slate-500">
-              Correct answer: <span className="text-[#4CAF50] font-semibold">Option {String.fromCharCode(65 + q.correctAnswer)}</span>
+              Correct answer: <span className="text-[#207D86] font-semibold">Option {String.fromCharCode(65 + q.correctAnswer)}</span>
             </p>
           </div>
         ))}
@@ -690,11 +700,11 @@ export default function CreateQuiz() {
         {/* ── Bottom Action Bar ─────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
           <button onClick={addQuestion}
-            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm">
+            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#207D86]/60 hover:bg-[#207D86]/5 transition font-medium text-sm">
             + Add Question Manually
           </button>
           <button onClick={() => setShowImportModal(true)}
-            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#4CAF50]/50 hover:text-[#4CAF50] hover:bg-[#4CAF50]/5 transition font-medium text-sm flex items-center justify-center gap-2">
+            className="py-4 border-2 border-dashed border-[#207D86]/30 rounded-2xl text-[#207D86] hover:border-[#207D86]/60 hover:bg-[#207D86]/5 transition font-medium text-sm flex items-center justify-center gap-2">
             ✨ Import Questions
           </button>
         </div>
