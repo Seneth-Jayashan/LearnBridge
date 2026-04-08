@@ -85,7 +85,11 @@ export const updateUser = async (req, res) => {
     try {
         const { firstName, lastName, email, phoneNumber, role, grade, level, address } = req.body;
         const user = await User.findById(req.params.id);
-        
+
+        if (user._id == req.user.id && user.role === 'super_admin') {
+            return res.status(400).json({ message: "You cannot change your own role." });
+        }
+
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const finalRole = role || user.role;
@@ -146,6 +150,9 @@ export const deleteUser = async (req, res) => {
 export const toggleUserStatus = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
+        if (user._id == req.user.id) {
+            return res.status(400).json({ message: "You cannot deactivate your own account." });
+        }
         if (!user) return res.status(404).json({ message: "User not found" });
         user.isActive = !user.isActive;
         await user.save();
@@ -159,6 +166,9 @@ export const toggleUserLock = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: "User not found" });
+        if (user._id == req.user.id) {
+            return res.status(400).json({ message: "You cannot lock or unlock your own account." });
+        }
         user.isLocked = !user.isLocked;
         await user.save();
         res.status(200).json({ message: `User ${user.isLocked ? "locked" : "unlocked"} successfully` });

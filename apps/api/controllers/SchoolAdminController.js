@@ -25,23 +25,59 @@ export const getMySchoolDetails = async (req, res) => {
 
 export const updateSchoolProfile = async (req, res) => {
     try {
-        if (req.user.role !== "school_admin") return res.status(403).json({ message: "Access denied." });
+        if (req.user.role !== "school_admin") {
+            return res.status(403).json({ message: "Access denied." });
+        }
 
-        const { contactEmail, contactPhone, address, logoUrl } = req.body;
-        
         const school = await School.findById(req.user.school);
         if (!school) return res.status(404).json({ message: "School not found." });
 
+        // 1. Extract standard fields
+        const { contactEmail, contactPhone, logoUrl } = req.body;
         if (contactEmail) school.contactEmail = contactEmail;
         if (contactPhone) school.contactPhone = contactPhone;
-        if (logoUrl) school.logoUrl = logoUrl;
-        if (address) {
-            school.address = { ...school.address, ...address };
+
+        // 2. Extract nested address fields from FormData
+        // FormData sends nested objects as flattened strings: "address[street]"
+        const hasFormDataAddress = req.body["address[street]"] !== undefined;
+        
+        if (hasFormDataAddress) {
+            school.address = {
+                street: req.body["address[street]"] || school.address.street,
+                city: req.body["address[city]"] || school.address.city,
+                state: req.body["address[state]"] || school.address.state,
+                zipCode: req.body["address[zipCode]"] || school.address.zipCode,
+            };
+        } else if (req.body.address) {
+            // Fallback just in case standard JSON is sent
+            school.address = { ...school.address, ...req.body.address };
+        }
+
+        // 3. Handle Logo Image Upload
+        if (req.file) {
+            /* Because you are using multer.memoryStorage(), the file is in req.file.buffer.
+              Ideally, you upload this buffer to AWS S3, Cloudinary, or Firebase here.
+              
+              Example (Cloudinary):
+              const result = await uploadBufferToCloudinary(req.file.buffer);
+              school.logoUrl = result.secureUrl;
+            */
+
+            // Temporary Fallback: Convert buffer to Base64 data URL directly 
+            // (Use this if you don't have a cloud storage provider set up yet)
+            const b64 = Buffer.from(req.file.buffer).toString('base64');
+            const mimeType = req.file.mimetype;
+            school.logoUrl = `data:${mimeType};base64,${b64}`;
+            
+        } else if (logoUrl) {
+            // Allow manual text URL override if sent
+            school.logoUrl = logoUrl;
         }
 
         await school.save();
         res.status(200).json({ message: "School profile updated successfully", school });
     } catch (error) {
+        console.error("updateSchoolProfile error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };

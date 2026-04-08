@@ -25,6 +25,8 @@ import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import KnowledgeBasePublic from "./pages/KnowledgeBase/KnowledgeBasePublic";
 import KnowledgeBaseDetail from "./pages/KnowledgeBase/KnowledgeBaseDetail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // --- Role Routes ---
 import AdminRoutes from "./routes/AdminRoutes";
@@ -77,6 +79,8 @@ const AppContent = () => {
         <Route path="/knowledge-base" element={<KnowledgeBasePublic />} />
         <Route path="/knowledge-base/:id" element={<KnowledgeBaseDetail />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route element={<ProtectedRoutes />}>
           <Route path="/dashboard" element={<RoleBasedRedirect />} />
