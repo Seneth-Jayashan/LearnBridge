@@ -4,6 +4,14 @@ import adminService from "../../../services/AdminService";
 import api from "../../../api/Axios"; // Import API for fetching grades/levels directly
 import { FiArrowLeft, FiCheck, FiLoader } from "react-icons/fi";
 
+const STREAM_OPTIONS = [
+  "Mathematics Stream",
+  "Biology Stream",
+  "Commerce Stream",
+  "Arts Stream",
+  "Technology Stream",
+];
+
 const CreateUser = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -22,8 +30,11 @@ const CreateUser = () => {
     password: "",
     role: "student", // default
     grade: "",       // Required if student
-    level: ""        // Required if student
+    level: "",       // Required if student
+    stream: null,      // Optional
   });
+
+
 
   // --- Fetch Grades & Levels on Mount ---
   useEffect(() => {
@@ -47,6 +58,46 @@ const CreateUser = () => {
     fetchMetadata();
   }, []);
 
+  useEffect(() => {
+    if (formData.grade && grades.length > 0 && levels.length > 0) {
+      // Find the selected grade object
+      const selectedGradeObj = grades.find((g) => g._id === formData.grade);
+      
+      if (selectedGradeObj) {
+        // Extract the number from the grade name (e.g., "Grade 10" -> 10)
+        const gradeNumberMatch = selectedGradeObj.name.match(/\d+/);
+        
+        if (gradeNumberMatch) {
+          const gradeNumber = parseInt(gradeNumberMatch[0], 10);
+          let targetLevelName = "";
+
+          // Determine the level name based on the grade number
+          if (gradeNumber <= 5) {
+            targetLevelName = "Primary Education";
+          } else if (gradeNumber <= 9) {
+            targetLevelName = "Junior Secondary";
+          } else if (gradeNumber <= 11) {
+            targetLevelName = "Senior Secondary – G.C.E. O/L";
+          } else {
+            targetLevelName = "Advanced Level – G.C.E. A/L";
+          }
+
+          // Find the matching level ID from your levels array
+          const targetLevelObj = levels.find((l) => l.name === targetLevelName);
+
+          // Update the form data if the level needs to change
+          if (targetLevelObj && targetLevelObj._id !== formData.level) {
+            setFormData((prev) => ({
+              ...prev,
+              level: targetLevelObj._id,
+              ...(targetLevelName !== "Advanced Level – G.C.E. A/L" && { stream: null }) 
+            }));
+          }
+        }
+      }
+    }
+  }, [formData.grade, grades, levels, setFormData]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -69,6 +120,7 @@ const CreateUser = () => {
       if (payload.role !== "student") {
         delete payload.grade;
         delete payload.level;
+        delete payload.stream;
       }
 
       await adminService.createUser(payload);
@@ -175,20 +227,47 @@ const CreateUser = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Level (Optional)</label>
-                <select 
-                  name="level" 
-                  value={formData.level} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#207D86] focus:ring-1 focus:ring-[#207D86] outline-none transition-all bg-white"
-                >
-                  <option value="">Select Level</option>
-                  {levels.map(l => (
-                    <option key={l._id} value={l._id}>{l.name}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Level Selection - Auto-populated based on Grade */}
+              {formData.grade && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Level *</label>
+                  <div className="relative">
+                    <select
+                      name="level"
+                      value={formData.level}
+                      onChange={handleChange}
+                      required={formData.role === "student"}
+                      disabled // Optional: Add this if you don't want them manually overriding the automated logic
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#207D86] focus:ring-1 focus:ring-[#207D86] outline-none transition-all bg-slate-50 cursor-not-allowed" // Added bg-slate-50 for disabled look
+                    >
+                      <option value="">Select Level</option>
+                      {levels.map(l => (
+                        <option key={l._id} value={l._id}>{l.name}</option>
+                      ))}
+                    </select>
+                    {metaLoading && <div className="absolute right-3 top-3"><FiLoader className="animate-spin text-[#207D86]" /></div>}
+                  </div>
+                </div>
+              )}
+
+              {/* --- Stream Selection for Students if Level is Advanced Level---  */}
+              {formData.level && levels.find(l => l._id === formData.level)?.name === "Advanced Level – G.C.E. A/L" && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Stream</label>  
+                  <select
+                    name="stream"
+                    value={formData.stream || ""}
+                    onChange={handleChange}
+                    required={formData.role === "student"} // Usually required if A/L is selected
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#207D86] focus:ring-1 focus:ring-[#207D86] outline-none transition-all bg-white"
+                  >
+                    <option value="">Select Stream</option>
+                    {STREAM_OPTIONS.map(stream => (
+                      <option key={stream} value={stream}>{stream}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 

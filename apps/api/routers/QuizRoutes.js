@@ -8,6 +8,8 @@ import {
   getQuizById,
   submitQuiz,
   getStudentResults,
+  getQuizResultsForTeacher,
+  getAllQuizResultsForTeacher,
 } from "../controllers/QuizController.js";
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
@@ -26,6 +28,8 @@ router.use(protect);
 // --- Teacher Routes ---
 router.post("/", restrictTo("teacher"), validate(createQuizSchema), createQuiz);
 router.get("/my-quizzes", restrictTo("teacher"), getTeacherQuizzes);
+router.get("/results/teacher", restrictTo("teacher"), getAllQuizResultsForTeacher);
+router.get("/:id/results", restrictTo("teacher"), getQuizResultsForTeacher);
 router.put("/:id", restrictTo("teacher"), validate(updateQuizSchema), updateQuiz);
 router.delete("/:id", restrictTo("teacher"), deleteQuiz);
 

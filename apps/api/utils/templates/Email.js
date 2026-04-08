@@ -2,7 +2,7 @@ import sendEmail from "../../services/Email.js";
 
 const BRAND_NAME = "Learn Bridge"; 
 
-export const accountCreationEmail = async (name, email, password) => {
+export const accountCreationEmail = async (name, login, password, email) => {
     const htmlContent = `
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
@@ -12,7 +12,7 @@ export const accountCreationEmail = async (name, email, password) => {
                 Your account has been created successfully. Below are your login details:
             </p>
             <ul style="color: #555555; font-size: 16px;">
-                <li><strong>Email:</strong> ${email}</li>
+                <li><strong>Login:</strong> ${login}</li>
                 <li><strong>Password:</strong> ${password}</li>
             </ul>
             <p style="color: #555555; font-size: 16px;">

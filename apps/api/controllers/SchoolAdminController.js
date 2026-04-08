@@ -25,23 +25,59 @@ export const getMySchoolDetails = async (req, res) => {
 
 export const updateSchoolProfile = async (req, res) => {
     try {
-        if (req.user.role !== "school_admin") return res.status(403).json({ message: "Access denied." });
+        if (req.user.role !== "school_admin") {
+            return res.status(403).json({ message: "Access denied." });
+        }
 
-        const { contactEmail, contactPhone, address, logoUrl } = req.body;
-        
         const school = await School.findById(req.user.school);
         if (!school) return res.status(404).json({ message: "School not found." });
 
+        // 1. Extract standard fields
+        const { contactEmail, contactPhone, logoUrl } = req.body;
         if (contactEmail) school.contactEmail = contactEmail;
         if (contactPhone) school.contactPhone = contactPhone;
-        if (logoUrl) school.logoUrl = logoUrl;
-        if (address) {
-            school.address = { ...school.address, ...address };
+
+        // 2. Extract nested address fields from FormData
+        // FormData sends nested objects as flattened strings: "address[street]"
+        const hasFormDataAddress = req.body["address[street]"] !== undefined;
+        
+        if (hasFormDataAddress) {
+            school.address = {
+                street: req.body["address[street]"] || school.address.street,
+                city: req.body["address[city]"] || school.address.city,
+                state: req.body["address[state]"] || school.address.state,
+                zipCode: req.body["address[zipCode]"] || school.address.zipCode,
+            };
+        } else if (req.body.address) {
+            // Fallback just in case standard JSON is sent
+            school.address = { ...school.address, ...req.body.address };
+        }
+
+        // 3. Handle Logo Image Upload
+        if (req.file) {
+            /* Because you are using multer.memoryStorage(), the file is in req.file.buffer.
+              Ideally, you upload this buffer to AWS S3, Cloudinary, or Firebase here.
+              
+              Example (Cloudinary):
+              const result = await uploadBufferToCloudinary(req.file.buffer);
+              school.logoUrl = result.secureUrl;
+            */
+
+            // Temporary Fallback: Convert buffer to Base64 data URL directly 
+            // (Use this if you don't have a cloud storage provider set up yet)
+            const b64 = Buffer.from(req.file.buffer).toString('base64');
+            const mimeType = req.file.mimetype;
+            school.logoUrl = `data:${mimeType};base64,${b64}`;
+            
+        } else if (logoUrl) {
+            // Allow manual text URL override if sent
+            school.logoUrl = logoUrl;
         }
 
         await school.save();
         res.status(200).json({ message: "School profile updated successfully", school });
     } catch (error) {
+        console.error("updateSchoolProfile error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
@@ -63,6 +99,11 @@ export const createStudentForSchool = async (req, res) => {
             return res.status(400).json({ message: "Grade is required when creating a Student." });
         }
 
+        if (!studentData.level) {
+            return res.status(400).json({ message: "Level is required when creating a Student." });
+        }
+
+
         const newStudent = new User({
             ...studentData,
             email: studentData.email ? studentData.email.toLowerCase() : undefined,
@@ -70,12 +111,14 @@ export const createStudentForSchool = async (req, res) => {
             school: schoolId, 
             isSchoolVerified: true,
             grade: studentData.grade,
+            level: studentData.level,
+            stream: studentData.stream || null,
             requiresPasswordChange: true
         });
 
         await newStudent.save();
-        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, studentData.email, studentData.password);
-        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,studentData.email, studentData.password);
+        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, newStudent.regNumber, studentData.password, );
+        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,newStudent.regNumber, studentData.password, studentData.email);
 
         await School.findByIdAndUpdate(schoolId, { $push: { students: newStudent._id } });
 
@@ -95,7 +138,7 @@ export const getSchoolStudents = async (req, res) => {
             school: req.user.school, 
             role: "student",
             isDeleted: false
-        }).populate("grade", "name");
+        }).populate("grade", "name").populate("level", "name");
 
         res.status(200).json(students);
     } catch (error) {
@@ -110,7 +153,7 @@ export const updateSchoolStudent = async (req, res) => {
 
         if (!student) return res.status(404).json({ message: "Student not found in your school." });
 
-        const { firstName, lastName, email, phoneNumber, grade, level, address } = req.body;
+        const { firstName, lastName, email, phoneNumber, grade, level, address, stream } = req.body;
 
         if (grade === null || grade === "") {
             return res.status(400).json({ message: "Student must have a grade. You cannot remove it." });
@@ -123,6 +166,7 @@ export const updateSchoolStudent = async (req, res) => {
         
         if (grade) student.grade = grade;
         if (level) student.level = level;
+        if (stream) student.stream = stream;
         
         if (address) student.address = { ...student.address, ...address };
 

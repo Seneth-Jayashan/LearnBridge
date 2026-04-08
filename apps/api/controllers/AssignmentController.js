@@ -48,14 +48,57 @@ const canViewAssignment = (user, assignment) => {
   if (canManageAssignment(user, assignment)) return true;
 
   if (user.role === "student") {
+    const moduleStream = assignment?.module?.subjectStream || null;
+
     return (
       Boolean(user.grade) &&
       Boolean(assignment?.module?.grade) &&
-      user.grade.toString() === assignment.module.grade.toString()
+      user.grade.toString() === assignment.module.grade.toString() &&
+      (!user.stream || !moduleStream || user.stream === moduleStream)
     );
   }
 
   return false;
+};
+
+const toValidDate = (value) => {
+  if (!value) return null;
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const getLateSubmissionDetails = (dueDate, submittedAt) => {
+  const dueDateValue = toValidDate(dueDate);
+  const submittedAtValue = toValidDate(submittedAt);
+
+  if (!dueDateValue || !submittedAtValue) {
+    return {
+      isLate: false,
+      lateByMilliseconds: 0,
+      lateByMinutes: 0,
+    };
+  }
+
+  const lateByMilliseconds = Math.max(0, submittedAtValue.getTime() - dueDateValue.getTime());
+
+  return {
+    isLate: lateByMilliseconds > 0,
+    lateByMilliseconds,
+    lateByMinutes: lateByMilliseconds > 0 ? Math.ceil(lateByMilliseconds / (1000 * 60)) : 0,
+  };
+};
+
+const withLateSubmissionDetails = (submission, dueDate) => {
+  if (!submission) return null;
+
+  const submissionObject =
+    typeof submission.toObject === "function" ? submission.toObject() : { ...submission };
+  const submittedAt = submissionObject.submittedAt || submissionObject.createdAt || null;
+
+  return {
+    ...submissionObject,
+    ...getLateSubmissionDetails(dueDate, submittedAt),
+  };
 };
 
 export const createAssignment = async (req, res) => {
@@ -117,6 +160,9 @@ export const getAllAssignments = async (req, res) => {
       }
 
       const moduleQuery = { grade: req.user.grade };
+      if (req.user.stream) {
+        moduleQuery.$or = [{ subjectStream: req.user.stream }, { subjectStream: null }];
+      }
       if (requestedModuleId) {
         moduleQuery._id = requestedModuleId;
       }
@@ -142,7 +188,7 @@ export const getAllAssignments = async (req, res) => {
     const assignments = await Assignment.find(query)
       .populate({
         path: "module",
-        select: "name description thumbnailUrl grade",
+        select: "name description thumbnailUrl grade subjectStream",
         populate: { path: "grade", select: "name" },
       })
       .populate("createdBy", "firstName lastName role")
@@ -190,8 +236,10 @@ export const getAllAssignments = async (req, res) => {
 
       const payload = validAssignments.map((assignment) => {
         const assignmentJson = assignment.toObject();
-        assignmentJson.studentSubmission =
-          submissionMap[assignment._id.toString()]?.toObject() || null;
+        assignmentJson.studentSubmission = withLateSubmissionDetails(
+          submissionMap[assignment._id.toString()],
+          assignment.dueDate,
+        );
         return assignmentJson;
       });
 
@@ -209,7 +257,7 @@ export const getAssignmentById = async (req, res) => {
     const assignment = await Assignment.findById(req.params.id)
       .populate({
         path: "module",
-        select: "name description thumbnailUrl grade",
+        select: "name description thumbnailUrl grade subjectStream",
         populate: { path: "grade", select: "name" },
       })
       .populate("createdBy", "firstName lastName role");
@@ -238,7 +286,10 @@ export const getAssignmentById = async (req, res) => {
 
 export const getAssignmentMaterialDownloadUrl = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    const assignment = await Assignment.findById(req.params.id).populate(
+      "module",
+      "grade subjectStream",
+    );
 
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
@@ -268,7 +319,10 @@ export const getAssignmentMaterialDownloadUrl = async (req, res) => {
 
 export const submitAssignment = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    const assignment = await Assignment.findById(req.params.id).populate(
+      "module",
+      "grade subjectStream",
+    );
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
@@ -309,6 +363,8 @@ export const submitAssignment = async (req, res) => {
       }
     }
 
+    const submittedAt = new Date();
+
     const savedSubmission = await AssignmentSubmission.findOneAndUpdate(
       { assignment: assignment._id, student: req.user._id },
       {
@@ -316,7 +372,7 @@ export const submitAssignment = async (req, res) => {
         student: req.user._id,
         fileUrl: submissionUrl,
         notes,
-        submittedAt: new Date(),
+        submittedAt,
       },
       {
         upsert: true,
@@ -325,9 +381,14 @@ export const submitAssignment = async (req, res) => {
       },
     );
 
+    const lateSubmissionDetails = getLateSubmissionDetails(assignment.dueDate, submittedAt);
+
     return res.status(200).json({
-      message: "Assignment submitted successfully",
-      submission: savedSubmission,
+      message: lateSubmissionDetails.isLate
+        ? "Assignment submitted successfully (late submission)"
+        : "Assignment submitted successfully",
+      submission: withLateSubmissionDetails(savedSubmission, assignment.dueDate),
+      submissionStatus: lateSubmissionDetails.isLate ? "late" : "on_time",
     });
   } catch (error) {
     if (error.name === "ValidationError" || error.name === "CastError") {
@@ -446,7 +507,10 @@ export const deleteAssignment = async (req, res) => {
 
 export const getMyAssignmentSubmission = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    const assignment = await Assignment.findById(req.params.id).populate(
+      "module",
+      "grade subjectStream",
+    );
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
@@ -462,7 +526,9 @@ export const getMyAssignmentSubmission = async (req, res) => {
       student: req.user._id,
     });
 
-    return res.status(200).json({ submission });
+    return res.status(200).json({
+      submission: withLateSubmissionDetails(submission, assignment.dueDate),
+    });
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -524,7 +590,9 @@ export const getAssignmentSubmissions = async (req, res) => {
       .populate("student", "firstName lastName regNumber")
       .sort({ submittedAt: -1 });
 
-    return res.status(200).json(submissions);
+    return res
+      .status(200)
+      .json(submissions.map((submission) => withLateSubmissionDetails(submission, assignment.dueDate)));
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
   }

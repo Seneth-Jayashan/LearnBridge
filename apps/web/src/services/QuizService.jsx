@@ -28,6 +28,16 @@ const quizService = {
     return response.data;
   },
 
+  async getQuizResultsForTeacher(id) {
+    const response = await api.get(`/quizzes/${id}/results`);
+    return response.data;
+  },
+
+  async getAllQuizResultsForTeacher() {
+    const response = await api.get("/quizzes/results/teacher");
+    return response.data;
+  },
+
   // ─── STUDENT SERVICES ───────────────────────────────────────────────
 
   async getQuizzesByModule(moduleId) {

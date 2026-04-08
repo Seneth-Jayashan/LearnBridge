@@ -14,17 +14,28 @@ const Login = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+
+  // We still grab 'from' just in case they were trying to access a specific deep link 
+  // (like a specific course page), but we will default to "/dashboard"
   const from = location.state?.from?.pathname || "/dashboard";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await login(formData.identifier, formData.password);
+    
     if (result.success) {
-      navigate(from, { replace: true });
+      if (result.requiresOtpVerification) {
+        navigate("/first-login-verification", { 
+          replace: true,
+          state: { userId: result.userId, message: result.message }
+        });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
   };
 
@@ -76,7 +87,6 @@ const Login = () => {
 
       {/* --- Right Side: The "Attractive" Login Form --- */}
       <div className="flex flex-col justify-center items-center w-full md:w-7/12 p-6 md:p-12 bg-slate-50 relative">
-        {/* Subtle background text for design depth */}
         <div className="absolute top-10 right-10 text-[120px] font-black text-slate-200/50 select-none pointer-events-none hidden lg:block">
           LOGIN
         </div>
@@ -97,7 +107,6 @@ const Login = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Input Wrapper with focus-within shadow effect */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Identity</label>
               <div className="relative flex items-center group">

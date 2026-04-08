@@ -41,12 +41,12 @@ const Users = () => {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
+const handleToggleStatus = async (id, currentStatus) => {
     try {
       await adminService.toggleUserStatus(id);
       setUsers(users.map(u => u._id === id ? { ...u, isActive: !currentStatus } : u));
     } catch (err) {
-      alert("Failed to change user status.");
+      alert(err.response?.data?.message || err.message || "Failed to change user status.");
     }
   };
 
@@ -55,7 +55,7 @@ const Users = () => {
       await adminService.toggleUserLock(id);
       setUsers(users.map(u => u._id === id ? { ...u, isLocked: !currentLockStatus } : u));
     } catch (err) {
-      alert("Failed to change lock status.");
+      alert(err.response?.data?.message || err.message || "Failed to change lock status.");
     }
   };
 
