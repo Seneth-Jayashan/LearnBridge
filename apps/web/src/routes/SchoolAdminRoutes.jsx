@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import SchoolSidebar from "../components/sidebar/SchoolSidebar";
 import NeedsRegistry from "../pages/SchoolAdmin/NeedsRegistry";
@@ -6,10 +5,17 @@ import Students from "../pages/school/students/Students";
 import CreateStudent from "../pages/school/students/Create";
 import Teachers from "../pages/school/teachers/Teachers";
 import CreateTeacher from "../pages/school/teachers/Create";
+import ProfileSettings from "../pages/ProfileSettings";
+import SchoolProfile from "../pages/school/SchoolProfile";
 
 const SchoolAdminRoutes = () => {
-  const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
-  const [isExpanded, setIsExpanded] = useState(true);
+
+  const { 
+    isMobileMenuOpen, 
+    setIsMobileMenuOpen, 
+    isExpanded, 
+    setIsExpanded 
+  } = useOutletContext();
 
   return (
     <>
@@ -35,6 +41,11 @@ const SchoolAdminRoutes = () => {
             {/* Teacher Routes */}
             <Route path="teachers" element={<Teachers />} />
             <Route path="teachers/create" element={<CreateTeacher />} />
+          
+
+            {/* Profile Settings */}
+            <Route path="profile" element={<SchoolProfile />} />
+            <Route path="settings" element={<ProfileSettings />} />
           </Routes>
         </div>
       </div>

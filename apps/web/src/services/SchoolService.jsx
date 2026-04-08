@@ -10,7 +10,18 @@ const schoolService = {
   },
 
   async updateSchoolProfile(profileData) {
-    const response = await api.put("/school-admin/my-school", profileData);
+    // 1. Check if the payload is FormData (contains an image)
+    const isFormData = profileData instanceof FormData;
+
+    // 2. Dynamically set the header
+    const config = isFormData ? {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    } : {};
+
+    // 3. Pass the config as the third argument
+    const response = await api.put("/school-admin/my-school", profileData, config);
     return response.data;
   },
 

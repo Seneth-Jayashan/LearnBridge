@@ -17,7 +17,11 @@ export const AuthProvider = ({ children }) => {
             
             setAccessToken(data.accessToken);
             const userRes = await authService.getCurrentUser(); 
-            setUser(userRes.user);
+            
+            // THE FIX: Some backends return the user nested { user: {} }, others return it directly.
+            // This ensures it grabs the user object correctly on refresh.
+            const fetchedUser = userRes.user || userRes;
+            setUser(fetchedUser);
 
         } catch (err) {
             setUser(null);
@@ -31,7 +35,7 @@ export const AuthProvider = ({ children }) => {
         checkSession();
     }, [checkSession]);
 
-// 2️⃣ Login (REMOVED setLoading)
+    // 2. Login
     const login = async (identifier, password) => {
         setError(null);
         try {
@@ -60,7 +64,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 3️⃣ Verify First Login OTP (REMOVED setLoading)
+    // 3. Verify First Login OTP
     const verifyFirstLoginOtp = async (userId, otp) => {
         setError(null);
         try {
@@ -73,7 +77,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 4️⃣ Complete First Login (REMOVED setLoading)
+    // 4. Complete First Login
     const completeFirstLogin = async (resetToken, newPassword) => {
         setError(null);
         try {
@@ -93,7 +97,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
     
-    // 5️⃣ Register Donor
+    // 5. Register Donor
     const registerDonor = async (formData) => {
         setLoading(true);
         setError(null);
@@ -109,7 +113,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 6️⃣ Logout
+    // 6. Logout
     const logout = async () => {
         try {
             await authService.logout(); 
@@ -125,12 +129,16 @@ export const AuthProvider = ({ children }) => {
 
     const refreshUser = async () => {
         try {
-             const userData = await authService.getCurrentUser();
-             setUser(userData.user);
+             const userRes = await authService.getCurrentUser();
+             const fetchedUser = userRes.user || userRes;
+             setUser(fetchedUser);
         } catch (err) {
              console.error("Refresh user failed", err);
         }
     };
+
+    // THE FIX: Normalize role string to prevent strict equality failures
+    const normalizedRole = user?.role?.toLowerCase()?.trim();
 
     const value = {
         user,
@@ -139,16 +147,16 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         refreshUser,
-        verifyFirstLoginOtp, // Added
-        completeFirstLogin,  // Added
+        verifyFirstLoginOtp, 
+        completeFirstLogin,  
         
         isAuthenticated: !!user,
-        isSuperAdmin: user?.role === "super_admin",
-        isSchoolAdmin: user?.role === "school_admin",
-        isAdmin: ["super_admin", "school_admin"].includes(user?.role), 
-        isTeacher: user?.role === "teacher",
-        isStudent: user?.role === "student",
-        isDonor: user?.role === "donor",
+        isSuperAdmin: normalizedRole === "super_admin",
+        isSchoolAdmin: normalizedRole === "school_admin",
+        isAdmin: ["super_admin", "school_admin"].includes(normalizedRole), 
+        isTeacher: normalizedRole === "teacher",
+        isStudent: normalizedRole === "student",
+        isDonor: normalizedRole === "donor",
         isSchoolVerified: user?.isSchoolVerified ?? false,
     };
 
