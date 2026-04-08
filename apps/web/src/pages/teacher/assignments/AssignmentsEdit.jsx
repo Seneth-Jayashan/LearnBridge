@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
     Library, 
@@ -13,7 +13,8 @@ import {
     Layers,
     GraduationCap,
     Download,
-    GitBranch
+    GitBranch,
+    Search
 } from "lucide-react";
 import assignmentService from "../../../services/AssignmentService";
 import moduleService from "../../../services/ModuleService";
@@ -60,6 +61,14 @@ const inferFileNameFromUrl = (url) => {
     }
 };
 
+const toPublicMediaUrl = (value) => {
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value) || /^blob:/i.test(value)) return value;
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+    const origin = apiBase.replace(/\/api\/v1\/?$/i, "");
+    return `${origin}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
 const downloadFile = async (url, fileName = "") => {
     if (!url) return;
     const response = await fetch(url);
@@ -90,15 +99,66 @@ const AssignmentsEdit = () => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [error, setError] = useState("");
 
+    // Custom Module Dropdown State
+    const [moduleQuery, setModuleQuery] = useState("");
+    const [showModuleDropdown, setShowModuleDropdown] = useState(false);
+    const moduleInputRef = useRef(null);
+
     const selectedModule = useMemo(() => {
         if (!formData.module) return null;
         return modules.find((item) => String(item._id) === String(formData.module)) || null;
     }, [modules, formData.module]);
 
+    // Sync display query with selected module id
+    useEffect(() => {
+        if (selectedModule) {
+            const grade = selectedModule?.grade?.name || selectedModule?.grade || "";
+            const level = selectedModule?.level?.name || selectedModule?.level || "";
+            const stream = selectedModule?.subjectStream ? ` — ${selectedModule.subjectStream}` : "";
+            const display = `${selectedModule.name}${grade || level ? ` — ${grade || level}` : ""}${stream}`;
+            setModuleQuery(display);
+        } else if (!showModuleDropdown) {
+            setModuleQuery("");
+        }
+    }, [selectedModule, showModuleDropdown]);
+
+    const filteredModules = useMemo(() => {
+        const q = String(moduleQuery || "").trim().toLowerCase();
+        if (!q) return modules;
+        return modules.filter((m) => {
+            const name = String(m?.name || "").toLowerCase();
+            const grade = String(m?.grade?.name || m?.grade || "").toLowerCase();
+            const level = String(m?.level?.name || m?.level || "").toLowerCase();
+            const stream = String(m?.subjectStream || "").toLowerCase();
+            return name.includes(q) || grade.includes(q) || level.includes(q) || stream.includes(q);
+        });
+    }, [modules, moduleQuery]);
+
+    const handleModuleQueryChange = (e) => {
+        const v = e.target.value;
+        setModuleQuery(v);
+        // clear selected module id while typing
+        setFormData((prev) => ({ ...prev, module: "" }));
+        if (error) setError("");
+        setShowModuleDropdown(true);
+    };
+
+    const handleSelectModule = (item) => {
+        setFormData((prev) => ({ ...prev, module: String(item._id) }));
+        const grade = item?.grade?.name || item?.grade || "";
+        const level = item?.level?.name || item?.level || "";
+        const stream = item?.subjectStream ? ` — ${item.subjectStream}` : "";
+        const display = `${item.name}${grade || level ? ` — ${grade || level}` : ""}${stream}`;
+        setModuleQuery(display);
+        setShowModuleDropdown(false);
+        if (moduleInputRef.current) moduleInputRef.current.blur();
+    };
+
     useEffect(() => {
         const loadData = async () => {
             try {
                 setError("");
+                setIsLoading(true);
                 const [assignment, moduleData] = await Promise.all([
                     assignmentService.getAssignmentById(id),
                     moduleService.getAllModules(),
@@ -144,7 +204,8 @@ const AssignmentsEdit = () => {
         try {
             setError("");
             const { downloadUrl, fileName } = await assignmentService.getMaterialDownloadUrl(id);
-            await downloadFile(downloadUrl, fileName || inferFileNameFromUrl(downloadUrl));
+            const resolvedUrl = toPublicMediaUrl(downloadUrl || formData.materialUrl);
+            await downloadFile(resolvedUrl, fileName || inferFileNameFromUrl(resolvedUrl));
         } catch {
             setError("Failed to securely download assignment material. Please try again.");
         } finally {
@@ -156,7 +217,7 @@ const AssignmentsEdit = () => {
         event.preventDefault();
 
         if (!formData.title.trim()) return setError("Assignment title is required.");
-        if (!formData.module.trim()) return setError("Please select a module.");
+        if (!formData.module.trim()) return setError("Please select a module from the dropdown.");
 
         try {
             setError("");
@@ -219,47 +280,95 @@ const AssignmentsEdit = () => {
                     <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
                         
                         <div className="space-y-6">
-                            {/* Module Select */}
+                            
+                            {/* Searchable Module Select */}
                             <div className="space-y-2">
-                                <label htmlFor="module" className="text-sm font-bold text-slate-700">
+                                <label htmlFor="moduleSearch" className="text-sm font-bold text-slate-700">
                                     Target Module <span className="text-red-500">*</span>
                                 </label>
-                                <div className="relative group">
+                                
+                                <div 
+                                    className="relative group" 
+                                    onBlur={(e) => {
+                                        // Close dropdown if clicked outside this container
+                                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                                            setShowModuleDropdown(false);
+                                            // Reset text if no module was properly selected
+                                            if (!formData.module) setModuleQuery("");
+                                        }
+                                    }}
+                                >
                                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                                        <Library className="w-5 h-5" />
+                                        <Search className="w-5 h-5" />
                                     </div>
-                                    <select
-                                        id="module"
-                                        name="module"
-                                        value={formData.module}
-                                        onChange={handleInputChange}
-                                        className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200 appearance-none"
-                                    >
-                                        <option value="">Select module...</option>
-                                        {modules.map((item) => (
-                                            <option key={item._id} value={item._id}>
-                                                {item.name}
-                                                {item?.grade?.name ? ` — ${item.grade.name}` : ""}
-                                                {isAdvancedModule(item) && item?.subjectStream ? ` — ${item.subjectStream}` : ""}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <input
+                                        id="moduleSearch"
+                                        ref={moduleInputRef}
+                                        type="text"
+                                        name="moduleSearch"
+                                        value={moduleQuery}
+                                        onChange={handleModuleQueryChange}
+                                        onFocus={() => setShowModuleDropdown(true)}
+                                        placeholder="Search for a module..."
+                                        className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all duration-200"
+                                        autoComplete="off"
+                                    />
+
+                                    {/* Dropdown Results */}
+                                    {showModuleDropdown && (
+                                        <ul className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-2 animate-in fade-in zoom-in-95 duration-200">
+                                            {filteredModules.length > 0 ? (
+                                                filteredModules.map((item) => (
+                                                    <li
+                                                        key={item._id}
+                                                        onMouseDown={(e) => { 
+                                                            e.preventDefault(); // Prevents input onBlur
+                                                            handleSelectModule(item); 
+                                                        }}
+                                                        className="px-4 py-3 hover:bg-[#207D86]/5 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                                                    >
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            <div className="text-sm font-extrabold text-slate-800 line-clamp-1">
+                                                                {item.name}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                                                    {item?.grade?.name || item?.grade || item?.level?.name || item?.level || ""}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        {isAdvancedModule(item) && item?.subjectStream && (
+                                                            <div className="text-xs text-indigo-500 font-medium mt-1 flex items-center gap-1">
+                                                                <GitBranch className="w-3 h-3" />
+                                                                Stream: {item.subjectStream}
+                                                            </div>
+                                                        )}
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <li className="px-4 py-8 text-center text-sm text-slate-500">
+                                                    No modules found matching your search.
+                                                </li>
+                                            )}
+                                        </ul>
+                                    )}
                                 </div>
-                                {/* Selected Module Info Badge */}
+
+                                {/* Selected Module Info Badges */}
                                 {selectedModule && (
-                                    <div className="mt-2 flex flex-wrap items-center gap-2 px-1 animate-in fade-in slide-in-from-top-1">
+                                    <div className="mt-3 flex flex-wrap items-center gap-2 px-1 animate-in fade-in slide-in-from-top-1">
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200 shadow-sm">
                                             <Layers className="w-3.5 h-3.5 text-slate-400" />
-                                            <span className="text-slate-400">Level:</span> {selectedModule?.level?.name || "N/A"}
+                                            <span className="text-slate-400">Level:</span> {selectedModule?.level?.name || selectedModule?.level || "N/A"}
                                         </span>
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200 shadow-sm">
                                             <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
-                                            <span className="text-slate-400">Grade:</span> {selectedModule?.grade?.name || "N/A"}
+                                            <span className="text-slate-400">Grade:</span> {selectedModule?.grade?.name || selectedModule?.grade || "N/A"}
                                         </span>
-                                        {isAdvancedModule(selectedModule) && (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-medium text-slate-600 border border-slate-200 shadow-sm">
-                                                <GitBranch className="w-3.5 h-3.5 text-slate-400" />
-                                                <span className="text-slate-400">Stream:</span> {selectedModule?.subjectStream || "N/A"}
+                                        {isAdvancedModule(selectedModule) && selectedModule?.subjectStream && (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-xs font-medium text-indigo-700 border border-indigo-100 shadow-sm">
+                                                <GitBranch className="w-3.5 h-3.5 text-indigo-400" />
+                                                <span className="text-indigo-400">Stream:</span> {selectedModule.subjectStream}
                                             </span>
                                         )}
                                     </div>
@@ -325,7 +434,7 @@ const AssignmentsEdit = () => {
                                             type="file"
                                             accept=".pdf,.doc,.docx,.zip,.txt,image/*"
                                             onChange={handleFileChange}
-                                            className="w-full pl-11 pr-4 py-[11px] bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#207D86]/10 file:text-[#207D86] hover:file:bg-[#207D86]/20 cursor-pointer"
+                                            className="w-full pl-11 pr-4 py-[11px] bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#207D86]/10 focus:border-[#207D86] transition-all file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#207D86]/10 file:text-[#207D86] hover:file:bg-[#207D86]/20 cursor-pointer h-full"
                                         />
                                     </div>
                                     

@@ -10,7 +10,7 @@
     "seed:grades": "node scripts/seedGrades.js",
     "migrate:module-indexes": "node scripts/migrateModuleIndexes.js",
     "migrate:remove-module-content": "node scripts/removeModuleContentUrl.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
   },
   "keywords": [],
   "author": "OneX Universe (Pvt) Ltd.",
@@ -37,6 +37,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.11"
   }
 }

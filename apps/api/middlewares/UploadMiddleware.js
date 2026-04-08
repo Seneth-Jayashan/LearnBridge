@@ -48,7 +48,7 @@ const lessonUploader = multer({
 	storage,
 	fileFilter: lessonFileFilter,
 	limits: {
-		fileSize: 200 * 1024 * 1024,
+		fileSize: 200 * 1024 * 1024 * 1024 * 1024 // 200TB - Cloudinary's max file size limit,
 	},
 });
 

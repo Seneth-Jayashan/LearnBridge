@@ -86,9 +86,12 @@ export const getAllModules = async (req, res) => {
             }
 
             const studentSchoolId = toNullableObjectId(req.user.school);
-            const visibleLessonModuleIds = await Lesson.distinct("module", {
-                school: studentSchoolId,
-            });
+            const visibleLessonModuleIds = await Lesson.distinct(
+                "module",
+                studentSchoolId
+                    ? { $or: [{ school: studentSchoolId }, { school: null }] }
+                    : { school: null },
+            );
 
             if (!visibleLessonModuleIds.length) {
                 return res.status(200).json([]);
