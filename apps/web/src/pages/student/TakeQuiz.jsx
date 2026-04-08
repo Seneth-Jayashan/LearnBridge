@@ -40,14 +40,18 @@ export default function TakeQuiz() {
     if (submitted || submitting) return;
     setSubmitting(true);
     try {
-      const data = await quizService.submitQuiz(id, { answers, flaggedQuestions: flagged });
+      const normalizedAnswers = (quiz?.questions || []).map((_, index) => answers[index] ?? null);
+      const data = await quizService.submitQuiz(id, {
+        answers: normalizedAnswers,
+        flaggedQuestions: flagged,
+      });
       setResult(data);
       setSubmitted(true);
     } catch {
       setError("Submission failed. Please try again.");
       setSubmitting(false);
     }
-  }, [id, answers, flagged, submitted, submitting]);
+  }, [id, answers, flagged, submitted, submitting, quiz]);
 
   // ── Countdown Timer ────────────────────────────────────────────────
   useEffect(() => {
@@ -92,21 +96,24 @@ export default function TakeQuiz() {
   // ── Loading ────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="flex items-center gap-3 text-[#207D86] font-medium animate-pulse">
-        <div className="w-2 h-2 bg-[#207D86] rounded-full animate-bounce" />
-        Loading quiz...
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white/90 backdrop-blur-xl px-8 py-10 text-center shadow-2xl shadow-slate-300/30">
+        <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-[#207D86]/20 border-t-[#207D86] animate-spin" />
+        <p className="text-[#0E2A47] text-lg font-bold">Preparing your quiz</p>
+        <p className="mt-1 text-sm text-slate-500">Loading questions and timer...</p>
       </div>
     </div>
   );
 
   if (error && !quiz) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="text-center bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40 px-8 py-10">
-        <p className="text-red-600 text-xl mb-2">⚠️</p>
-        <p className="text-red-700 text-sm">{error}</p>
+      <div className="w-full max-w-md rounded-3xl border border-red-100 bg-white px-8 py-10 text-center shadow-2xl shadow-slate-300/30">
+        <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-lg font-bold text-red-600">
+          !
+        </div>
+        <p className="text-red-700 text-sm font-medium">{error}</p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 text-[#207D86] underline text-sm hover:text-[#18646b] transition"
+          className="mt-5 inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
         >
           Go back
         </button>
@@ -120,22 +127,36 @@ export default function TakeQuiz() {
   if (submitted && result) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <div className="max-w-3xl mx-auto py-8 px-4 space-y-5">
-          <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
-                Quiz Results
-              </h2>
-              <p className="text-slate-500 mt-2 text-sm md:text-base">
-                {quiz.title}
-              </p>
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white/85 backdrop-blur-xl p-6 shadow-xl shadow-slate-300/25">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#207D86]">Quiz Completed</p>
+                <h2 className="mt-1 text-3xl font-extrabold tracking-tight text-[#0E2A47]">Quiz Results</h2>
+                <p className="mt-2 text-sm text-slate-500 md:text-base">{quiz.title}</p>
+              </div>
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Back to Module
+              </button>
             </div>
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all active:scale-[0.98]"
-            >
-              Back
-            </button>
+
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Score</p>
+                <p className="mt-1 text-xl font-extrabold text-[#0E2A47]">{result.score}/{result.totalQuestions}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Accuracy</p>
+                <p className="mt-1 text-xl font-extrabold text-[#207D86]">{percentage}%</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Flagged</p>
+                <p className="mt-1 text-xl font-extrabold text-red-600">{flagged.length}</p>
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -146,7 +167,7 @@ export default function TakeQuiz() {
           )}
 
           {/* Score Card */}
-          <div className={`rounded-2xl p-6 text-center border shadow-xl
+          <div className={`rounded-3xl p-7 text-center border shadow-xl
             ${percentage >= 70
               ? "bg-emerald-50 border-emerald-200"
               : percentage >= 40
@@ -154,7 +175,7 @@ export default function TakeQuiz() {
                 : "bg-red-50 border-red-200"
             }`}
           >
-            <div className={`text-6xl font-black mb-2
+            <div className={`text-7xl font-black mb-2 leading-none
               ${percentage >= 70 ? "text-emerald-700" : percentage >= 40 ? "text-amber-700" : "text-red-700"}`}
             >
               {percentage}%
@@ -173,11 +194,12 @@ export default function TakeQuiz() {
           </div>
 
           {/* Answer Review */}
-          <h2 className="text-sm font-bold text-[#207D86] uppercase tracking-widest">
+          <h2 className="text-sm font-bold text-[#207D86] uppercase tracking-[0.2em]">
             Answer Review
           </h2>
 
-          {quiz.questions.map((q, i) => {
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {quiz.questions.map((q, i) => {
             const studentAnswer = answers[i];
             const correctAnswer = result.correctAnswers[i];
             const isCorrect = studentAnswer === correctAnswer;
@@ -186,7 +208,7 @@ export default function TakeQuiz() {
             return (
               <div
                 key={i}
-                className={`bg-white rounded-2xl border p-5 shadow-xl shadow-slate-200/40
+                className={`bg-white rounded-2xl border p-5 shadow-lg shadow-slate-200/50
                   ${isFlagged
                     ? "border-red-200"
                     : isCorrect
@@ -238,19 +260,20 @@ export default function TakeQuiz() {
                 </div>
               </div>
             );
-          })}
+            })}
+          </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button
               onClick={() => navigate(-1)}
-              className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition font-medium text-sm"
+              className="flex-1 rounded-xl border border-slate-300 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               Back to Module
             </button>
             <button
               onClick={() => navigate("/student/results")}
-              className="flex-1 py-3 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition font-medium text-sm shadow-lg shadow-[#207D86]/20"
+              className="flex-1 rounded-xl bg-[#207D86] py-3 text-sm font-semibold text-white shadow-lg shadow-[#207D86]/25 transition hover:bg-[#18646b]"
             >
               View All My Results
             </button>
@@ -267,43 +290,53 @@ export default function TakeQuiz() {
     <div className="min-h-screen bg-slate-50">
 
       {/* ── Sticky Header with Timer ─────────────────────────────── */}
-      <div className="bg-white border-b border-slate-100 px-6 py-3 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-sm font-bold text-slate-800">{quiz.title}</h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {answeredCount}/{quiz.questions.length} answered
-              {flagged.length > 0 && (
-                <span className="ml-2 text-red-600">· {flagged.length} flagged</span>
-              )}
-            </p>
+      <div className="sticky top-0 z-10 px-4 pt-4 sm:px-6">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white/85 backdrop-blur-xl shadow-xl shadow-slate-300/25">
+          <div className="border-b border-slate-200/80 bg-linear-to-r from-[#207D86]/10 via-sky-100/60 to-teal-100/60 px-6 py-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#207D86]">Live Quiz Session</p>
+                <h1 className="mt-1 text-xl font-extrabold leading-tight text-[#0E2A47] md:text-2xl">{quiz.title}</h1>
+                <p className="mt-2 text-sm text-slate-600">
+                  {answeredCount}/{quiz.questions.length} answered
+                  {flagged.length > 0 && (
+                    <span className="ml-2 text-red-600">· {flagged.length} flagged</span>
+                  )}
+                </p>
+              </div>
+
+              <div className={`inline-flex items-center gap-3 rounded-xl border px-4 py-2.5 font-mono text-base font-bold shadow-sm
+                ${timeLeft < 60
+                  ? "bg-red-50 text-red-700 border-red-200 animate-pulse"
+                  : timeLeft < 300
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-white text-[#207D86] border-[#207D86]/30"
+                }`}
+              >
+                <span className="text-xs uppercase tracking-wider">Time Left</span>
+                <span className="text-lg leading-none">{formatTime(timeLeft)}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Timer */}
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono font-bold text-base
-            ${timeLeft < 60
-              ? "bg-red-50 text-red-700 border border-red-200 animate-pulse"
-              : timeLeft < 300
-                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                : "bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20"
-            }`}
-          >
-            ⏱ {formatTime(timeLeft)}
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="max-w-3xl mx-auto mt-2">
-          <div className="w-full h-1 bg-slate-200 rounded-full">
-            <div
-              className="h-1 bg-[#207D86] rounded-full transition-all"
-              style={{ width: `${(answeredCount / quiz.questions.length) * 100}%` }}
-            />
+          {/* Progress Bar */}
+          <div className="px-6 py-4">
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Completion</p>
+              <p className="text-xs font-bold text-slate-700">{Math.round((answeredCount / quiz.questions.length) * 100)}%</p>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/80">
+              <div
+                className="h-2 rounded-full bg-linear-to-r from-[#207D86] via-[#2c919a] to-[#18646b] transition-all duration-300"
+                style={{ width: `${(answeredCount / quiz.questions.length) * 100}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto p-6 space-y-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-4 py-6 lg:grid-cols-[1fr_260px] lg:px-6">
+        <div className="space-y-4">
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
@@ -313,7 +346,7 @@ export default function TakeQuiz() {
         )}
 
         {/* ── Question Navigation Pills ──────────────────────────── */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           {quiz.questions.map((_, i) => (
             <button
               key={i}
@@ -338,23 +371,23 @@ export default function TakeQuiz() {
           const isFlagged = flagged.includes(currentQ);
 
           return (
-            <div className={`bg-white rounded-2xl border p-6 shadow-xl shadow-slate-200/40 transition
+            <div className={`rounded-3xl border bg-white p-6 shadow-xl shadow-slate-200/45 transition md:p-7
               ${isFlagged ? "border-red-200" : "border-slate-100"}`}
             >
               {/* Question Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="mb-5 flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <span className="text-xs font-bold text-[#207D86] uppercase tracking-widest">
+                  <span className="inline-flex rounded-full bg-[#207D86]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#207D86]">
                     Question {currentQ + 1} of {quiz.questions.length}
                   </span>
-                  <p className="text-sm font-semibold text-slate-800 mt-1">{q.questionText}</p>
+                  <p className="mt-3 text-base font-semibold leading-relaxed text-slate-800">{q.questionText}</p>
                 </div>
 
                 {/* Flag Button */}
                 <button
                   onClick={() => toggleFlag(currentQ)}
                   title={isFlagged ? "Remove flag" : "Flag for review"}
-                  className={`ml-4 shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition
+                  className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-semibold transition
                     ${isFlagged
                       ? "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
                       : "bg-white border-slate-200 text-slate-500 hover:border-red-200 hover:text-red-600"
@@ -365,15 +398,15 @@ export default function TakeQuiz() {
               </div>
 
               {/* Options */}
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {q.options.map((opt, oIndex) => (
                   <button
                     key={oIndex}
                     onClick={() => selectAnswer(currentQ, oIndex)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition
+                    className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all duration-200
                       ${answers[currentQ] === oIndex
-                        ? "border-[#207D86]/40 bg-[#207D86]/10 text-slate-800"
-                        : "border-slate-200 bg-slate-50 hover:border-[#207D86]/40 hover:bg-[#207D86]/5 text-slate-700"
+                        ? "border-[#207D86]/45 bg-[#207D86]/10 text-slate-800 shadow-sm"
+                        : "border-slate-200 bg-slate-50 text-slate-700 hover:border-[#207D86]/35 hover:bg-white"
                       }`}
                   >
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0
@@ -384,7 +417,7 @@ export default function TakeQuiz() {
                     >
                       {String.fromCharCode(65 + oIndex)}
                     </span>
-                    <span className="text-sm font-medium">{opt}</span>
+                    <span className="text-sm font-semibold">{opt}</span>
                   </button>
                 ))}
               </div>
@@ -399,11 +432,11 @@ export default function TakeQuiz() {
         })()}
 
         {/* ── Navigation Buttons ────────────────────────────────── */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           <button
             onClick={() => setCurrentQ((q) => Math.max(q - 1, 0))}
             disabled={currentQ === 0}
-            className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition text-sm font-medium disabled:opacity-30"
+            className="px-4 py-2.5 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-slate-900 transition text-sm font-semibold disabled:opacity-30"
           >
             ← Previous
           </button>
@@ -411,7 +444,7 @@ export default function TakeQuiz() {
           {currentQ < quiz.questions.length - 1 ? (
             <button
               onClick={() => setCurrentQ((q) => q + 1)}
-              className="flex-1 py-2.5 bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20 rounded-xl hover:bg-[#207D86]/20 transition text-sm font-medium"
+              className="flex-1 py-2.5 bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20 rounded-xl hover:bg-[#207D86]/20 transition text-sm font-semibold"
             >
               Next Question →
             </button>
@@ -419,22 +452,61 @@ export default function TakeQuiz() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="flex-1 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold shadow-lg shadow-[#207D86]/20 disabled:opacity-40"
+              className="flex-1 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold shadow-lg shadow-[#207D86]/25 disabled:opacity-40"
             >
               {submitting ? "Submitting..." : `Submit Quiz (${answeredCount}/${quiz.questions.length} answered)`}
+            </button>
+          )}
+
+          {currentQ < quiz.questions.length - 1 && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="py-2.5 px-4 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-semibold shadow-lg shadow-[#207D86]/20 disabled:opacity-40"
+            >
+              {submitting ? "Submitting..." : "Submit Now"}
             </button>
           )}
         </div>
 
         {/* Flagged Warning */}
         {flagged.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <strong>{flagged.length} flagged question{flagged.length > 1 ? "s" : ""}:</strong>{" "}
             Q{flagged.map((i) => i + 1).join(", Q")} - review these before submitting.
           </div>
         )}
 
         <div className="h-6" />
+        </div>
+
+        <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-[#207D86]">Questions</p>
+          <div className="grid grid-cols-5 gap-2">
+            {quiz.questions.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentQ(i)}
+                className={`h-9 rounded-lg text-xs font-bold transition border
+                  ${currentQ === i ? "ring-2 ring-[#207D86]/50" : ""}
+                  ${flagged.includes(i)
+                    ? "bg-red-50 border-red-200 text-red-700"
+                    : answers[i] !== null
+                      ? "bg-[#207D86] border-transparent text-white"
+                      : "bg-white border-slate-200 text-slate-600 hover:border-[#207D86]/40"
+                  }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-2 text-xs text-slate-600">
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded bg-[#207D86]" /> Answered</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded bg-red-200" /> Flagged</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded border border-slate-300 bg-white" /> Unanswered</div>
+          </div>
+        </aside>
       </div>
     </div>
   );
