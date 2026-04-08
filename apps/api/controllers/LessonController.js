@@ -31,10 +31,14 @@ const canViewLesson = (user, lesson) => {
   if (canManageLesson(user, lesson)) return true;
 
   if (user.role === "student") {
+    const studentSchoolId = toNullableObjectId(user.school);
+    const lessonSchoolId = toNullableObjectId(lesson.school);
+
     return (
       Boolean(user.grade) &&
       Boolean(lesson?.module?.grade) &&
-      user.grade.toString() === lesson.module.grade.toString()
+      user.grade.toString() === lesson.module.grade.toString() &&
+      String(studentSchoolId) === String(lessonSchoolId)
     );
   }
 
@@ -191,6 +195,9 @@ export const getAllLessons = async (req, res) => {
       }
 
       const moduleQuery = { grade: req.user.grade };
+      if (req.user.stream) {
+        moduleQuery.$or = [{ subjectStream: req.user.stream }, { subjectStream: null }];
+      }
       if (requestedModuleId) {
         moduleQuery._id = requestedModuleId;
       }
@@ -203,13 +210,10 @@ export const getAllLessons = async (req, res) => {
       }
 
       // Include lessons belonging to matching modules. Also include lessons
-      // created by non-school teachers (lesson.school === null) so global
-      // lessons are visible to students.
+      // only for the student's school to avoid cross-school data exposure.
       query.module = { $in: moduleIds };
       const studentSchoolId = toNullableObjectId(req.user.school);
-      query.$or = studentSchoolId
-        ? [{ school: studentSchoolId }, { school: null }]
-        : [{ school: null }];
+      query.school = studentSchoolId;
     }
 
     if (requestedModuleId && req.user.role !== "student") {

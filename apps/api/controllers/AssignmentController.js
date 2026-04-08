@@ -48,10 +48,13 @@ const canViewAssignment = (user, assignment) => {
   if (canManageAssignment(user, assignment)) return true;
 
   if (user.role === "student") {
+    const moduleStream = assignment?.module?.subjectStream || null;
+
     return (
       Boolean(user.grade) &&
       Boolean(assignment?.module?.grade) &&
-      user.grade.toString() === assignment.module.grade.toString()
+      user.grade.toString() === assignment.module.grade.toString() &&
+      (!user.stream || !moduleStream || user.stream === moduleStream)
     );
   }
 
@@ -157,6 +160,9 @@ export const getAllAssignments = async (req, res) => {
       }
 
       const moduleQuery = { grade: req.user.grade };
+      if (req.user.stream) {
+        moduleQuery.$or = [{ subjectStream: req.user.stream }, { subjectStream: null }];
+      }
       if (requestedModuleId) {
         moduleQuery._id = requestedModuleId;
       }
@@ -182,7 +188,7 @@ export const getAllAssignments = async (req, res) => {
     const assignments = await Assignment.find(query)
       .populate({
         path: "module",
-        select: "name description thumbnailUrl grade",
+        select: "name description thumbnailUrl grade subjectStream",
         populate: { path: "grade", select: "name" },
       })
       .populate("createdBy", "firstName lastName role")
@@ -251,7 +257,7 @@ export const getAssignmentById = async (req, res) => {
     const assignment = await Assignment.findById(req.params.id)
       .populate({
         path: "module",
-        select: "name description thumbnailUrl grade",
+        select: "name description thumbnailUrl grade subjectStream",
         populate: { path: "grade", select: "name" },
       })
       .populate("createdBy", "firstName lastName role");
@@ -280,7 +286,10 @@ export const getAssignmentById = async (req, res) => {
 
 export const getAssignmentMaterialDownloadUrl = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    const assignment = await Assignment.findById(req.params.id).populate(
+      "module",
+      "grade subjectStream",
+    );
 
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
@@ -310,7 +319,10 @@ export const getAssignmentMaterialDownloadUrl = async (req, res) => {
 
 export const submitAssignment = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    const assignment = await Assignment.findById(req.params.id).populate(
+      "module",
+      "grade subjectStream",
+    );
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
@@ -495,7 +507,10 @@ export const deleteAssignment = async (req, res) => {
 
 export const getMyAssignmentSubmission = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id).populate("module", "grade");
+    const assignment = await Assignment.findById(req.params.id).populate(
+      "module",
+      "grade subjectStream",
+    );
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
