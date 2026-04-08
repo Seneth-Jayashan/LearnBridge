@@ -1,5 +1,6 @@
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import SchoolSidebar from "../components/sidebar/SchoolSidebar";
+import SchoolDashboard from "../pages/SchoolAdmin/Dashboard";
 import NeedsRegistry from "../pages/SchoolAdmin/NeedsRegistry";
 import Students from "../pages/school/students/Students";
 import CreateStudent from "../pages/school/students/Create";
@@ -30,7 +31,7 @@ const SchoolAdminRoutes = () => {
       <div className="w-full transition-all duration-300">
         <div className={`transition-all duration-300 `}>
           <Routes>
-            <Route path="dashboard" element={<div>School Dashboard Content</div>} />
+            <Route path="dashboard" element={<SchoolDashboard />} />
             <Route path="needsRegistry" element={<NeedsRegistry />} />
 
             {/* Student Routes */}
