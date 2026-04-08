@@ -6,15 +6,13 @@ import quizService from "../../../services/QuizService.jsx";
 const Toast = ({ message, type }) => {
   if (!message) return null;
   return (
-    <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium animate-in fade-in slide-in-from-top-3 duration-300
+    <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-3 duration-300
       ${type === "success"
-        ? "bg-white border border-emerald-200 text-emerald-700"
-        : "bg-white border border-red-200 text-red-700"
+        ? "bg-white border border-emerald-100 text-emerald-700"
+        : "bg-white border border-red-100 text-red-700"
       }`}
     >
-      <span className={`w-2 h-2 rounded-full shrink-0
-        ${type === "success" ? "bg-emerald-500" : "bg-red-500"}`}
-      />
+      <div className={`w-2 h-2 rounded-full ${type === "success" ? "bg-emerald-500" : "bg-red-500"}`} />
       {message}
     </div>
   );
@@ -53,7 +51,11 @@ export default function MyQuizzes() {
     fetchQuizzes();
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, isPublished = false) => {
+    if (isPublished) {
+      showToast("Published quizzes cannot be deleted.", "error");
+      return;
+    }
     if (!window.confirm("Delete this quiz? This cannot be undone.")) return;
     try {
       await quizService.deleteQuiz(id);
@@ -76,25 +78,22 @@ export default function MyQuizzes() {
     }
   };
 
-  // ── Loading ───────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="flex items-center gap-3 text-[#207D86] font-medium animate-pulse">
-        <div className="w-2 h-2 bg-[#207D86] rounded-full animate-bounce" />
+      <div className="flex flex-col items-center gap-4 text-[#207D86] font-medium">
+        <div className="w-8 h-8 border-4 border-t-[#207D86] border-slate-200 rounded-full animate-spin" />
         Loading your quizzes...
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-
-      {/* Toast */}
+    <div className="min-h-screen bg-[#F8FAFC]">
       <Toast message={toast.message} type={toast.type} />
 
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        {/* Header Section */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="max-w-5xl mx-auto py-12 px-6">
+        {/* --- HERO SECTION (UNCHANGED) --- */}
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-3xl font-extrabold text-[#0E2A47] tracking-tight">
               My Quizzes
@@ -111,84 +110,104 @@ export default function MyQuizzes() {
           </button>
         </div>
 
-        {/* Error Banner */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm mb-6 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
             {error}
           </div>
         )}
 
-        {/* ── Empty State ───────────────────────────────────────── */}
+        {/* --- UPDATED LIST STYLE --- */}
         {quizzes.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40">
-            <div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-              📚
+          <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
+              📂
             </div>
-            <p className="text-slate-800 font-semibold text-lg mb-1">No quizzes yet</p>
-            <p className="text-slate-500 text-sm mb-6">Create your first quiz to get started</p>
+            <h3 className="text-[#0E2A47] font-bold text-xl mb-2">No quizzes found</h3>
+            <p className="text-slate-500 mb-8 max-w-xs mx-auto">Get started by creating your first interactive quiz for your students.</p>
             <button
               onClick={() => navigate("/teacher/quiz/create")}
-              className="px-5 py-2.5 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition text-sm font-medium shadow-lg shadow-[#207D86]/20"
+              className="px-8 py-3 bg-[#207D86] text-white rounded-xl hover:bg-[#18646b] transition font-bold shadow-md"
             >
-              Create a Quiz
+              Start Creating
             </button>
           </div>
         ) : (
-          // ── Quiz List ───────────────────────────────────────────
-          <div className="space-y-3">
+          <div className="grid gap-4">
             {quizzes.map((quiz) => (
               <div
                 key={quiz._id}
-                className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center justify-between gap-4 shadow-xl shadow-slate-200/40 hover:border-[#207D86]/30 transition"
+                className="group bg-white rounded-2xl border border-slate-200 p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/50 hover:border-[#207D86]/20"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <h2 className="text-sm font-semibold text-slate-800 truncate">{quiz.title}</h2>
-                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium shrink-0
-                      ${quiz.isPublished
-                        ? "bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20"
-                        : "bg-amber-50 text-amber-700 border border-amber-200"
-                      }`}
-                    >
-                      {quiz.isPublished ? "Published" : "Draft"}
-                    </span>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-bold text-[#0E2A47] group-hover:text-[#207D86] transition-colors leading-tight">
+                        {quiz.title}
+                      </h3>
+                      <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-md font-bold
+                        ${quiz.isPublished
+                          ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                          : "bg-amber-50 text-amber-600 border border-amber-100"
+                        }`}
+                      >
+                        {quiz.isPublished ? "Live" : "Draft"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-slate-500 text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <span className="opacity-60 text-base">📝</span>
+                        {quiz.questions?.length || 0} Questions
+                      </span>
+                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <span className="flex items-center gap-1.5">
+                        <span className="opacity-60 text-base">⏱️</span>
+                        {quiz.timeLimit} mins
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    ❓ {quiz.questions?.length || 0} questions
-                    &nbsp;·&nbsp;
-                    ⏱ {quiz.timeLimit} min
-                  </p>
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => navigate(`/teacher/quiz/${quiz._id}/results`)}
-                    className="text-xs px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition font-medium"
-                  >
-                    Results
-                  </button>
-                  {!quiz.isPublished && (
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
-                      onClick={() => handlePublish(quiz._id)}
-                      className="text-xs px-3 py-1.5 bg-[#207D86]/10 text-[#207D86] border border-[#207D86]/20 rounded-lg hover:bg-[#207D86]/20 transition font-medium"
+                      onClick={() => navigate(`/teacher/quiz/${quiz._id}/results`)}
+                      className="flex-1 md:flex-none px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-lg transition"
                     >
-                      Publish
+                      Analytics
                     </button>
-                  )}
-                  <button
-                    onClick={() => navigate(`/teacher/quiz/edit/${quiz._id}`)}
-                    className="text-xs px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition font-medium"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(quiz._id)}
-                    className="text-xs px-3 py-1.5 border border-red-200 text-red-600/80 rounded-lg hover:bg-red-50 hover:text-red-700 transition font-medium"
-                  >
-                    Delete
-                  </button>
+                    
+                    {!quiz.isPublished && (
+                      <button
+                        onClick={() => handlePublish(quiz._id)}
+                        className="flex-1 md:flex-none px-4 py-2 text-sm font-bold bg-[#207D86] text-white rounded-lg hover:bg-[#18646b] shadow-sm transition"
+                      >
+                        Publish Now
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => navigate(`/teacher/quiz/edit/${quiz._id}`)}
+                      className="p-2 text-slate-400 hover:text-[#207D86] hover:bg-[#207D86]/5 rounded-lg transition"
+                      title="Edit Quiz"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(quiz._id, quiz.isPublished)}
+                      disabled={quiz.isPublished}
+                      className={`p-2 rounded-lg transition ${quiz.isPublished
+                        ? "text-slate-300 cursor-not-allowed"
+                        : "text-slate-400 hover:text-red-500 hover:bg-red-50"}`}
+                      title={quiz.isPublished ? "Published quizzes cannot be deleted" : "Delete Quiz"}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
