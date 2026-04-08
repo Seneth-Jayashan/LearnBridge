@@ -19,6 +19,8 @@ import {
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
+import { uploadSchoolLogo } from "../middlewares/UploadMiddleware.js";
+
 import { 
     createUserSchema, 
     updateUserSchema, 
@@ -57,6 +59,7 @@ router.put(
     "/schools/:id", 
     protect, 
     restrictTo("super_admin"), 
+    uploadSchoolLogo,
     updateSchool
 );
 

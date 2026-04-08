@@ -149,7 +149,7 @@ const StudentModules = () => {
         // First filter by stream if student has a stream
         let streamFiltered = modules;
         if (user?.stream) {
-            streamFiltered = modules.filter((m) => m.subjectStream === null || m.subjectStream === user.stream);
+            streamFiltered = modules.filter((m) => !m?.subjectStream || m.subjectStream === user.stream);
         }
 
         if (!searchQuery || String(searchQuery).trim() === "") return streamFiltered;
