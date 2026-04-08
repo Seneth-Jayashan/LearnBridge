@@ -38,7 +38,7 @@ export const updateNeed = (id, data) =>
 export const deleteNeed = (id) =>
   api.delete(`/school-admin/school/${id}`);
 
-export const initiatePayment = (needId) =>
+export const initiatePayment = (needId) =>  
   api.post(`/payments/initiate/${needId}`);
 
 export const confirmPayment = (data) =>

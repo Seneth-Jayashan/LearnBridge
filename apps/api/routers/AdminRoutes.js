@@ -19,7 +19,6 @@ import {
 
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
-import { uploadSchoolLogo } from "../middlewares/UploadMiddleware.js";
 
 import { 
     createUserSchema, 
@@ -27,7 +26,7 @@ import {
     checkPhoneSchema, 
     checkEmailSchema 
 } from "../validators/AdminValidator.js";
-
+import { uploadLogo } from "../middlewares/UploadMiddleware.js";
 const router = express.Router();
 
 // ==========================================
@@ -59,7 +58,7 @@ router.put(
     "/schools/:id", 
     protect, 
     restrictTo("super_admin"), 
-    uploadSchoolLogo,
+    uploadLogo,
     updateSchool
 );
 
