@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, ChevronLeft, Loader2, Users } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronLeft, ChevronUp, Loader2, Users } from "lucide-react";
 import quizService from "../../../services/QuizService.jsx";
 
 const formatDate = (dateValue) => {
@@ -28,20 +28,42 @@ export default function QuizResults() {
 	const isAllMode = !id;
 
 	const [quiz, setQuiz] = useState(null);
+	const [teacherQuizzes, setTeacherQuizzes] = useState([]);
 	const [results, setResults] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
+	const [openQuizId, setOpenQuizId] = useState(null);
 
 	useEffect(() => {
 		const loadQuizResults = async () => {
 			try {
 				setError("");
 				setLoading(true);
-				const data = isAllMode
-					? await quizService.getAllQuizResultsForTeacher()
-					: await quizService.getQuizResultsForTeacher(id);
-				setQuiz(data?.quiz || null);
-				setResults(Array.isArray(data?.results) ? data.results : []);
+
+				if (isAllMode) {
+					const [quizData, resultData] = await Promise.all([
+						quizService.getTeacherQuizzes(),
+						quizService.getAllQuizResultsForTeacher(),
+					]);
+
+					const quizList = Array.isArray(quizData) ? quizData : quizData?.quizzes || [];
+					const sortedQuizList = [...quizList].sort((a, b) => {
+						const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+						const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+						return bTime - aTime;
+					});
+
+					setTeacherQuizzes(sortedQuizList);
+					setResults(Array.isArray(resultData?.results) ? resultData.results : []);
+					setQuiz(null);
+					setOpenQuizId((prev) => prev || sortedQuizList?.[0]?._id || null);
+				} else {
+					const data = await quizService.getQuizResultsForTeacher(id);
+					setQuiz(data?.quiz || null);
+					setResults(Array.isArray(data?.results) ? data.results : []);
+					setTeacherQuizzes([]);
+					setOpenQuizId(null);
+				}
 			} catch (err) {
 				setError(err?.response?.data?.message || "Failed to load quiz results.");
 			} finally {
@@ -51,6 +73,19 @@ export default function QuizResults() {
 
 		loadQuizResults();
 	}, [id, isAllMode]);
+
+	const groupedResults = useMemo(() => {
+		if (!isAllMode) return [];
+
+		return teacherQuizzes.map((quizItem) => {
+			const quizId = String(quizItem?._id || "");
+			const participants = results.filter((item) => String(item?.quizId?._id || item?.quizId || "") === quizId);
+			return {
+				quiz: quizItem,
+				participants,
+			};
+		});
+	}, [isAllMode, teacherQuizzes, results]);
 
 	const summary = useMemo(() => {
 		if (!results.length) {
@@ -131,13 +166,101 @@ export default function QuizResults() {
 					</div>
 				)}
 
-				{!error && results.length === 0 ? (
+				{!error && isAllMode && groupedResults.length === 0 ? (
 					<div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40">
 						<div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
 							<Users className="w-8 h-8 text-[#207D86]" />
 						</div>
-						<p className="text-slate-800 font-semibold text-lg mb-1">No attempts yet</p>
-						<p className="text-slate-500 text-sm">No student has submitted this quiz yet.</p>
+						<p className="text-slate-800 font-semibold text-lg mb-1">No quizzes yet</p>
+						<p className="text-slate-500 text-sm">Create a quiz to start tracking student results.</p>
+					</div>
+				) : !error && isAllMode ? (
+					<div className="space-y-3">
+						{groupedResults.map(({ quiz: quizItem, participants }) => {
+							const quizId = quizItem?._id;
+							const isOpen = String(openQuizId) === String(quizId);
+							const attempts = participants.length;
+							const avgPercent = attempts
+								? Math.round(participants.reduce((sum, row) => {
+									const total = Number(row?.totalQuestions) || 0;
+									const score = Number(row?.score) || 0;
+									return sum + (total > 0 ? (score / total) * 100 : 0);
+								}, 0) / attempts)
+								: 0;
+
+							return (
+								<div key={quizId} className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+									<button
+										onClick={() => setOpenQuizId((prev) => (String(prev) === String(quizId) ? null : quizId))}
+										className="w-full px-5 py-4 flex items-center justify-between gap-4 hover:bg-slate-50 transition"
+									>
+										<div className="text-left min-w-0">
+											<p className="text-sm font-semibold text-slate-800 truncate">{quizItem?.title || "Untitled Quiz"}</p>
+											<p className="text-xs text-slate-500 mt-1">
+												❓ {quizItem?.questions?.length || 0} questions
+												<span className="mx-2">·</span>
+												⏱ {quizItem?.timeLimit || 0} min
+												<span className="mx-2">·</span>
+												Attempts: {attempts}
+												{attempts > 0 && (
+													<>
+														<span className="mx-2">·</span>
+														Avg: {avgPercent}%
+													</>
+												)}
+											</p>
+										</div>
+										<div className="shrink-0 text-slate-500">
+											{isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+										</div>
+									</button>
+
+									{isOpen && (
+										<div className="border-t border-slate-100 p-5 space-y-3">
+											{participants.length === 0 ? (
+												<div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+													No students have attempted this quiz yet.
+												</div>
+											) : (
+												participants.map((item) => {
+													const score = Number(item?.score) || 0;
+													const total = Number(item?.totalQuestions) || 0;
+													const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+													const studentName = `${item?.studentId?.firstName || ""} ${item?.studentId?.lastName || ""}`.trim() || "Unknown Student";
+
+													return (
+														<div key={item._id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+															<div className="min-w-0">
+																<p className="text-sm font-semibold text-slate-800 truncate">{studentName}</p>
+																<p className="text-xs text-slate-500 mt-1">
+																	{item?.studentId?.regNumber || item?.studentId?.email || "Student"}
+																	<span className="mx-2">·</span>
+																	Submitted: {formatDate(item?.completedAt || item?.createdAt)}
+																</p>
+																{Array.isArray(item?.flaggedQuestions) && item.flaggedQuestions.length > 0 && (
+																	<p className="text-xs text-red-600 mt-1">
+																		Flagged: {item.flaggedQuestions.length} question{item.flaggedQuestions.length > 1 ? "s" : ""}
+																	</p>
+																)}
+															</div>
+															<div className="flex items-center gap-3 shrink-0">
+																<span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getBadgeClassByPercent(pct)}`}>
+																	{pct}%
+																</span>
+																<div className="text-right">
+																	<p className="text-base font-black text-slate-800">{score}/{total}</p>
+																	<p className="text-xs text-slate-500">Score</p>
+																</div>
+															</div>
+														</div>
+													);
+												})
+											)}
+										</div>
+									)}
+								</div>
+							);
+						})}
 					</div>
 				) : !error ? (
 					<div className="space-y-3">
