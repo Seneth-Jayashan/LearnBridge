@@ -86,7 +86,7 @@ export const updateUser = async (req, res) => {
         const { firstName, lastName, email, phoneNumber, role, grade, level, address } = req.body;
         const user = await User.findById(req.params.id);
 
-        if (user._id == req.user.id && user.role === 'super_admin') {
+        if (user._id == req.user.id && user.role === 'super_admin' && role  !== user.role) {
             return res.status(400).json({ message: "You cannot change your own role." });
         }
 
