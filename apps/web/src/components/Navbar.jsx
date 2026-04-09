@@ -70,13 +70,7 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <NavLink to="/dashboard" icon={FiGrid}>Dashboard</NavLink>
-                
-                {/* Conditional Admin Links */}
-                {isSuperAdmin && <NavLink to="/admin" icon={FiSettings}>Super Admin</NavLink>}
-                {isSchoolAdmin && <NavLink to="/school" icon={FiSettings}>School</NavLink>}
-                
-                <div className="h-8 w-px bg-slate-200 mx-2"></div>
-                
+                    
                 <div className="flex items-center gap-4">
                   {/* Teacher Verification Badge */}
                   {isTeacher && !user?.isSchoolVerified && (
@@ -84,7 +78,7 @@ const Navbar = () => {
                       <FiAlertCircle /> Pending
                     </div>
                   )}
-
+                  {}
                   <Link to="/profile" className="flex items-center gap-2 group">
                     <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white text-sm font-bold border-2 border-white shadow-md group-hover:scale-105 transition-transform uppercase">
                       {user?.firstName?.[0] || "U"}{user?.lastName?.[0] || ""}

@@ -14,6 +14,8 @@ const STREAMS = [
   "Technology Stream",
 ];
 
+const ADVANCED_LEVEL_KEYWORDS = ["advanced level", "g.c.e. a/l", "a/l"];
+
 const parseGradeNumber = (gradeName) => {
   const parsed = Number.parseInt(String(gradeName || "").trim(), 10);
   return Number.isNaN(parsed) ? null : parsed;
@@ -91,11 +93,22 @@ const ensureLevelAndGradeExist = async ({ levelId, gradeId }) => {
     throw new ModuleValidationError("Selected grade is invalid.");
   }
 
-  return { gradeRecord };
+  return { levelRecord, gradeRecord };
 };
 
-const ensureStreamRules = ({ gradeName, subjectStream }) => {
+const isAdvancedLevel = (levelName) => {
+  const normalized = String(levelName || "").trim().toLowerCase();
+  if (!normalized) return false;
+  return ADVANCED_LEVEL_KEYWORDS.some((keyword) => normalized.includes(keyword));
+};
+
+const ensureStreamRules = ({ levelName, gradeName, subjectStream }) => {
   const gradeNumber = parseGradeNumber(gradeName);
+  const advancedLevel = isAdvancedLevel(levelName);
+
+  if (!advancedLevel) {
+    return;
+  }
 
   if (gradeNumber !== null && gradeNumber >= 12) {
     if (!subjectStream || !STREAMS.includes(subjectStream)) {
@@ -145,15 +158,20 @@ export const validateCreateModuleBusinessRules = async ({
   subjectStream,
 }) => {
   const normalizedName = name.trim();
-  const normalizedSubjectStream =
-    subjectStream === undefined ? null : subjectStream;
 
-  const { gradeRecord } = await ensureLevelAndGradeExist({
+  const { levelRecord, gradeRecord } = await ensureLevelAndGradeExist({
     levelId: level,
     gradeId: grade,
   });
 
+  const normalizedSubjectStream = isAdvancedLevel(levelRecord.name)
+    ? subjectStream === undefined
+      ? null
+      : subjectStream
+    : null;
+
   ensureStreamRules({
+    levelName: levelRecord.name,
     gradeName: gradeRecord.name,
     subjectStream: normalizedSubjectStream,
   });
@@ -187,8 +205,6 @@ export const validateUpdateModuleBusinessRules = async ({
   const nextLevel = level || currentLevel;
   const nextGrade = grade || currentGrade;
   const normalizedName = name?.trim() || currentName;
-  const normalizedSubjectStream =
-    subjectStream !== undefined ? subjectStream : currentSubjectStream;
 
   if (!nextLevel) {
     throw new ModuleValidationError("Level is required.");
@@ -198,12 +214,19 @@ export const validateUpdateModuleBusinessRules = async ({
     throw new ModuleValidationError("Grade is required.");
   }
 
-  const { gradeRecord } = await ensureLevelAndGradeExist({
+  const { levelRecord, gradeRecord } = await ensureLevelAndGradeExist({
     levelId: nextLevel,
     gradeId: nextGrade,
   });
 
+  const normalizedSubjectStream = isAdvancedLevel(levelRecord.name)
+    ? subjectStream !== undefined
+      ? subjectStream
+      : currentSubjectStream
+    : null;
+
   ensureStreamRules({
+    levelName: levelRecord.name,
     gradeName: gradeRecord.name,
     subjectStream: normalizedSubjectStream,
   });

@@ -3,6 +3,7 @@ import School from "../models/School.js";
 import ResourceRequest from "../models/ResourceRequest.js";
 import { sendAccountCreationSms } from "../utils/templates/SMS.js";
 import { accountCreationEmail } from "../utils/templates/Email.js";
+import { uploadFileToCloudinary, deleteCloudinaryAssetFromUrl } from "../services/CloudinaryService.js";
 
 // ==========================================
 // --- DASHBOARD & PROFILE ---
@@ -38,7 +39,6 @@ export const updateSchoolProfile = async (req, res) => {
         if (contactPhone) school.contactPhone = contactPhone;
 
         // 2. Extract nested address fields from FormData
-        // FormData sends nested objects as flattened strings: "address[street]"
         const hasFormDataAddress = req.body["address[street]"] !== undefined;
         
         if (hasFormDataAddress) {
@@ -53,21 +53,23 @@ export const updateSchoolProfile = async (req, res) => {
             school.address = { ...school.address, ...req.body.address };
         }
 
-        // 3. Handle Logo Image Upload
+        // 3. Handle Logo Image Upload to Cloudinary
         if (req.file) {
-            /* Because you are using multer.memoryStorage(), the file is in req.file.buffer.
-              Ideally, you upload this buffer to AWS S3, Cloudinary, or Firebase here.
-              
-              Example (Cloudinary):
-              const result = await uploadBufferToCloudinary(req.file.buffer);
-              school.logoUrl = result.secureUrl;
-            */
+            // Optional but recommended: Delete the old logo from Cloudinary to save space
+            if (school.logoUrl && school.logoUrl.includes('res.cloudinary.com')) {
+                await deleteCloudinaryAssetFromUrl(school.logoUrl).catch(err => 
+                    console.error("Failed to delete old logo from Cloudinary:", err)
+                );
+            }
 
-            // Temporary Fallback: Convert buffer to Base64 data URL directly 
-            // (Use this if you don't have a cloud storage provider set up yet)
-            const b64 = Buffer.from(req.file.buffer).toString('base64');
-            const mimeType = req.file.mimetype;
-            school.logoUrl = `data:${mimeType};base64,${b64}`;
+            // Upload the new file buffer
+            const uploadResult = await uploadFileToCloudinary(req.file, {
+                folder: "learnbridge/school_logos", // Change folder name as needed
+                resourceType: "image"
+            });
+
+            // Cloudinary returns the HTTPS URL in secure_url
+            school.logoUrl = uploadResult.secure_url;
             
         } else if (logoUrl) {
             // Allow manual text URL override if sent
@@ -226,7 +228,7 @@ export const createTeacherForSchool = async (req, res) => {
 
         await newTeacher.save();
         await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
-        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
+        await accountCreationEmail(`${firstName} ${lastName}`,email, password , email);
 
         if (targetSchoolId) {
             await School.findByIdAndUpdate(targetSchoolId, { $push: { teachers: newTeacher._id } });

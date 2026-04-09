@@ -201,28 +201,37 @@ export const uploadAssignmentFiles = (req, res, next) => {
 	});
 };
 
-// --- Add this to your multer middleware file ---
-
+// --- Logo Uploader ---
 const logoFileFilter = (_req, file, cb) => {
+    // Only allow image files for the logo
     if (file.mimetype.startsWith("image/")) {
         return cb(null, true);
     }
-    cb(new Error("Invalid file type. Only images are allowed for logos."));
+
+    cb(new Error("Invalid logo file type. Only images are allowed"));
 };
 
 const logoUploader = multer({
-    storage, // Uses your existing memoryStorage
+    storage, // still using memoryStorage
     fileFilter: logoFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit for logos
+    },
 });
 
-// Export a middleware that expects a single file in the "logo" field
-export const uploadSchoolLogo = (req, res, next) => {
-    logoUploader.single("logo")(req, res, (err) => {
-        if (!err) return next();
+// Assuming the frontend sends the file in a field named "logo"
+const uploadLogoField = logoUploader.single("logo");
+
+export const uploadLogo = (req, res, next) => {
+    uploadLogoField(req, res, (err) => {
+        if (!err) {
+            return next();
+        }
+
         if (err instanceof multer.MulterError) {
             return res.status(400).json({ message: err.message });
         }
+
         return res.status(400).json({ message: err.message || "Logo upload failed" });
     });
 };
