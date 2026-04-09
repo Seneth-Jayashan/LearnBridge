@@ -1,5 +1,8 @@
 import ResourceRequest from "../models/ResourceRequest.js";
 import User from "../models/User.js";
+import mongoose from "mongoose";
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // ─── GET ALL NEEDS — Browse Needs Tab ────────────────────────────────────────
 // GET /api/donations
@@ -31,6 +34,10 @@ export const getAllNeeds = async (req, res) => {
 // PUT /api/donations/:id/pledge
 export const pledgeDonation = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid need id" });
+    }
+
     const need = await ResourceRequest.findById(req.params.id);
 
     if (!need) {
@@ -81,13 +88,17 @@ export const getMyDonations = async (req, res) => {
 // PUT /api/donations/:id/complete
 export const markFulfilled = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid need id" });
+    }
+
     const need = await ResourceRequest.findById(req.params.id);
 
     if (!need) {
       return res.status(404).json({ message: "Need not found" });
     }
 
-    if (need.donorId.toString() !== req.user._id.toString()) {
+    if (!need.donorId || need.donorId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not your donation" });
     }
 

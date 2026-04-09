@@ -1,7 +1,10 @@
 // backend/controllers/paymentController.js
 import crypto from "crypto";
+import mongoose from "mongoose";
 import ResourceRequest from "../models/ResourceRequest.js";
 import Payment from "../models/Payment.js";
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const generateHash = (merchantId, orderId, amount, currency, secret) => {
   const hashedSecret = crypto
@@ -29,6 +32,10 @@ export const initiatePayment = async (req, res) => {
 
     if (!MERCHANT_ID || !MERCHANT_SECRET) {
       return res.status(500).json({ message: "Payment configuration missing." });
+    }
+
+    if (!isValidObjectId(req.params.needId)) {
+      return res.status(400).json({ message: "Invalid need id" });
     }
 
     const need = await ResourceRequest.findById(req.params.needId)
@@ -119,6 +126,14 @@ export const initiatePayment = async (req, res) => {
       try {
         const { orderId, needId } = req.body;
 
+        if (!orderId || !needId) {
+          return res.status(400).json({ message: "orderId and needId are required" });
+        }
+
+        if (!isValidObjectId(needId)) {
+          return res.status(400).json({ message: "Invalid need id" });
+        }
+
         const need = await ResourceRequest.findById(needId);
         if (!need) {
           return res.status(404).json({ message: "Need not found" });
@@ -146,7 +161,9 @@ export const initiatePayment = async (req, res) => {
         }
 
         // ── Webhook not yet fired → handle as backup ───────────
-        console.log("Webhook not received yet — using frontend as backup");
+        if (process.env.NODE_ENV !== "test") {
+          console.log("Webhook not received yet - using frontend as backup");
+        }
 
         need.status = "Fulfilled";
         need.donorId = req.user._id;
@@ -204,8 +221,11 @@ export const paymentNotify = async (req, res) => {
       .toUpperCase();
 
     if (localSig !== md5sig) {
-      console.error("PayHere hash mismatch");
       return res.status(400).send("Hash mismatch");
+    }
+
+    if (!isValidObjectId(needId) || !isValidObjectId(donorId)) {
+      return res.status(400).send("Invalid identifiers");
     }
 
     const need = await ResourceRequest.findById(needId);
@@ -270,6 +290,10 @@ export const getMyPaymentHistory = async (req, res) => {
 // ─── RESET PAYMENT STATUS (testing) ──────────────────────────
 export const resetPaymentStatus = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.needId)) {
+      return res.status(400).json({ message: "Invalid need id" });
+    }
+
     const need = await ResourceRequest.findById(req.params.needId);
     if (!need) return res.status(404).json({ message: "Need not found" });
 
