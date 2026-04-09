@@ -214,6 +214,10 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
     throw new Error("No file received for Cloudinary upload");
   }
 
+  if (process.env.NODE_ENV === 'test') {
+    return { secure_url: "https://mock-cloudinary.com/logo.png" };
+  }
+
   ensureCloudinaryConfigured();
 
   // Auto-detect common document mimetypes and force raw upload so Cloudinary

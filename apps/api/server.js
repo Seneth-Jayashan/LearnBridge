@@ -18,8 +18,6 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-connectDB();
-
 // ==============================================================
 // 1. GLOBAL MIDDLEWARE (Order is Crucial)
 // ==============================================================
@@ -114,8 +112,12 @@ app.use((req, res) => {
 // 3. SERVER START
 // ==============================================================
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+// ONLY connect to the real DB and start the server if we are NOT running tests
+if (process.env.NODE_ENV !== 'test') {
+    connectDB();
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+}
 
 export default app;

@@ -1,5 +1,4 @@
 import SmsSender from "../../services/SMS.js";
-
 // --- Configuration ---
 const BRAND_NAME = "Learn Bridge";
 
@@ -24,12 +23,16 @@ const sanitizePhone = (phone) => {
 
 
 export const sendAccountCreationSms = async (phone, name, email, password) => {
+  if (process.env.NODE_ENV === 'test') return;
+
   const message = `${BRAND_NAME}: Welcome ${name}! Login: ${email} Pass: ${password}. Please change your password after your first login.`;
   
   return SmsSender.send(sanitizePhone(phone), message);
 };
 
 export const sendVerificationSms = async (phone, otp) => {
+  if (process.env.NODE_ENV === 'test') return;
+
   const message = `${BRAND_NAME}: Your verification code is ${otp}. It expires in 10 minutes.`;
   return SmsSender.send(sanitizePhone(phone), message);
 };

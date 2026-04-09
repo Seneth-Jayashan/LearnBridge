@@ -8,4 +8,10 @@ export default defineConfig({
     react(),
     tailwindcss(), // <--- Add this to the plugins array
   ],
+  test: {
+    globals: true, // This allows you to use describe, it, expect without importing them
+    environment: 'jsdom', // Simulates a browser environment for React components
+    setupFiles: './src/setupTests.js', // Points to the file you just created
+    css: true, // Optional: parses CSS if your tests rely on it
+  }
 })
