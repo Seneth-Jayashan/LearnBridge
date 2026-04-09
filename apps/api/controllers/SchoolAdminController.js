@@ -418,3 +418,41 @@ export const deleteNeed = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ─── GET DONOR DETAILS FOR A NEED ────────────────────────────
+// GET /api/v1/donations/school/donor/:needId
+export const getDonorDetails = async (req, res) => {
+  try {
+    const need = await ResourceRequest.findById(req.params.needId)
+      .populate("donorId", "firstName lastName email phoneNumber address createdAt role");
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.schoolId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (!need.donorId) {
+      return res.status(404).json({ message: "No donor found for this need" });
+    }
+
+    res.status(200).json({
+      donor: need.donorId,
+      need: {
+        itemName: need.itemName,
+        quantity: need.quantity,
+        amount: need.amount,
+        status: need.status,
+        pledgedDate: need.pledgedDate,
+        fulfilledDate: need.fulfilledDate,
+        paymentMethod: need.paymentMethod,
+        paymentStatus: need.paymentStatus,
+      },
+    });
+  } catch (err) {
+    console.error("getDonorDetails error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

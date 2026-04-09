@@ -4,13 +4,13 @@ import {
     createStudentForSchool, 
     createTeacherForSchool,
     getSchoolStudents,
-    getMySchoolDetails,
     updateSchoolStudent,
     deactivateStudent,
     getPendingTeachers,
     getMySchoolDetails,
     createNeed,
     getMyPostedNeeds,
+     getDonorDetails,   
     updateNeed,
     deleteNeed,
     getVerifiedTeachers,
@@ -64,5 +64,6 @@ router.post("/needs", protect, restrictTo("school_admin"), createNeed);
 router.get("/school/my-needs", protect, restrictTo("school_admin"), getMyPostedNeeds);
 router.put("/school/:id", protect, restrictTo("school_admin"), updateNeed);
 router.delete("/school/:id", protect, restrictTo("school_admin"), deleteNeed);
+router.get("/needs/donor/:needId", getDonorDetails);
 
 export default router;
