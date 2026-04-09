@@ -5,6 +5,7 @@ import {
     createTeacherForSchool,
     getSchoolStudents,
     updateSchoolStudent,
+    getMySchoolDetails,
     deactivateStudent,
     getPendingTeachers,
     createNeed,
