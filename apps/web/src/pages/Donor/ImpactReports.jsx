@@ -1,6 +1,6 @@
 // src/pages/donor/ImpactReports.jsx
 import { useEffect, useState } from "react";
-import { getImpactReport } from "../../services/DonorServices";
+import { getImpactReport } from "../../services/donorServices";
 import { toast } from "react-toastify";
 
 export default function ImpactReports() {

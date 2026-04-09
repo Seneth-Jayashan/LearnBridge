@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const getViteApiUrl = () => {
+    try {
+        return Function("return import.meta?.env?.VITE_API_URL")();
+    } catch {
+        return undefined;
+    }
+};
+
+const BASE_URL = getViteApiUrl() || process.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 let memoryAccessToken = null;
 
