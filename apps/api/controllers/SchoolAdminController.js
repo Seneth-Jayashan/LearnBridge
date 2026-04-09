@@ -228,7 +228,7 @@ export const createTeacherForSchool = async (req, res) => {
 
         await newTeacher.save();
         await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
-        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
+        await accountCreationEmail(`${firstName} ${lastName}`,email, password , email);
 
         if (targetSchoolId) {
             await School.findByIdAndUpdate(targetSchoolId, { $push: { teachers: newTeacher._id } });
