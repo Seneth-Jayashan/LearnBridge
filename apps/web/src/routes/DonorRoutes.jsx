@@ -23,7 +23,7 @@ const DonorRoutes = () => {
       <div className="w-full transition-all duration-300">
         <Routes>
           <Route index element={<Overview />} />
-          <Route path="overview" element={<Overview />} />
+          <Route path="dashboard" element={<Overview />} />
           <Route path="browse" element={<BrowseNeeds />} />
           <Route path="donations" element={<MyDonations />} />
           <Route path="impact" element={<ImpactReports />} />

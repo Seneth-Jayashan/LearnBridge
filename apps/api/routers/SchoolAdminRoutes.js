@@ -8,6 +8,7 @@ import {
     updateSchoolStudent,
     deactivateStudent,
     getPendingTeachers,
+    getMySchoolDetails,
     createNeed,
     getMyPostedNeeds,
     updateNeed,
@@ -20,7 +21,7 @@ import {
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
 import { createStudentSchema } from "../validators/SchoolAdminValidator.js";
-import { uploadSchoolLogo } from "../middlewares/UploadMiddleware.js"; // Adjust import path
+import { uploadLogo } from "../middlewares/UploadMiddleware.js";
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.use(restrictTo("school_admin"));
 // --- SCHOOL PROFILE ---
 // ==========================================
 router.get("/my-school", getMySchoolDetails);
-router.put("/my-school", uploadSchoolLogo, updateSchoolProfile);
+router.put("/my-school", uploadLogo, updateSchoolProfile);
 
 // ==========================================
 // --- STUDENT MANAGEMENT ---

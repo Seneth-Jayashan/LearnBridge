@@ -45,15 +45,18 @@ export const updateQuizSchema = z.object({
 });
 
 // --- Submit Quiz Schema ---
+const submittedAnswerSchema = z.union([
+  z
+    .number()
+    .int()
+    .min(0, "Answer index must be at least 0")
+    .max(3, "Answer index must be at most 3"),
+  z.null(),
+]);
+
 export const submitQuizSchema = z.object({
   answers: z
-    .array(
-      z
-        .number()
-        .int()
-        .min(0, "Answer index must be at least 0")
-        .max(3, "Answer index must be at most 3")
-    )
+    .array(submittedAnswerSchema)
     .min(1, "Answers array cannot be empty"),
   flaggedQuestions: z.array(z.number().int().min(0)).optional(),
 });

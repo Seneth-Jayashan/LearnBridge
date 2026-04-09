@@ -8,7 +8,7 @@ const DonorSidebar = ({ isOpen, close, isExpanded, setIsExpanded }) => {
   const { logout } = useAuth();
 
   const links = [
-    { name: "Overview", path: "/donor/overview", icon: FiHome },
+    { name: "Dashboard", path: "/donor/dashboard", icon: FiHome },
     { name: "Browse Needs", path: "/donor/browse", icon: FiSearch }, 
     { name: "My Donations", path: "/donor/donations", icon: FiHeart },
     { name: "Impact Reports", path: "/donor/impact", icon: FiPieChart },

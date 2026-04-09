@@ -461,7 +461,7 @@ export default function CreateQuiz() {
     } else {
       setQuestions(imported);
       if (category) setTitle(`${category} Quiz`);
-      setTimeLimit(Math.min(Math.max(Math.round(imported.length * 1.5), 5), 120));
+      setTimeLimit(Math.min(Math.max(Math.round(imported.length * 1.5), 1), 120));
       showToast(`Quiz auto-generated with ${imported.length} questions!`, "success");
     }
   };
@@ -636,9 +636,9 @@ export default function CreateQuiz() {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               Time Limit: <span className="text-[#207D86] font-semibold">{timeLimit} minutes</span>
             </label>
-            <input type="range" min={5} max={120} step={5} value={timeLimit}
+            <input type="range" min={1} max={120} step={1} value={timeLimit}
               onChange={(e) => setTimeLimit(e.target.value)} className="w-full accent-[#207D86]" />
-            <div className="flex justify-between text-xs text-slate-600 mt-1"><span>5 min</span><span>120 min</span></div>
+            <div className="flex justify-between text-xs text-slate-600 mt-1"><span>1 min</span><span>120 min</span></div>
           </div>
         </div>
 
