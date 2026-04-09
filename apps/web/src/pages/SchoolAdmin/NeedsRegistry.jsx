@@ -30,40 +30,11 @@ export default function NeedsRegistry() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null); // ← add this
 
   useEffect(() => {
     fetchNeeds();
   }, []);
-
-  const toastConfirm = (message, onConfirm) => {
-    const id = toast.info(
-      <div className="flex flex-col gap-2">
-        <span>{message}</span>
-        <div className="flex gap-2 justify-end mt-2">
-          <button
-            onClick={() => {
-              toast.dismiss(id);
-              onConfirm();
-            }}
-            className="px-3 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-          >
-            Yes
-          </button>
-          <button
-            onClick={() => toast.dismiss(id)}
-            className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-          >
-            No
-          </button>
-        </div>
-      </div>,
-      {
-        autoClose: false,
-        closeOnClick: false,
-        closeButton: false,
-      }
-    );
-  };
 
   const fetchNeeds = async () => {
     try {
@@ -104,7 +75,6 @@ export default function NeedsRegistry() {
       toast.error("Quantity must be greater than 0.");
       return;
     }
-    // ← validate amount on both create AND edit
     if (!form.amount || Number(form.amount) <= 0) {
       toast.error("Please enter a valid amount.");
       return;
@@ -115,7 +85,7 @@ export default function NeedsRegistry() {
         await updateNeed(editingId, {
           itemName: form.itemName,
           quantity: form.quantity,
-          amount: Number(form.amount), // ← add amount here
+          amount: Number(form.amount),
           description: form.description,
           urgency: form.urgency,
         });
@@ -133,19 +103,23 @@ export default function NeedsRegistry() {
     }
   };
 
-  const handleDelete = (id) => {
-    toastConfirm("Are you sure you want to delete this need?", async () => {
-      try {
-        setDeleting(id);
-        await deleteNeed(id);
-        toast.success("Need deleted 🗑️");
-        fetchNeeds();
-      } catch (err) {
-        toast.error(err.response?.data?.message || "Could not delete.");
-      } finally {
-        setDeleting(null);
-      }
-    });
+  // ── Delete handlers ────────────────────────────────────────
+  const handleDeleteClick = (id) => {
+    setConfirmDeleteId(id); // ← just open confirm modal
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setDeleting(confirmDeleteId);
+      setConfirmDeleteId(null);
+      await deleteNeed(confirmDeleteId);
+      toast.success("Need deleted 🗑️");
+      fetchNeeds();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not delete.");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const total = needs.length;
@@ -162,149 +136,196 @@ export default function NeedsRegistry() {
   }
 
   return (
-    <div className="p-8 min-h-screen">
+    <div className="p-4 sm:p-8 min-h-screen">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
         <div>
-          <h1 className="text-2xl font-bold text-[#0A1D32]">Needs Registry</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0A1D32]">Needs Registry</h1>
           <p className="text-slate-500 text-sm mt-0.5">
             Post and manage your school's resource requirements.
           </p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
+          className="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold rounded-xl bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
         >
           + Post New Need
         </button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 mb-8">
         <StatCard icon="📋" label="Total Posted" value={total} gradient="from-[#207D86] to-[#4CAF50]" />
         <StatCard icon="🟢" label="Open" value={open} gradient="from-blue-500 to-blue-600" />
         <StatCard icon="⏳" label="Pledged" value={pledged} gradient="from-yellow-400 to-yellow-500" />
         <StatCard icon="✅" label="Fulfilled" value={fulfilled} gradient="from-green-400 to-green-600" />
       </div>
 
-      {/* Needs Table */}
+      {/* Needs — Table on desktop, Cards on mobile */}
       {needs.length === 0 ? (
         <div className="text-center text-slate-400 py-20 text-lg">
           No needs posted yet. Click "+ Post New Need" to get started.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest">
-                <th className="text-left px-6 py-4 font-semibold">Item</th>
-                <th className="text-left px-6 py-4 font-semibold">Qty</th>
-                <th className="text-left px-6 py-4 font-semibold">Amount (LKR)</th>
-                <th className="text-left px-6 py-4 font-semibold">Urgency</th>
-                <th className="text-left px-6 py-4 font-semibold">Status</th>
-                <th className="text-left px-6 py-4 font-semibold">Posted</th>
-                <th className="text-right px-6 py-4 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {needs.map((need, index) => (
-                <tr
-                  key={need._id}
-                  className={`border-t border-slate-50 hover:bg-[#207D86]/5 transition-all duration-150 ${
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
-                  }`}
-                >
-                  {/* Item */}
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-[#0A1D32]">{need.itemName}</p>
+        <>
+          {/* ── Desktop Table ── */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 text-xs uppercase tracking-widest">
+                  <th className="text-left px-6 py-4 font-semibold">Item</th>
+                  <th className="text-left px-6 py-4 font-semibold">Qty</th>
+                  <th className="text-left px-6 py-4 font-semibold">Amount (LKR)</th>
+                  <th className="text-left px-6 py-4 font-semibold">Urgency</th>
+                  <th className="text-left px-6 py-4 font-semibold">Status</th>
+                  <th className="text-left px-6 py-4 font-semibold">Posted</th>
+                  <th className="text-right px-6 py-4 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {needs.map((need, index) => (
+                  <tr
+                    key={need._id}
+                    className={`border-t border-slate-50 hover:bg-[#207D86]/5 transition-all duration-150 ${
+                      index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                    }`}
+                  >
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-[#0A1D32]">{need.itemName}</p>
+                      {need.description && (
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+                          {need.description}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">{need.quantity}</td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">
+                      {need.amount > 0 ? `Rs. ${need.amount.toLocaleString()}` : "—"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${urgencyColor[need.urgency]}`}>
+                        {need.urgency}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                        need.status === "Open"
+                          ? "bg-[#207D86]/10 text-[#207D86]"
+                          : need.status === "Pledged"
+                          ? "bg-yellow-500/10 text-yellow-500"
+                          : "bg-green-500/10 text-green-500"
+                      }`}>
+                        {need.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-400">
+                      {new Date(need.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2 justify-end">
+                        {need.status === "Open" ? (
+                          <>
+                            <button
+                              onClick={() => handleOpenEdit(need)}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#207D86]/10 text-[#207D86] hover:bg-[#207D86]/20 transition"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(need._id)}
+                              disabled={deleting === need._id}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition disabled:opacity-50"
+                            >
+                              {deleting === need._id ? "..." : "Delete"}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-slate-300 italic">Locked</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Mobile Cards ── */}
+          <div className="md:hidden flex flex-col gap-4">
+            {needs.map((need) => (
+              <div
+                key={need._id}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#0A1D32] text-sm">{need.itemName}</p>
                     {need.description && (
-                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">
                         {need.description}
                       </p>
                     )}
-                  </td>
+                  </div>
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${urgencyColor[need.urgency]}`}>
+                    {need.urgency}
+                  </span>
+                </div>
 
-                  {/* Quantity */}
-                  <td className="px-6 py-4 text-slate-600 font-medium">
-                    {need.quantity}
-                  </td>
+                <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                  <span>📦 Qty: <strong className="text-slate-700">{need.quantity}</strong></span>
+                  <span>💰 <strong className="text-slate-700">
+                    {need.amount > 0 ? `Rs. ${need.amount.toLocaleString()}` : "—"}
+                  </strong></span>
+                  <span>📅 {new Date(need.createdAt).toLocaleDateString()}</span>
+                </div>
 
-                  {/* Amount */}
-                  <td className="px-6 py-4 text-slate-600 font-medium">
-                    {need.amount > 0
-                      ? `Rs. ${need.amount.toLocaleString()}`
-                      : "—"}
-                  </td>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    need.status === "Open"
+                      ? "bg-[#207D86]/10 text-[#207D86]"
+                      : need.status === "Pledged"
+                      ? "bg-yellow-500/10 text-yellow-500"
+                      : "bg-green-500/10 text-green-500"
+                  }`}>
+                    {need.status}
+                  </span>
 
-                  {/* Urgency */}
-                  <td className="px-6 py-4">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${urgencyColor[need.urgency]}`}>
-                      {need.urgency}
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-6 py-4">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      need.status === "Open"
-                        ? "bg-[#207D86]/10 text-[#207D86]"
-                        : need.status === "Pledged"
-                        ? "bg-yellow-500/10 text-yellow-500"
-                        : "bg-green-500/10 text-green-500"
-                    }`}>
-                      {need.status}
-                    </span>
-                  </td>
-
-                  {/* Date */}
-                  <td className="px-6 py-4 text-xs text-slate-400">
-                    {new Date(need.createdAt).toLocaleDateString()}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2 justify-end">
-                      {need.status === "Open" ? (
-                        <>
-                          <button
-                            onClick={() => handleOpenEdit(need)}
-                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#207D86]/10 text-[#207D86] hover:bg-[#207D86]/20 transition"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(need._id)}
-                            disabled={deleting === need._id}
-                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition disabled:opacity-50"
-                          >
-                            {deleting === need._id ? "..." : "Delete"}
-                          </button>
-                        </>
-                      ) : (
-                        <span className="text-xs text-slate-300 italic">
-                          Locked
-                        </span>
-                      )}
+                  {need.status === "Open" ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleOpenEdit(need)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#207D86]/10 text-[#207D86] hover:bg-[#207D86]/20 transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(need._id)}
+                        disabled={deleting === need._id}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition disabled:opacity-50"
+                      >
+                        {deleting === need._id ? "..." : "Delete"}
+                      </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    <span className="text-xs text-slate-300 italic">Locked</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
-      {/* ── Modal ── */}
+      {/* ── Post/Edit Modal ── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 flex flex-col gap-5">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-7 flex flex-col gap-4 sm:gap-5 max-h-[90vh] overflow-y-auto">
 
             <h2 className="text-lg font-bold text-[#0A1D32]">
               {editingId ? "Edit Need" : "Post New Need"}
             </h2>
 
-            {/* Item Name */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 Item Name *
@@ -318,42 +339,41 @@ export default function NeedsRegistry() {
               />
             </div>
 
-            {/* Quantity */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Quantity *
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={form.quantity}
-                onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                placeholder="e.g. 5"
-                className="rounded-xl px-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
-              />
-            </div>
-
-            {/* Amount — fully editable */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Estimated Amount (LKR) *
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
-                  Rs.
-                </span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Quantity *
+                </label>
                 <input
                   type="number"
                   min="1"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  placeholder="e.g. 2500"
-                  className="w-full rounded-xl pl-10 pr-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
+                  value={form.quantity}
+                  onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                  placeholder="e.g. 5"
+                  className="rounded-xl px-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Amount (LKR) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">
+                    Rs.
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.amount}
+                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                    placeholder="2500"
+                    className="w-full rounded-xl pl-8 pr-3 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Description */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 Description
@@ -367,7 +387,6 @@ export default function NeedsRegistry() {
               />
             </div>
 
-            {/* Urgency */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 Urgency
@@ -383,7 +402,6 @@ export default function NeedsRegistry() {
               </select>
             </div>
 
-            {/* Buttons */}
             <div className="flex gap-3 justify-end pt-2">
               <button
                 onClick={() => setShowModal(false)}
@@ -394,9 +412,43 @@ export default function NeedsRegistry() {
               <button
                 onClick={handleSubmit}
                 disabled={saving}
-                className="px-6 py-2 text-sm font-semibold rounded-xl bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-60"
+                className="flex-1 sm:flex-none px-6 py-2 text-sm font-semibold rounded-xl bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-60"
               >
                 {saving ? "Saving..." : editingId ? "Update Need" : "Post Need 📢"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ── */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 flex flex-col gap-5">
+
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center text-3xl">
+                🗑️
+              </div>
+              <h2 className="text-lg font-bold text-[#0A1D32]">Delete Need?</h2>
+              <p className="text-sm text-slate-400">
+                Are you sure you want to delete this need? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-6 py-2 text-sm font-medium rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-6 py-2 text-sm font-semibold rounded-xl bg-red-500 text-white hover:bg-red-600 hover:shadow-lg transition-all duration-200"
+              >
+                Yes, Delete
               </button>
             </div>
 
@@ -411,13 +463,13 @@ export default function NeedsRegistry() {
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, gradient }) {
   return (
-    <div className={`bg-linear-to-r ${gradient} rounded-2xl p-5 text-white shadow-lg`}>
+    <div className={`bg-linear-to-r ${gradient} rounded-2xl p-4 sm:p-5 text-white shadow-lg`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-white/70 font-medium">{label}</p>
-          <p className="text-3xl font-bold mt-1">{value}</p>
+          <p className="text-2xl sm:text-3xl font-bold mt-1">{value}</p>
         </div>
-        <span className="text-3xl">{icon}</span>
+        <span className="text-2xl sm:text-3xl">{icon}</span>
       </div>
     </div>
   );
