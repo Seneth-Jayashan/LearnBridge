@@ -5,6 +5,7 @@ import {
   getMyPostedNeeds,
   updateNeed,
   deleteNeed,
+  getDonorDetails,
 } from "../../services/donorServices";
 import { toast } from "react-toastify";
 
@@ -30,7 +31,9 @@ export default function NeedsRegistry() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null); // ← add this
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [donorModal, setDonorModal] = useState(null); // ← donor details
+  const [donorLoading, setDonorLoading] = useState(false);
 
   useEffect(() => {
     fetchNeeds();
@@ -103,9 +106,8 @@ export default function NeedsRegistry() {
     }
   };
 
-  // ── Delete handlers ────────────────────────────────────────
   const handleDeleteClick = (id) => {
-    setConfirmDeleteId(id); // ← just open confirm modal
+    setConfirmDeleteId(id);
   };
 
   const handleConfirmDelete = async () => {
@@ -119,6 +121,19 @@ export default function NeedsRegistry() {
       toast.error(err.response?.data?.message || "Could not delete.");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  // ── View Donor ─────────────────────────────────────────────
+  const handleViewDonor = async (needId) => {
+    try {
+      setDonorLoading(true);
+      const res = await getDonorDetails(needId);
+      setDonorModal(res.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not load donor details.");
+    } finally {
+      setDonorLoading(false);
     }
   };
 
@@ -162,7 +177,7 @@ export default function NeedsRegistry() {
         <StatCard icon="✅" label="Fulfilled" value={fulfilled} gradient="from-green-400 to-green-600" />
       </div>
 
-      {/* Needs — Table on desktop, Cards on mobile */}
+      {/* Needs Table */}
       {needs.length === 0 ? (
         <div className="text-center text-slate-400 py-20 text-lg">
           No needs posted yet. Click "+ Post New Need" to get started.
@@ -241,7 +256,14 @@ export default function NeedsRegistry() {
                             </button>
                           </>
                         ) : (
-                          <span className="text-xs text-slate-300 italic">Locked</span>
+                          // ← View Donor button for Pledged/Fulfilled
+                          <button
+                            onClick={() => handleViewDonor(need._id)}
+                            disabled={donorLoading}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#207D86]/10 text-[#207D86] hover:bg-[#207D86]/20 transition"
+                          >
+                            {donorLoading ? "..." : "View Donor 👤"}
+                          </button>
                         )}
                       </div>
                     </td>
@@ -308,7 +330,13 @@ export default function NeedsRegistry() {
                       </button>
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-300 italic">Locked</span>
+                    <button
+                      onClick={() => handleViewDonor(need._id)}
+                      disabled={donorLoading}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#207D86]/10 text-[#207D86] hover:bg-[#207D86]/20 transition"
+                    >
+                      {donorLoading ? "..." : "View Donor 👤"}
+                    </button>
                   )}
                 </div>
               </div>
@@ -417,7 +445,6 @@ export default function NeedsRegistry() {
                 {saving ? "Saving..." : editingId ? "Update Need" : "Post Need 📢"}
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -426,7 +453,6 @@ export default function NeedsRegistry() {
       {confirmDeleteId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 flex flex-col gap-5">
-
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center text-3xl">
                 🗑️
@@ -436,7 +462,6 @@ export default function NeedsRegistry() {
                 Are you sure you want to delete this need? This action cannot be undone.
               </p>
             </div>
-
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setConfirmDeleteId(null)}
@@ -451,11 +476,143 @@ export default function NeedsRegistry() {
                 Yes, Delete
               </button>
             </div>
-
           </div>
         </div>
       )}
 
+      {/* ── Donor Details Modal ── */}
+      {donorModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[#0A1D32]">Donor Details</h2>
+              <button
+                onClick={() => setDonorModal(null)}
+                className="text-slate-400 hover:text-slate-600 transition text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Donor Avatar + Name */}
+            <div className="flex items-center gap-4 bg-slate-50 rounded-2xl p-4">
+              <div className="w-14 h-14 rounded-full bg-linear-to-r from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white text-xl font-bold shadow">
+                {donorModal.donor?.firstName?.charAt(0)}
+                {donorModal.donor?.lastName?.charAt(0)}
+              </div>
+              <div>
+                <p className="font-bold text-[#0A1D32]">
+                  {donorModal.donor?.firstName} {donorModal.donor?.lastName}
+                </p>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#207D86]/10 text-[#207D86] font-semibold capitalize">
+                  {donorModal.donor?.role}
+                </span>
+              </div>
+            </div>
+
+            {/* Donor Info */}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                Contact Information
+              </p>
+
+              <InfoRow icon="📧" label="Email" value={donorModal.donor?.email} />
+              <InfoRow icon="📞" label="Phone" value={donorModal.donor?.phoneNumber || "—"} />
+              <InfoRow
+                icon="📍"
+                label="Address"
+                value={
+                  donorModal.donor?.address?.street
+                    ? `${donorModal.donor.address.street}, ${donorModal.donor.address.city || ""}`
+                    : "—"
+                }
+              />
+              <InfoRow
+                icon="📅"
+                label="Member Since"
+                value={
+                  donorModal.donor?.createdAt
+                    ? new Date(donorModal.donor.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "—"
+                }
+              />
+            </div>
+
+            {/* Donation Info */}
+            <div className="flex flex-col gap-3 border-t border-slate-100 pt-4">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                Donation Details
+              </p>
+
+              <InfoRow icon="📦" label="Item" value={donorModal.need?.itemName} />
+              <InfoRow icon="🔢" label="Quantity" value={donorModal.need?.quantity} />
+              <InfoRow
+                icon="💰"
+                label="Amount"
+                value={
+                  donorModal.need?.amount > 0
+                    ? `Rs. ${donorModal.need.amount.toLocaleString()}`
+                    : "Material Donation"
+                }
+              />
+              <InfoRow
+                icon="💳"
+                label="Payment Method"
+                value={donorModal.need?.paymentMethod || "Pledge (Material)"}
+              />
+              <InfoRow
+                icon="✅"
+                label="Status"
+                value={donorModal.need?.status}
+              />
+              <InfoRow
+                icon="📅"
+                label="Pledged Date"
+                value={
+                  donorModal.need?.pledgedDate
+                    ? new Date(donorModal.need.pledgedDate).toLocaleDateString()
+                    : "—"
+                }
+              />
+              {donorModal.need?.fulfilledDate && (
+                <InfoRow
+                  icon="🎉"
+                  label="Fulfilled Date"
+                  value={new Date(donorModal.need.fulfilledDate).toLocaleDateString()}
+                />
+              )}
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setDonorModal(null)}
+              className="w-full py-2.5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// ─── Info Row ─────────────────────────────────────────────────────────────────
+function InfoRow({ icon, label, value }) {
+  return (
+    <div className="flex items-start gap-3 text-sm">
+      <span className="text-base">{icon}</span>
+      <div className="flex-1">
+        <p className="text-xs text-slate-400 font-medium">{label}</p>
+        <p className="text-[#0A1D32] font-medium mt-0.5">{value || "—"}</p>
+      </div>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import EditLevels from "../pages/admin/Levels/EditLevels";
 import GradeManage from "../pages/admin/Grades/GradeManage";
 import AddGrade from "../pages/admin/Grades/AddGrade";
 import EditGrade from "../pages/admin/Grades/EditGrade";
+import Dashboard from "../pages/admin/Dashboard";
 import ProfileSettings from "../pages/ProfileSettings";
 
 const AdminRoutes = () => {
@@ -37,7 +38,7 @@ const AdminRoutes = () => {
       
       <div className="w-full transition-all duration-300">
         <Routes>
-          <Route path="dashboard" element={<div>admin Dashboard Content</div>} />
+          <Route path="dashboard" element={<Dashboard />} />
           
           {/* User Routes */}
           <Route path="users" element={<Users />} />

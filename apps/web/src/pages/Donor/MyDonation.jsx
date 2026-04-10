@@ -82,7 +82,7 @@ export default function MyDonations() {
             onClick={() => setActiveTab(tab)}
             className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
               activeTab === tab
-                ? "bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white shadow-md"
+                ? "bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white shadow-md"
                 : "text-slate-500 hover:text-[#207D86]"
             }`}
           >
@@ -121,7 +121,7 @@ export default function MyDonations() {
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ label, value, color, icon }) {
   return (
-    <div className={`bg-gradient-to-r ${color} rounded-2xl p-5 text-white shadow-lg`}>
+    <div className={`bg-linear-to-r ${color} rounded-2xl p-5 text-white shadow-lg`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-white/70 font-medium">{label}</p>
@@ -182,7 +182,7 @@ function DonationCard({ donation, onFulfill, fulfilling }) {
           <button
             onClick={() => onFulfill(_id)}
             disabled={fulfilling === _id}
-            className="w-full py-2 text-sm rounded-xl font-medium bg-gradient-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-60"
+            className="w-full py-2 text-sm rounded-xl font-medium bg-linear-to-r from-[#207D86] to-[#4CAF50] text-white hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-60"
           >
             {fulfilling === _id ? "Updating..." : "Mark as Fulfilled ✅"}
           </button>

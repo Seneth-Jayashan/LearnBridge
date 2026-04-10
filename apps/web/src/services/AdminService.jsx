@@ -27,7 +27,6 @@ const adminService = {
         "Content-Type": "multipart/form-data",
       }
     } : {};
-
     const response = await api.put(`/admin/schools/${id}`, schoolData, config);
     return response.data;
   },

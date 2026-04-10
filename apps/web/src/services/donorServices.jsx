@@ -35,6 +35,9 @@ export const getMyPostedNeeds = () =>
 export const updateNeed = (id, data) =>
   api.put(`/school-admin/school/${id}`, data);
 
+export const getDonorDetails = (needId) =>
+  api.get(`/school-admin/needs/donor/${needId}`);
+
 export const deleteNeed = (id) =>
   api.delete(`/school-admin/school/${id}`);
 
