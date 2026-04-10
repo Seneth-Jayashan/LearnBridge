@@ -9,11 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
 
-    "test": "jest --config jest.config.frontend.js",
-    "test:watch": "jest --config jest.config.frontend.js --watch",
-    "test:coverage": "jest --config jest.config.frontend.js --coverage",
-
-    "test:frontend": "jest --config jest.config.frontend.js"
+    "test": "jest --config jest.config.frontend.cjs",
+    "test:watch": "jest --config jest.config.frontend.cjs --watch",
+    "test:coverage": "jest --config jest.config.frontend.cjs --coverage",
+    "test:frontend": "jest --config jest.config.frontend.cjs"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.18",
