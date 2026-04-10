@@ -10,7 +10,7 @@
     "seed:grades": "node scripts/seedGrades.js",
     "migrate:module-indexes": "node scripts/migrateModuleIndexes.js",
     "migrate:remove-module-content": "node scripts/removeModuleContentUrl.js",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand"
   },
   "keywords": [],
   "author": "OneX Universe (Pvt) Ltd.",
@@ -37,7 +37,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
+    "@babel/preset-env": "^7.29.2",
+    "babel-jest": "^30.3.0",
     "nodemon": "^3.1.11"
   }
 }
