@@ -8,4 +8,11 @@ export default defineConfig({
     react(),
     tailwindcss(), // <--- Add this to the plugins array
   ],
+
+  test: {
+    globals: true, 
+    environment: 'jsdom', 
+    setupFiles: './src/setupTests.js', 
+    css: true, 
+  }
 })
