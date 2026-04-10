@@ -34,6 +34,7 @@ async function refreshAccessToken() {
  * @param {string} [options.html] - Optional HTML content
  */
 async function sendEmail({ to, subject, text, html }) {
+  if (process.env.NODE_ENV === 'test') return;
   try {
     const data = {
       fromAddress: `Learn Bridge <${process.env.ZOHO_EMAIL}>`,

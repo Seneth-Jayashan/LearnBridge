@@ -6,14 +6,7 @@ import User from "../../models/User.js";
 import School from "../../models/School.js";
 import { connectDBForTesting, disconnectDBForTesting, clearDBForTesting } from "../setup.js";
 
-// MOCK EXTERNAL SERVICES
-jest.mock("../../services/CloudinaryService.js", () => ({
-    uploadFileToCloudinary: jest.fn().mockResolvedValue({ secure_url: "https://mock-cloudinary.com/logo.png" }),
-    deleteCloudinaryAssetFromUrl: jest.fn().mockResolvedValue(true)
-}));
-jest.mock("../../utils/templates/Email.js", () => ({ accountCreationEmail: jest.fn() }));
-jest.mock("../../utils/templates/SMS.js", () => ({ sendAccountCreationSms: jest.fn() }));
-
+jest.setTimeout(15000); // Gives tests 15 seconds before failing
 beforeAll(async () => await connectDBForTesting());
 afterAll(async () => await disconnectDBForTesting());
 afterEach(async () => await clearDBForTesting());

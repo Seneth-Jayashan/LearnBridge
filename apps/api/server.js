@@ -18,7 +18,6 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-connectDB();
 
 // ==============================================================
 // 1. GLOBAL MIDDLEWARE (Order is Crucial)
@@ -114,8 +113,13 @@ app.use((req, res) => {
 // 3. SERVER START
 // ==============================================================
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+
+if (!isTestEnvironment) {
+    connectDB();
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+}
 
 export default app;

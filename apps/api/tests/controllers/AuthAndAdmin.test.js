@@ -4,14 +4,6 @@ import User from "../../models/User.js";
 import { connectDBForTesting, disconnectDBForTesting, clearDBForTesting } from "../setup.js";
 import { jest } from '@jest/globals';
 jest.setTimeout(15000); // Gives tests 15 seconds before failing
-jest.mock("../../utils/templates/Email.js", () => ({
-    sendVerificationEmail: jest.fn(),
-    accountCreationEmail: jest.fn()
-}));
-jest.mock("../../utils/templates/SMS.js", () => ({
-    sendVerificationSms: jest.fn(),
-    sendAccountCreationSms: jest.fn()
-}));
 
 beforeAll(async () => await connectDBForTesting());
 afterAll(async () => await disconnectDBForTesting());

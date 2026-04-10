@@ -68,7 +68,7 @@ describe('RegisterTeacher Component', () => {
   it('submits successfully and navigates to login', async () => {
     const user = userEvent.setup();
     userService.registerTeacher.mockResolvedValue({ success: true });
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     render(
       <MemoryRouter>
