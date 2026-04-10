@@ -28,6 +28,11 @@ describe('ResetPassword Component', () => {
     useLocation.mockReturnValue({ state: mockLocationState });
   });
 
+  // ==========================================
+  // NEGATIVE TEST CASES
+  // ==========================================
+
+  // NEGATIVE TEST CASE: Missing required routing state
   it('redirects to forgot-password if no identifier is in state', async () => {
     useLocation.mockReturnValue({ state: null });
 
@@ -42,6 +47,22 @@ describe('ResetPassword Component', () => {
     });
   });
 
+  // NEGATIVE TEST CASE: Client-side validation (Empty submission)
+  it('does not trigger the reset API if required fields are empty', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ResetPassword />
+      </MemoryRouter>
+    );
+
+    await user.click(screen.getByRole('button', { name: /Reset Password/i }));
+
+    // Assuming HTML5 validation or internal checks prevent submission
+    expect(authService.resetPassword).not.toHaveBeenCalled();
+  });
+
+  // NEGATIVE TEST CASE: Client-side validation (Password mismatch)
   it('shows error if passwords do not match without hitting API', async () => {
     const user = userEvent.setup();
     
@@ -63,10 +84,78 @@ describe('ResetPassword Component', () => {
     expect(screen.getByText('Passwords do not match.')).toBeInTheDocument();
   });
 
+  // NEGATIVE TEST CASE: API Failure (e.g., Invalid or expired OTP/Token)
+  it('displays an error message if the API reset call fails', async () => {
+    const user = userEvent.setup();
+    authService.resetPassword.mockRejectedValue({
+      response: { data: { message: 'Invalid or expired reset token.' } }
+    });
+
+    render(
+      <MemoryRouter>
+        <ResetPassword />
+      </MemoryRouter>
+    );
+
+    const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+    
+    await user.type(screen.getByPlaceholderText('123456'), '000000'); 
+    await user.type(passwordInputs[0], 'ValidPass123!'); 
+    await user.type(passwordInputs[1], 'ValidPass123!'); 
+
+    await user.click(screen.getByRole('button', { name: /Reset Password/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid or expired reset token.')).toBeInTheDocument();
+    });
+  });
+
+  // NEGATIVE TEST CASE: General network/server failure handling
+  it('shows a generic error message if the server crashes or network fails', async () => {
+    const user = userEvent.setup();
+    authService.resetPassword.mockRejectedValue(new Error('Network Error'));
+
+    render(
+      <MemoryRouter>
+        <ResetPassword />
+      </MemoryRouter>
+    );
+
+    const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+    
+    await user.type(screen.getByPlaceholderText('123456'), '111111'); 
+    await user.type(passwordInputs[0], 'NetworkPass1!'); 
+    await user.type(passwordInputs[1], 'NetworkPass1!'); 
+
+    await user.click(screen.getByRole('button', { name: /Reset Password/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/failed|error|something went wrong/i)).toBeInTheDocument();
+    });
+  });
+
+  // ==========================================
+  // POSITIVE TEST CASES
+  // ==========================================
+
+  // POSITIVE TEST CASE: Initial UI Render
+  it('renders the reset password form correctly on load', () => {
+    render(
+      <MemoryRouter>
+        <ResetPassword />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByPlaceholderText('123456')).toBeInTheDocument();
+    expect(screen.getAllByPlaceholderText('••••••••')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: /Reset Password/i })).toBeInTheDocument();
+  });
+
+  // POSITIVE TEST CASE: Successful API call and navigation
   it('calls API and navigates to login on success', async () => {
     const user = userEvent.setup();
     authService.resetPassword.mockResolvedValue({ success: true });
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     render(
       <MemoryRouter>

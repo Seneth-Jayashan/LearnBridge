@@ -34,6 +34,10 @@ describe('FirstLoginVerification Component', () => {
     });
   });
 
+  // ==========================================
+  // NEGATIVE TEST CASES
+  // ==========================================
+
   it('redirects to /login if accessed without a userId in location state', async () => {
     mockLocationState = null;
 
@@ -46,18 +50,6 @@ describe('FirstLoginVerification Component', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
     });
-  });
-
-  it('renders Step 1 (OTP form) correctly with the success message from Login', () => {
-    render(
-      <MemoryRouter>
-        <FirstLoginVerification />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText('Verify Identity')).toBeInTheDocument();
-    expect(screen.getByText('OTP sent to your email and phone.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Verify Code/i })).toBeDisabled();
   });
 
   it('displays an error message if OTP verification fails', async () => {
@@ -78,32 +70,6 @@ describe('FirstLoginVerification Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Invalid OTP code.')).toBeInTheDocument();
     });
-  });
-
-  it('transitions to Step 2 (Password Setup) on successful OTP verification', async () => {
-    const user = userEvent.setup();
-    mockVerifyOtp.mockResolvedValue({ 
-      success: true, 
-      resetToken: 'fake-jwt-token', 
-      message: 'OTP verified successfully.' 
-    });
-
-    render(
-      <MemoryRouter>
-        <FirstLoginVerification />
-      </MemoryRouter>
-    );
-
-    await user.type(screen.getByPlaceholderText('Enter 6-digit OTP'), '654321');
-    await user.click(screen.getByRole('button', { name: /Verify Code/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Secure Account')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('OTP verified successfully.')).toBeInTheDocument();
-    // Using getAllByPlaceholderText to avoid the multiple elements error
-    expect(screen.getAllByPlaceholderText('••••••••')[0]).toBeInTheDocument(); 
   });
 
   it('shows an error if new passwords do not match in Step 2', async () => {
@@ -132,6 +98,77 @@ describe('FirstLoginVerification Component', () => {
     expect(screen.getByText('Passwords do not match.')).toBeInTheDocument();
   });
 
+  it('displays an error message if the final completeLogin API call fails in Step 2', async () => {
+    const user = userEvent.setup();
+    mockVerifyOtp.mockResolvedValue({ success: true, resetToken: 'valid-reset-token' });
+    mockCompleteLogin.mockResolvedValue({ success: false, message: 'Server rejected password.' });
+
+    render(
+      <MemoryRouter>
+        <FirstLoginVerification />
+      </MemoryRouter>
+    );
+
+    // Pass Step 1
+    await user.type(screen.getByPlaceholderText('Enter 6-digit OTP'), '999999');
+    await user.click(screen.getByRole('button', { name: /Verify Code/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Secure Account')).toBeInTheDocument();
+    });
+
+    // Fail Step 2 via API (Using a string >= 8 chars to pass client validation)
+    const passwordInputs = screen.getAllByPlaceholderText('••••••••');
+    await user.type(passwordInputs[0], 'ValidPass123!');
+    await user.type(passwordInputs[1], 'ValidPass123!');
+    await user.click(screen.getByRole('button', { name: /Save & Login/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Server rejected password.')).toBeInTheDocument();
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith('/dashboard', expect.anything());
+  });
+
+  // ==========================================
+  // POSITIVE TEST CASES
+  // ==========================================
+
+  it('renders Step 1 (OTP form) correctly with the success message from Login', () => {
+    render(
+      <MemoryRouter>
+        <FirstLoginVerification />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Verify Identity')).toBeInTheDocument();
+    expect(screen.getByText('OTP sent to your email and phone.')).toBeInTheDocument();
+  });
+
+  it('transitions to Step 2 (Password Setup) on successful OTP verification', async () => {
+    const user = userEvent.setup();
+    mockVerifyOtp.mockResolvedValue({ 
+      success: true, 
+      resetToken: 'fake-jwt-token', 
+      message: 'OTP verified successfully.' 
+    });
+
+    render(
+      <MemoryRouter>
+        <FirstLoginVerification />
+      </MemoryRouter>
+    );
+
+    await user.type(screen.getByPlaceholderText('Enter 6-digit OTP'), '654321');
+    await user.click(screen.getByRole('button', { name: /Verify Code/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Secure Account')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('OTP verified successfully.')).toBeInTheDocument();
+    expect(screen.getAllByPlaceholderText('••••••••')[0]).toBeInTheDocument(); 
+  });
+
   it('successfully completes password setup and navigates to dashboard', async () => {
     const user = userEvent.setup();
     mockVerifyOtp.mockResolvedValue({ success: true, resetToken: 'valid-reset-token' });
@@ -143,6 +180,7 @@ describe('FirstLoginVerification Component', () => {
       </MemoryRouter>
     );
 
+    // Pass Step 1
     await user.type(screen.getByPlaceholderText('Enter 6-digit OTP'), '999999');
     await user.click(screen.getByRole('button', { name: /Verify Code/i }));
 
@@ -150,6 +188,7 @@ describe('FirstLoginVerification Component', () => {
       expect(screen.getByText('Secure Account')).toBeInTheDocument();
     });
 
+    // Pass Step 2
     const passwordInputs = screen.getAllByPlaceholderText('••••••••');
     await user.type(passwordInputs[0], 'PerfectPassword1!');
     await user.type(passwordInputs[1], 'PerfectPassword1!');

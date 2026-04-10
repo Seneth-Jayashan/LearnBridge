@@ -32,18 +32,11 @@ describe('Login Component', () => {
     });
   });
 
-  it('renders the login form correctly', () => {
-    render(
-      <MemoryRouter>
-        <Login />
-      </MemoryRouter>
-    );
+  // ==========================================
+  // NEGATIVE TEST CASES
+  // ==========================================
 
-    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Email, Phone or Student ID')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Authorize Account/i })).toBeInTheDocument();
-  });
-
+  // NEGATIVE TEST CASE: Renders context-level authentication errors
   it('displays an error message if auth context has an error', () => {
     useAuth.mockReturnValue({
       login: mockLogin,
@@ -60,6 +53,60 @@ describe('Login Component', () => {
     expect(screen.getByText('Invalid credentials provided.')).toBeInTheDocument();
   });
 
+  // NEGATIVE TEST CASE: Client-side validation (Empty submission)
+  it('does not trigger the login API if required fields are empty', async () => {
+    const user = userEvent.setup();
+    
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    // Assuming the form has some basic HTML5 validation or client-side checks that prevent empty submission
+    await user.click(screen.getByRole('button', { name: /Authorize Account/i }));
+    
+    expect(mockLogin).not.toHaveBeenCalled();
+  });
+
+
+  // ==========================================
+  // POSITIVE TEST CASES
+  // ==========================================
+
+  // POSITIVE TEST CASE: Initial UI Render
+  it('renders the login form correctly', () => {
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Email, Phone or Student ID')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Authorize Account/i })).toBeInTheDocument();
+  });
+
+  // POSITIVE TEST CASE: UI state change during loading
+  it('disables the submit button while authentication is in progress (loading state)', () => {
+    useAuth.mockReturnValue({
+      login: mockLogin,
+      loading: true, 
+      error: null,
+    });
+
+    const { container } = render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    // Grab the submit button directly since the inner text is removed during loading
+    const submitButton = container.querySelector('button[type="submit"]');
+    expect(submitButton).toBeDisabled();
+  });
+
+  // POSITIVE TEST CASE: Standard authentication flow
   it('submits the form and navigates to dashboard on standard success', async () => {
     const user = userEvent.setup();
     mockLogin.mockResolvedValue({ success: true, requiresOtpVerification: false });
@@ -81,6 +128,7 @@ describe('Login Component', () => {
     });
   });
 
+  // POSITIVE TEST CASE: Edge-case authentication flow (First-time user setup)
   it('navigates to OTP verification if first login is detected', async () => {
     const user = userEvent.setup();
     mockLogin.mockResolvedValue({ 
