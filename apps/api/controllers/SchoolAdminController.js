@@ -1,7 +1,9 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
+import ResourceRequest from "../models/ResourceRequest.js";
 import { sendAccountCreationSms } from "../utils/templates/SMS.js";
 import { accountCreationEmail } from "../utils/templates/Email.js";
+import { uploadFileToCloudinary, deleteCloudinaryAssetFromUrl } from "../services/CloudinaryService.js";
 
 // ==========================================
 // --- DASHBOARD & PROFILE ---
@@ -24,23 +26,60 @@ export const getMySchoolDetails = async (req, res) => {
 
 export const updateSchoolProfile = async (req, res) => {
     try {
-        if (req.user.role !== "school_admin") return res.status(403).json({ message: "Access denied." });
+        if (req.user.role !== "school_admin") {
+            return res.status(403).json({ message: "Access denied." });
+        }
 
-        const { contactEmail, contactPhone, address, logoUrl } = req.body;
-        
         const school = await School.findById(req.user.school);
         if (!school) return res.status(404).json({ message: "School not found." });
 
+        // 1. Extract standard fields
+        const { contactEmail, contactPhone, logoUrl } = req.body;
         if (contactEmail) school.contactEmail = contactEmail;
         if (contactPhone) school.contactPhone = contactPhone;
-        if (logoUrl) school.logoUrl = logoUrl;
-        if (address) {
-            school.address = { ...school.address, ...address };
+
+        // 2. Extract nested address fields from FormData
+        const hasFormDataAddress = req.body["address[street]"] !== undefined;
+        
+        if (hasFormDataAddress) {
+            school.address = {
+                street: req.body["address[street]"] || school.address.street,
+                city: req.body["address[city]"] || school.address.city,
+                state: req.body["address[state]"] || school.address.state,
+                zipCode: req.body["address[zipCode]"] || school.address.zipCode,
+            };
+        } else if (req.body.address) {
+            // Fallback just in case standard JSON is sent
+            school.address = { ...school.address, ...req.body.address };
+        }
+
+        // 3. Handle Logo Image Upload to Cloudinary
+        if (req.file) {
+            // Optional but recommended: Delete the old logo from Cloudinary to save space
+            if (school.logoUrl && school.logoUrl.includes('res.cloudinary.com')) {
+                await deleteCloudinaryAssetFromUrl(school.logoUrl).catch(err => 
+                    console.error("Failed to delete old logo from Cloudinary:", err)
+                );
+            }
+
+            // Upload the new file buffer
+            const uploadResult = await uploadFileToCloudinary(req.file, {
+                folder: "learnbridge/school_logos", // Change folder name as needed
+                resourceType: "image"
+            });
+
+            // Cloudinary returns the HTTPS URL in secure_url
+            school.logoUrl = uploadResult.secure_url;
+            
+        } else if (logoUrl) {
+            // Allow manual text URL override if sent
+            school.logoUrl = logoUrl;
         }
 
         await school.save();
         res.status(200).json({ message: "School profile updated successfully", school });
     } catch (error) {
+        console.error("updateSchoolProfile error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
@@ -62,6 +101,11 @@ export const createStudentForSchool = async (req, res) => {
             return res.status(400).json({ message: "Grade is required when creating a Student." });
         }
 
+        if (!studentData.level) {
+            return res.status(400).json({ message: "Level is required when creating a Student." });
+        }
+
+
         const newStudent = new User({
             ...studentData,
             email: studentData.email ? studentData.email.toLowerCase() : undefined,
@@ -69,12 +113,14 @@ export const createStudentForSchool = async (req, res) => {
             school: schoolId, 
             isSchoolVerified: true,
             grade: studentData.grade,
+            level: studentData.level,
+            stream: studentData.stream || null,
             requiresPasswordChange: true
         });
 
         await newStudent.save();
-        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, studentData.email, studentData.password);
-        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,studentData.email, studentData.password);
+        await sendAccountCreationSms(studentData.phoneNumber, `${studentData.firstName} ${studentData.lastName}`, newStudent.regNumber, studentData.password, );
+        await accountCreationEmail(`${studentData.firstName} ${studentData.lastName}`,newStudent.regNumber, studentData.password, studentData.email);
 
         await School.findByIdAndUpdate(schoolId, { $push: { students: newStudent._id } });
 
@@ -94,7 +140,7 @@ export const getSchoolStudents = async (req, res) => {
             school: req.user.school, 
             role: "student",
             isDeleted: false
-        }).populate("grade", "name");
+        }).populate("grade", "name").populate("level", "name");
 
         res.status(200).json(students);
     } catch (error) {
@@ -109,7 +155,7 @@ export const updateSchoolStudent = async (req, res) => {
 
         if (!student) return res.status(404).json({ message: "Student not found in your school." });
 
-        const { firstName, lastName, email, phoneNumber, grade, level, address } = req.body;
+        const { firstName, lastName, email, phoneNumber, grade, level, address, stream } = req.body;
 
         if (grade === null || grade === "") {
             return res.status(400).json({ message: "Student must have a grade. You cannot remove it." });
@@ -122,6 +168,7 @@ export const updateSchoolStudent = async (req, res) => {
         
         if (grade) student.grade = grade;
         if (level) student.level = level;
+        if (stream) student.stream = stream;
         
         if (address) student.address = { ...student.address, ...address };
 
@@ -181,7 +228,7 @@ export const createTeacherForSchool = async (req, res) => {
 
         await newTeacher.save();
         await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
-        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
+        await accountCreationEmail(`${firstName} ${lastName}`,email, password , email);
 
         if (targetSchoolId) {
             await School.findByIdAndUpdate(targetSchoolId, { $push: { teachers: newTeacher._id } });
@@ -261,4 +308,151 @@ export const removeTeacherFromSchool = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
+};
+
+// ─── SCHOOL ADMIN: CREATE A NEED ─────────────────────────────────────────────
+// POST /api/donations
+export const createNeed = async (req, res) => {
+  try {
+    const { itemName, quantity, amount, description, urgency } = req.body;
+
+    if (!itemName || !quantity) {
+      return res.status(400).json({ message: "Item name and quantity are required." });
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Please enter a valid amount." });
+    }
+
+    const need = await ResourceRequest.create({
+      schoolId: req.user._id,                    // ← school_admin user _id
+      schoolObjectId: req.user.school || null,   // ← actual school ObjectId
+      itemName,
+      quantity,
+      amount: Number(amount),
+      description,
+      urgency: urgency || "Medium",
+      status: "Open",
+    });
+
+    res.status(201).json({ message: "Need posted successfully", need });
+  } catch (err) {
+    console.error("createNeed error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─── SCHOOL ADMIN: GET MY POSTED NEEDS ───────────────────────────────────────
+// GET /api/donations/school/my-needs
+export const getMyPostedNeeds = async (req, res) => {
+  try {
+    const needs = await ResourceRequest.find({ schoolId: req.user._id })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(needs);
+  } catch (err) {
+    console.error("getMyPostedNeeds error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─── SCHOOL ADMIN: UPDATE A NEED ─────────────────────────────────────────────
+// PUT /api/donations/school/:id
+export const updateNeed = async (req, res) => {
+  try {
+    const need = await ResourceRequest.findById(req.params.id);
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.schoolId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to edit this need" });
+    }
+
+    if (need.status !== "Open") {
+      return res.status(400).json({
+        message: "Cannot edit a need that is already pledged or fulfilled",
+      });
+    }
+
+    const { itemName, quantity, amount, description, urgency } = req.body;
+
+    if (itemName) need.itemName = itemName;
+    if (quantity) need.quantity = quantity;
+    if (amount && Number(amount) > 0) need.amount = Number(amount); // ← add this
+    if (description !== undefined) need.description = description;
+    if (urgency) need.urgency = urgency;
+
+    await need.save();
+
+    res.status(200).json({ message: "Need updated successfully", need });
+  } catch (err) {
+    console.error("updateNeed error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+// ─── SCHOOL ADMIN: DELETE A NEED ─────────────────────────────────────────────
+// DELETE /api/donations/school/:id
+export const deleteNeed = async (req, res) => {
+  try {
+    const need = await ResourceRequest.findById(req.params.id);
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.schoolId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this need" });
+    }
+
+    if (need.status !== "Open") {
+      return res.status(400).json({ message: "Cannot delete a need that is already pledged or fulfilled" });
+    }
+
+    await need.deleteOne();
+
+    res.status(200).json({ message: "Need deleted successfully" });
+  } catch (err) {
+    console.error("deleteNeed error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ─── GET DONOR DETAILS FOR A NEED ────────────────────────────
+// GET /api/v1/donations/school/donor/:needId
+export const getDonorDetails = async (req, res) => {
+  try {
+    const need = await ResourceRequest.findById(req.params.needId)
+      .populate("donorId", "firstName lastName email phoneNumber address createdAt role");
+
+    if (!need) {
+      return res.status(404).json({ message: "Need not found" });
+    }
+
+    if (need.schoolId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (!need.donorId) {
+      return res.status(404).json({ message: "No donor found for this need" });
+    }
+
+    res.status(200).json({
+      donor: need.donorId,
+      need: {
+        itemName: need.itemName,
+        quantity: need.quantity,
+        amount: need.amount,
+        status: need.status,
+        pledgedDate: need.pledgedDate,
+        fulfilledDate: need.fulfilledDate,
+        paymentMethod: need.paymentMethod,
+        paymentStatus: need.paymentStatus,
+      },
+    });
+  } catch (err) {
+    console.error("getDonorDetails error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };

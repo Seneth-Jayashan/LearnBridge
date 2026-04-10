@@ -1,6 +1,5 @@
 import express from "express";
 import { 
-    getMySchoolDetails,
     updateSchoolProfile,
     createStudentForSchool, 
     createTeacherForSchool,
@@ -8,6 +7,12 @@ import {
     updateSchoolStudent,
     deactivateStudent,
     getPendingTeachers,
+    getMySchoolDetails,
+    createNeed,
+    getMyPostedNeeds,
+     getDonorDetails,   
+    updateNeed,
+    deleteNeed,
     getVerifiedTeachers,
     verifySchoolTeacher,
     removeTeacherFromSchool
@@ -16,6 +21,7 @@ import {
 import { protect, restrictTo } from "../middlewares/AuthMiddleware.js";
 import { validate } from "../middlewares/ValidateMiddleware.js";
 import { createStudentSchema } from "../validators/SchoolAdminValidator.js";
+import { uploadLogo } from "../middlewares/UploadMiddleware.js";
 
 const router = express.Router();
 
@@ -26,7 +32,7 @@ router.use(restrictTo("school_admin"));
 // --- SCHOOL PROFILE ---
 // ==========================================
 router.get("/my-school", getMySchoolDetails);
-router.put("/my-school", updateSchoolProfile);
+router.put("/my-school", uploadLogo, updateSchoolProfile);
 
 // ==========================================
 // --- STUDENT MANAGEMENT ---
@@ -52,5 +58,12 @@ router.get("/teachers/pending", getPendingTeachers);
 
 router.patch("/teachers/:teacherId/verify", verifySchoolTeacher);
 router.delete("/teachers/:teacherId/remove", removeTeacherFromSchool);
+
+// ── School Admin Routes (Needs Registry CRUD) ──────────────────
+router.post("/needs", protect, restrictTo("school_admin"), createNeed);
+router.get("/school/my-needs", protect, restrictTo("school_admin"), getMyPostedNeeds);
+router.put("/school/:id", protect, restrictTo("school_admin"), updateNeed);
+router.delete("/school/:id", protect, restrictTo("school_admin"), deleteNeed);
+router.get("/needs/donor/:needId", getDonorDetails);
 
 export default router;

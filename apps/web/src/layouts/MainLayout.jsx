@@ -1,24 +1,23 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 export default function MainLayout() {
   const location = useLocation();
   
-  // We don't want the top padding on the Login and Register pages 
-  // because they have their own full-screen centered designs.
-  const isAuthPage = ["/login", "/register-donor"].includes(location.pathname);
+  // ADD "/register-teacher" TO THIS ARRAY
+  const isFullBleedPage = ["/", "/login", "/register-donor", "/register-teacher"].includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* 1. The Floating Navbar */}
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       <Navbar />
       
-      {/* 2. The Page Content */}
-      {/* If it's an Auth page, no padding. Otherwise, add padding so content isn't under the navbar */}
-      <main className={`grow ${!isAuthPage ? 'pt-28 px-4 pb-10' : ''}`}>
-        <Outlet /> {/* This is where child routes (Home, Login, etc.) will render */}
+      <main className={`grow ${!isFullBleedPage ? 'pt-32 px-4 md:px-8 pb-10 max-w-7xl mx-auto w-full' : ''}`}>
+        <Outlet />
       </main>
+      
+      {!isFullBleedPage && <Footer />}
     </div>
   );
 }

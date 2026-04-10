@@ -20,7 +20,14 @@ const adminService = {
   },
 
   async updateSchool(id, schoolData) {
-    const response = await api.put(`/admin/schools/${id}`, schoolData);
+    const isFormData = schoolData instanceof FormData;
+    
+    const config = isFormData ? {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    } : {};
+    const response = await api.put(`/admin/schools/${id}`, schoolData, config);
     return response.data;
   },
 

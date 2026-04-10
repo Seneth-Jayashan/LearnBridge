@@ -1,14 +1,20 @@
 import User from "../models/User.js";
 import School from "../models/School.js";
+import Level from "../models/Level.js";
 import { sendAccountCreationSms } from "../utils/templates/SMS.js";
 import { accountCreationEmail } from "../utils/templates/Email.js";
+// Adjust the import path to match your project structure
+import { 
+  uploadFileToCloudinary, 
+  deleteCloudinaryAssetFromUrl 
+} from "../services/CloudinaryService.js";
 // ==========================================
 // --- USER MANAGEMENT (SUPER ADMIN) ---
 // ==========================================
 
 export const createUser = async (req, res) => {
     try {
-        const { firstName, lastName, email, phoneNumber, password, role, address, grade, level } = req.body;
+        const { firstName, lastName, email, phoneNumber, password, role, address, grade, level, stream } = req.body;
         const targetRole = role || "student";
 
         if (targetRole !== "student") {
@@ -24,6 +30,10 @@ export const createUser = async (req, res) => {
             return res.status(400).json({ message: "Grade is required when creating a Student account." });
         }
 
+        if (targetRole === "student" && !level) {
+            return res.status(400).json({ message: "Level is required when creating a Student account." });
+        }
+
         const newUser = new User({
             firstName,
             lastName,
@@ -32,13 +42,17 @@ export const createUser = async (req, res) => {
             password,
             role: targetRole,
             grade: targetRole === "student" ? grade : undefined,
+            level: targetRole === "student" ? level : undefined,
+            stream: targetRole === "student" ? stream : undefined,
             address,
             requiresPasswordChange: true
         });
 
         await newUser.save();
-        await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, email, password);
-        await accountCreationEmail(`${firstName} ${lastName}`,email, password);
+        await sendAccountCreationSms(phoneNumber, `${firstName} ${lastName}`, targetRole !== "student" ? email : newUser.regNumber,  password);
+        await accountCreationEmail(`${firstName} ${lastName}`,targetRole !== "student" ? email : newUser.regNumber, password, email);
+
+        console.log(`Account creation email sent to ${email} with password: ${password}`);
         res.status(201).json({ 
             message: "User created successfully", 
             userId: newUser._id 
@@ -76,7 +90,11 @@ export const updateUser = async (req, res) => {
     try {
         const { firstName, lastName, email, phoneNumber, role, grade, level, address } = req.body;
         const user = await User.findById(req.params.id);
-        
+
+        if (user._id == req.user.id && user.role === 'super_admin' && role  !== user.role) {
+            return res.status(400).json({ message: "You cannot change your own role." });
+        }
+
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const finalRole = role || user.role;
@@ -137,6 +155,9 @@ export const deleteUser = async (req, res) => {
 export const toggleUserStatus = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
+        if (user._id == req.user.id) {
+            return res.status(400).json({ message: "You cannot deactivate your own account." });
+        }
         if (!user) return res.status(404).json({ message: "User not found" });
         user.isActive = !user.isActive;
         await user.save();
@@ -150,6 +171,9 @@ export const toggleUserLock = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: "User not found" });
+        if (user._id == req.user.id) {
+            return res.status(400).json({ message: "You cannot lock or unlock your own account." });
+        }
         user.isLocked = !user.isLocked;
         await user.save();
         res.status(200).json({ message: `User ${user.isLocked ? "locked" : "unlocked"} successfully` });
@@ -256,16 +280,39 @@ export const updateSchool = async (req, res) => {
         if (name) school.name = name;
         if (contactEmail) school.contactEmail = contactEmail;
         if (contactPhone) school.contactPhone = contactPhone;
-        if (logoUrl) school.logoUrl = logoUrl;
         if (isActive !== undefined) school.isActive = isActive;
         
         if (address) {
             school.address = { ...school.address, ...address };
         }
 
+        // Handle Logo Image Upload to Cloudinary
+        if (req.file) {
+            // Delete old logo if it exists on Cloudinary
+            if (school.logoUrl && school.logoUrl.includes('res.cloudinary.com')) {
+                await deleteCloudinaryAssetFromUrl(school.logoUrl).catch(err => 
+                    console.error("Failed to delete old logo from Cloudinary:", err)
+                );
+            }
+
+            // Upload the new file buffer
+            const uploadResult = await uploadFileToCloudinary(req.file, {
+                folder: "learnbridge/school_logos", // Change folder name as needed
+                resourceType: "image"
+            });
+
+            // Set the new URL
+            school.logoUrl = uploadResult.secure_url;
+            
+        } else if (logoUrl) {
+            // Allow manual text URL override if sent
+            school.logoUrl = logoUrl;
+        }
+
         await school.save();
         res.status(200).json({ message: "School updated successfully", school });
     } catch (error) {
+        console.error("updateSchool error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };

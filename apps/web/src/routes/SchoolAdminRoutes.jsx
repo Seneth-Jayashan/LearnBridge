@@ -1,16 +1,22 @@
-import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
-import SchoolSidebar from "../components/sidebar/SchoolSidebar"; // Ensure path is correct
-
-// --- Import Pages ---
+import SchoolSidebar from "../components/sidebar/SchoolSidebar";
+import SchoolDashboard from "../pages/SchoolAdmin/Dashboard";
+import NeedsRegistry from "../pages/SchoolAdmin/NeedsRegistry";
 import Students from "../pages/school/students/Students";
 import CreateStudent from "../pages/school/students/Create";
 import Teachers from "../pages/school/teachers/Teachers";
 import CreateTeacher from "../pages/school/teachers/Create";
+import ProfileSettings from "../pages/ProfileSettings";
+import SchoolProfile from "../pages/school/SchoolProfile";
 
 const SchoolAdminRoutes = () => {
-  const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
-  const [isExpanded, setIsExpanded] = useState(true);
+
+  const { 
+    isMobileMenuOpen, 
+    setIsMobileMenuOpen, 
+    isExpanded, 
+    setIsExpanded 
+  } = useOutletContext();
 
   return (
     <>
@@ -21,20 +27,28 @@ const SchoolAdminRoutes = () => {
         setIsExpanded={setIsExpanded}
       />
       
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
-        <Routes>
-          <Route path="dashboard" element={<div className="p-6">School Admin Dashboard</div>} />
+      {/* 3. Content area (DashboardLayout now offsets for fixed sidebar) */}
+      <div className="w-full transition-all duration-300">
+        <div className={`transition-all duration-300 `}>
+          <Routes>
+            <Route path="dashboard" element={<SchoolDashboard />} />
+            <Route path="needsRegistry" element={<NeedsRegistry />} />
+
+            {/* Student Routes */}
+            <Route path="students" element={<Students />} />
+            <Route path="students/create" element={<CreateStudent />} />
+            {/* <Route path="students/edit/:id" element={<EditStudent />} /> */}
+
+            {/* Teacher Routes */}
+            <Route path="teachers" element={<Teachers />} />
+            <Route path="teachers/create" element={<CreateTeacher />} />
           
-          {/* Student Routes */}
-          <Route path="students" element={<Students />} />
-          <Route path="students/create" element={<CreateStudent />} />
-          {/* <Route path="students/edit/:id" element={<EditStudent />} /> */}
-          
-          {/* Teacher Routes (Placeholders for next steps) */}
-          <Route path="teachers" element={<Teachers />} />
-          <Route path="teachers/create" element={<CreateTeacher />} />
-          
-        </Routes>
+
+            {/* Profile Settings */}
+            <Route path="profile" element={<SchoolProfile />} />
+            <Route path="settings" element={<ProfileSettings />} />
+          </Routes>
+        </div>
       </div>
     </>
   );

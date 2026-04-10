@@ -1,12 +1,13 @@
-import { useState } from "react";
 import { useOutletContext, Routes, Route } from "react-router-dom";
 import DonorSidebar from "../components/sidebar/DonorSidebar"; // Ensure path matches your folder structure
+import BrowseNeeds from "../pages/Donor/BrowseNeeds";
+import MyDonations from "../pages/Donor/MyDonation";
+import Overview from "../pages/Donor/Overview";
+import ImpactReports from "../pages/Donor/ImpactReports";
+import ProfileSettings from "../pages/ProfileSettings";
 
 const DonorRoutes = () => {
-  const { isMobileMenuOpen, setIsMobileMenuOpen } = useOutletContext();
-  
-  // 1. Move the expand/shrink state HERE
-  const [isExpanded, setIsExpanded] = useState(true);
+  const { isMobileMenuOpen, setIsMobileMenuOpen, isExpanded, setIsExpanded } = useOutletContext();
 
   return (
     <>
@@ -18,11 +19,19 @@ const DonorRoutes = () => {
         setIsExpanded={setIsExpanded}
       />
       
-      {/* 3. Make the padding dynamic based on the state! */}
-      <div className={`transition-all duration-300 ${isExpanded ? "md:pl-64" : "md:pl-20"}`}>
+      {/* 3. Content area (DashboardLayout now offsets for fixed sidebar) */}
+      <div className="w-full transition-all duration-300">
         <Routes>
-          <Route path="dashboard" element={<div>Dashboard Content</div>} />
-          {/* ... Add your other donor routes here ... */}
+          <Route index element={<Overview />} />
+          <Route path="dashboard" element={<Overview />} />
+          <Route path="browse" element={<BrowseNeeds />} />
+          <Route path="donations" element={<MyDonations />} />
+          <Route path="impact" element={<ImpactReports />} />
+          <Route path="settings" element={<ProfileSettings />} />
+
+          
+          
+          
         </Routes>
       </div>
     </>

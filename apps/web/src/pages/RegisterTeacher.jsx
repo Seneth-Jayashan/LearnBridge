@@ -2,9 +2,29 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   FiUser, FiMail, FiPhone, FiLock, FiBookOpen, 
-  FiArrowRight, FiCheckCircle, FiLoader, FiAlertCircle, FiSearch 
+  FiArrowRight, FiCheckCircle, FiLoader, FiAlertCircle, FiSearch, FiHeart
 } from "react-icons/fi";
+import LogoImage from "../assets/Learn Bridge Logo 2.png";
 import userService from "../services/UserService";
+
+// Reusable Input Component matched to Login style
+const InputField = ({ label, name, type = "text", placeholder, icon: Icon, onChange, value, required = true }) => (
+  <div className="space-y-1.5 w-full">
+    <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <div className="relative flex items-center group">
+      <Icon className="absolute left-4 text-slate-400 group-focus-within:text-[#207D86] transition-colors z-10" />
+      <input
+        type={type}
+        name={name}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        required={required}
+        className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:border-[#207D86] focus:shadow-[0_0_20px_rgba(32,125,134,0.1)] transition-all font-semibold text-slate-700"
+      />
+    </div>
+  </div>
+);
 
 const RegisterTeacher = () => {
   const navigate = useNavigate();
@@ -31,8 +51,6 @@ const RegisterTeacher = () => {
     const fetchSchools = async () => {
       try {
         const data = await userService.getPublicSchools();
-        // FIXED: Removed .filter(s => s.isActive) because the backend 
-        // already filters this, and the field might not be in the response.
         setSchools(data); 
       } catch (err) {
         console.error("Failed to load schools");
@@ -54,7 +72,6 @@ const RegisterTeacher = () => {
     setError(null);
 
     try {
-      console.log("Submitting Teacher Registration with data:", formData);
       await userService.registerTeacher(formData);
       setIsSuccess(true);
       setTimeout(() => navigate("/login"), 4000);
@@ -70,172 +87,174 @@ const RegisterTeacher = () => {
   );
 
   return (
-    <div className="min-h-screen w-full flex justify-center items-center py-10 px-4 bg-linear-to-br from-[#0A1D32] via-[#0E2A47] to-[#207D86] font-sans">
+    <div className="min-h-screen w-full flex flex-col md:flex-row font-sans text-slate-800 bg-white">
       
-      <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20">
-        
-        {/* Header Section */}
-        <div className="bg-[#0A1D32] p-10 text-center text-white relative overflow-hidden">
-           <div className="absolute inset-0 bg-linear-to-r from-[#0A1D32] to-[#207D86] opacity-90"></div>
-           <div className="relative z-10">
-             <h2 className="text-3xl font-bold mb-2">Educator Registration</h2>
-             <p className="text-slate-200 text-sm">Join the network of teachers empowering rural Sri Lanka.</p>
-           </div>
+      {/* --- Left Side: Brand Panel --- */}
+      <div className="relative flex flex-col justify-center items-center w-full md:w-5/12 p-8 md:p-12 overflow-hidden bg-[#0A1D32] text-white">
+        {/* Animated Background Mesh */}
+        <div className="absolute inset-0 opacity-40">
+           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#207D86] rounded-full blur-[120px] animate-pulse"></div>
+           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#4CAF50] rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
 
-        <div className="p-8 md:p-12">
+        <div className="relative z-10 max-w-sm w-full flex flex-col items-center text-center">
+          <img src={LogoImage} alt="Logo" className="w-20 h-20 mb-6 rounded-2xl shadow-2xl border border-white/10" />
+          <h1 className="text-3xl font-extrabold mb-4 leading-tight">Inspire the Future</h1>
+          <p className="text-slate-400 mb-10 text-sm font-medium leading-relaxed">
+            Join our network of dedicated educators. Empower rural Sri Lanka by sharing your knowledge and making a lasting impact.
+          </p>
+
+          <div className="flex flex-col gap-4 w-full">
+            <Link to="/login" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white hover:text-[#0A1D32] transition-all duration-300 group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-slate-500/20 flex items-center justify-center text-slate-300 group-hover:bg-slate-100 group-hover:text-[#0A1D32] transition-colors">
+                  <FiUser className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold uppercase tracking-wider opacity-60">Already Registered?</p>
+                  <p className="font-bold">Sign In Here</p>
+                </div>
+              </div>
+              <FiArrowRight className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+            </Link>
+
+            <Link to="/register-donor" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white hover:text-[#0A1D32] transition-all duration-300 group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-[#4CAF50]/20 flex items-center justify-center text-[#4CAF50] group-hover:bg-[#4CAF50] group-hover:text-white transition-colors">
+                  <FiHeart className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold uppercase tracking-wider opacity-60">Want to help differently?</p>
+                  <p className="font-bold">Register as a Donor</p>
+                </div>
+              </div>
+              <FiArrowRight className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Right Side: Form Panel --- */}
+      <div className="flex flex-col justify-center items-center w-full md:w-7/12 p-6 md:p-12 bg-slate-50 relative overflow-y-auto">
+        {/* Subtle background text */}
+        <div className="absolute top-10 right-10 text-[100px] font-black text-slate-200/50 select-none pointer-events-none hidden lg:block z-0">
+          TEACHER
+        </div>
+
+        <div className="w-full max-w-xl relative z-10 py-10">
           {isSuccess ? (
-            <div className="text-center py-12 animate-in fade-in zoom-in duration-500">
-              <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="text-center py-16 animate-in fade-in zoom-in duration-500 bg-white p-10 rounded-3xl shadow-xl border border-slate-100">
+              <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 border-8 border-green-100/50">
                 <FiCheckCircle className="w-12 h-12" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">Registration Received!</h3>
-              <p className="text-slate-500 max-w-md mx-auto">
+              <h3 className="text-3xl font-black text-[#0A1D32] mb-4">Registration Received!</h3>
+              <p className="text-slate-500 text-lg max-w-md mx-auto">
                 {formData.schoolId 
-                  ? "Since you selected a school, your profile is pending School Admin verification. You can login once approved."
+                  ? "Your profile is pending School Admin verification. You can login once approved."
                   : "Standalone profile created. Redirecting to login..."}
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
+            <>
+              <div className="mb-10 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#207D86]/10 text-[#207D86] rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+                  <FiBookOpen className="w-3 h-3" /> Educator Portal
+                </div>
+                <h2 className="text-4xl font-black text-[#0A1D32] tracking-tight mb-2">Create Profile</h2>
+                <p className="text-slate-500 font-medium">Please fill in your details to register as a teacher.</p>
+              </div>
+
               {error && (
-                <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-center gap-3 animate-shake">
+                <div className="mb-8 p-4 rounded-2xl bg-red-50 border-l-4 border-red-500 text-red-700 text-sm font-bold animate-in fade-in slide-in-from-top-2 flex items-center gap-3">
                   <FiAlertCircle className="w-5 h-5 shrink-0" />
-                  <span className="font-medium">{error}</span>
+                  {error}
                 </div>
               )}
 
-              {/* Identity Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 ml-1">First Name</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                      <FiUser className="w-5 h-5" />
-                    </div>
-                    <input required name="firstName" value={formData.firstName} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="John" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Last Name</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                      <FiUser className="w-5 h-5" />
-                    </div>
-                    <input required name="lastName" value={formData.lastName} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="Doe" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                      <FiMail className="w-5 h-5" />
-                    </div>
-                    <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="teacher@example.com" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Phone Number</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                      <FiPhone className="w-5 h-5" />
-                    </div>
-                    <input required name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="94771234567" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                    <FiLock className="w-5 h-5" />
-                  </div>
-                  <input required type="password" name="password" value={formData.password} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#207D86]/10 outline-none transition-all" placeholder="••••••••" />
-                </div>
-              </div>
-
-              {/* School Affiliation Section */}
-              <div className="space-y-3 pt-2">
-                <label className="text-sm font-bold text-slate-700 ml-1 flex items-center gap-2">
-                  <FiBookOpen className="text-[#207D86]" /> School Affiliation
-                </label>
+              <form onSubmit={handleSubmit} className="space-y-6">
                 
-                <div className="p-5 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                  <p className="text-xs text-slate-500 mb-4 font-medium">
-                    Search for your school below. If your school is not listed, leave it blank to register as a standalone teacher.
-                  </p>
-                  
-                  {/* Search Input */}
-                  <div className="relative mb-3 group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#207D86] transition-colors">
-                      <FiSearch className="w-5 h-5" />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="Search school by name..." 
-                      className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-[#207D86] transition-all"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-
-                  {/* Dropdown Select */}
-                  <select 
-                    name="schoolId"
-                    value={formData.schoolId}
-                    onChange={handleChange}
-                    disabled={schoolsLoading}
-                    className="w-full p-2.5 text-sm bg-white border border-slate-200 rounded-lg outline-none cursor-pointer focus:border-[#207D86] transition-all disabled:opacity-50"
-                  >
-                    <option value="">I am a Standalone Teacher</option>
-                    
-                    {schoolsLoading ? (
-                       <option disabled>Loading schools...</option>
-                    ) : filteredSchools.length > 0 ? (
-                      filteredSchools.map(school => (
-                        <option key={school._id} value={school._id}>
-                          {school.name} {school.address?.city ? `- ${school.address.city}` : ""}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No schools found matching "{searchTerm}"</option>
-                    )}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <InputField label="First Name" name="firstName" placeholder="John" icon={FiUser} value={formData.firstName} onChange={handleChange} />
+                  <InputField label="Last Name" name="lastName" placeholder="Doe" icon={FiUser} value={formData.lastName} onChange={handleChange} />
                 </div>
-              </div>
 
-              {/* Action Button */}
-              <div className="pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <InputField label="Email Address" name="email" type="email" placeholder="teacher@example.com" icon={FiMail} value={formData.email} onChange={handleChange} />
+                  <InputField label="Phone Number" name="phoneNumber" placeholder="94771234567" icon={FiPhone} value={formData.phoneNumber} onChange={handleChange} />
+                </div>
+
+                <InputField label="Password" name="password" type="password" placeholder="••••••••" icon={FiLock} value={formData.password} onChange={handleChange} />
+
+                {/* School Affiliation Section */}
+                <div className="space-y-2 pt-4">
+                  <label className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">
+                    School Affiliation (Optional)
+                  </label>
+                  
+                  <div className="p-6 border-2 border-slate-200 rounded-2xl bg-white focus-within:border-[#207D86] focus-within:shadow-[0_0_20px_rgba(32,125,134,0.1)] transition-all">
+                    <p className="text-xs text-slate-500 mb-4 font-medium leading-relaxed">
+                      Search for your school below. If your school is not listed, leave it blank to register as an independent standalone teacher.
+                    </p>
+                    
+                    {/* Search Input */}
+                    <div className="relative mb-4 group">
+                      <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#207D86] transition-colors" />
+                      <input 
+                        type="text" 
+                        placeholder="Search school by name..." 
+                        className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#207D86] focus:bg-white transition-all font-medium text-slate-700"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Dropdown Select */}
+                    <select 
+                      name="schoolId"
+                      value={formData.schoolId}
+                      onChange={handleChange}
+                      disabled={schoolsLoading}
+                      className="w-full p-3.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer focus:border-[#207D86] focus:bg-white transition-all disabled:opacity-50 font-medium text-slate-700"
+                    >
+                      <option value="">I am a Standalone Teacher (No School)</option>
+                      
+                      {schoolsLoading ? (
+                         <option disabled>Loading schools...</option>
+                      ) : filteredSchools.length > 0 ? (
+                        filteredSchools.map(school => (
+                          <option key={school._id} value={school._id}>
+                            {school.name} {school.address?.city ? `- ${school.address.city}` : ""}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No schools found matching "{searchTerm}"</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 px-6 bg-[#0A1D32] hover:bg-[#207D86] text-white text-lg font-bold rounded-2xl shadow-xl shadow-[#0A1D32]/20 transition-all duration-300 flex justify-center items-center gap-3 disabled:opacity-70 group"
+                  className="w-full py-4 mt-6 bg-linear-to-r from-[#0A1D32] to-[#207D86] text-white font-bold rounded-2xl shadow-xl shadow-[#207D86]/20 hover:shadow-[#207D86]/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 flex justify-center items-center gap-3 overflow-hidden group"
                 >
                   {loading ? (
-                    <FiLoader className="w-6 h-6 animate-spin" />
+                    <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
                   ) : (
                     <>
-                      Register as Teacher 
+                      <span className="tracking-wide">Complete Registration</span>
                       <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </button>
-              </div>
-            </form>
+              </form>
+            </>
           )}
 
-          {!isSuccess && (
-            <div className="mt-8 text-center pt-6 border-t border-slate-100">
-              <p className="text-slate-500 font-medium text-sm">
-                Already have an account? <Link to="/login" className="text-[#207D86] font-bold hover:underline">Sign In</Link>
-              </p>
-            </div>
-          )}
+          <p className="mt-10 text-center text-xs text-slate-400 font-bold uppercase tracking-tighter">
+            Platform Secured by OneX Universe <br />
+            <span className="text-[#207D86]">Terms of Service • Privacy Policy</span>
+          </p>
         </div>
       </div>
     </div>
