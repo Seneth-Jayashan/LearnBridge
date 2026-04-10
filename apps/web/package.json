@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+
+    "test": "jest --config jest.config.frontend.js",
+    "test:watch": "jest --config jest.config.frontend.js --watch",
+    "test:coverage": "jest --config jest.config.frontend.js --coverage",
+
+    "test:frontend": "jest --config jest.config.frontend.js"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.18",
@@ -20,22 +26,39 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.13.0",
+    "react-toastify": "^11.0.5",
     "sweetalert2": "^11.26.24",
-    "sweetalert2-react-content": "^5.1.2",
-    "react-toastify": "^11.0.5"
+    "sweetalert2-react-content": "^5.1.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-react": "^7.28.5",
+
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+
+    "babel-jest": "^30.3.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+
+    "identity-obj-proxy": "^3.0.0",
+
     "@eslint/js": "^9.39.1",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "autoprefixer": "^10.4.24",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^7.3.1",
+
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18",
-    "vite": "^7.3.1"
+    "autoprefixer": "^10.4.24",
+    "tailwindcss": "^4.1.18"
   }
 }
