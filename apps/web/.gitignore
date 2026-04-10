@@ -23,9 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Tests and Vitest
-src/test/
-.vitest/
-vitest.config.js
-coverage/
+
 
