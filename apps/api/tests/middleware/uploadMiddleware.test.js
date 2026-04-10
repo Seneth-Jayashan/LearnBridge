@@ -18,6 +18,7 @@ describe("UploadMiddleware.uploadAssignmentFiles", () => {
   // 📦 Mock multer package
   const multerMock = jest.fn(() => ({
     fields: jest.fn(() => (_req, _res, cb) => delegate(_req, _res, cb)),
+    single: jest.fn(() => (_req, _res, cb) => delegate(_req, _res, cb)),
   }));
 
   // Mock storage + error type
