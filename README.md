@@ -199,3 +199,156 @@ LearnBridge/
 ## 📄 License
 
 - This project is developed for educational and social impact purposes.
+
+---
+
+## sajana unit test core componentt
+
+### Explain what I tested and why
+
+This project includes unit tests for both backend and frontend core components to reduce regressions and improve release confidence.
+
+Backend (apps/api) tested to validate:
+
+- Controllers: correct HTTP status codes, response shapes, and error handling.
+- Middleware: JWT/auth guards, validation flow, and request protection.
+- Services: integration wrappers (email, SMS, cloud, live class helpers) with mocked dependencies.
+- Validators: strict input validation for safer and cleaner API behavior.
+
+Frontend (apps/web) tested to validate:
+
+- Components: rendering logic, props behavior, and conditional UI states.
+- Pages/routes: expected screen output and key user interactions.
+- Service/api usage: predictable data handling and UI state transitions.
+
+Why this matters:
+
+- Protects critical user flows across LMS and donation bridge features.
+- Finds breaking changes early during development.
+- Makes refactoring safer for both API and UI layers.
+
+### Technologies Used
+
+Backend:
+
+- Jest (unit testing + assertions + mocks)
+
+Frontend:
+
+- Vitest (fast test runner for Vite)
+- React Testing Library (component behavior testing)
+
+Common:
+
+- npm scripts for standardized execution
+- Coverage reporting for test visibility
+
+### Test Structure (Show where your tests are)
+
+Backend test locations:
+
+- `apps/api/tests/controllers/`
+- `apps/api/tests/middleware/`
+- `apps/api/tests/services/`
+- `apps/api/tests/validators/`
+- Config: `apps/api/jest.config.js`
+
+Frontend test locations:
+
+- `apps/web/src/test/`
+- Config: `apps/web/vitest.config.js`
+
+### How to Run Unit Tests
+
+From repository root:
+
+```bash
+cd apps
+```
+
+Backend unit tests:
+
+```bash
+npm --prefix api test
+```
+
+Backend unit tests with coverage:
+
+```bash
+npm --prefix api run test -- --coverage
+```
+
+Frontend unit tests:
+
+```bash
+npm --prefix web test
+```
+
+Frontend unit tests with coverage (if configured):
+
+```bash
+npm --prefix web run test -- --coverage
+```
+
+### Example Test Cases
+
+Backend examples:
+
+- Returns `401` for invalid login credentials.
+- Rejects requests with missing/invalid JWT token.
+- Fails validation when required lesson/module fields are missing.
+- Handles service provider errors gracefully without process crash.
+
+Frontend examples:
+
+- Renders login form fields and submit button.
+- Shows validation/error message for invalid input.
+- Displays loading and success states correctly after API calls.
+- Navigates to expected route after successful action.
+
+### Sample Test Code
+
+Backend sample (Jest):
+
+```javascript
+describe("AuthController.login", () => {
+	it("returns 401 when credentials are invalid", async () => {
+		const req = { body: { email: "wrong@mail.com", password: "badpass" } };
+		const res = {
+			status: jest.fn().mockReturnThis(),
+			json: jest.fn(),
+		};
+
+		await AuthController.login(req, res);
+
+		expect(res.status).toHaveBeenCalledWith(401);
+		expect(res.json).toHaveBeenCalledWith(
+			expect.objectContaining({ success: false })
+		);
+	});
+});
+```
+
+Frontend sample (Vitest + RTL):
+
+```javascript
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import LoginPage from "../pages/LoginPage";
+
+describe("LoginPage", () => {
+	it("renders email and password inputs", () => {
+		render(<LoginPage />);
+		expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+		expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+	});
+});
+```
+
+### Testing Environment
+
+- OS: Windows (cross-platform compatible with standard Node.js setup)
+- Package manager: npm
+- Backend runtime: Node.js + Express + Jest
+- Frontend runtime: Vite + React + Vitest + React Testing Library
+- Backend coverage output: `apps/api/coverage/`
