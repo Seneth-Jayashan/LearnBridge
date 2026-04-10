@@ -8,6 +8,11 @@ const SmsSender = {
    * @returns {Promise<object>} - The API response result
    */
   send: async (phoneNumber, message) => {
+
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
+      console.log(`[Text.lk Mock] SMS to ${phoneNumber}: ${message}`);
+      return { success: true, message: 'Mock SMS sent' };
+    }
     // 1. Check if the driver is correctly configured
     if (process.env.SMS_DRIVER !== 'textlk') {
       console.warn(`SMS_DRIVER is set to ${process.env.SMS_DRIVER}. Skipping Text.lk send.`);

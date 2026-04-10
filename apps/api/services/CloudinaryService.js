@@ -214,6 +214,13 @@ export const uploadFileToCloudinary = async (file, { folder, resourceType = "aut
     throw new Error("No file received for Cloudinary upload");
   }
 
+  if (NODE_ENV === "test") {
+    return {
+      public_id: "test_public_id",
+      secure_url: "https://res.cloudinary.com/demo/image/upload/v1234567890/test_public_id.jpg",
+    };
+  }
+
   ensureCloudinaryConfigured();
 
   // Auto-detect common document mimetypes and force raw upload so Cloudinary
