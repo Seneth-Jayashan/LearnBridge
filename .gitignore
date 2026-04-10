@@ -28,14 +28,3 @@ dist-ssr
 .env.development
 .env.test
 .env.production
-
-tests
-__tests__/
- 
-# Ignore uploaded media files
-apps/api/uploads/
-uploads/
-# Ignore API tests and Jest config (keep locally but don't push)
-apps/api/tests/
-apps/api/jest.config.js
-
