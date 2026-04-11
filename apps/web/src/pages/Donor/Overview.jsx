@@ -1,6 +1,6 @@
 // src/pages/donor/Overview.jsx
 import { useEffect, useState } from "react";
-import { getMyDonations, getAllNeeds } from "../../services/donorServices";
+import { getMyDonations, getAllNeeds } from "../../services/DonorServices";
 import { toast } from "react-toastify";
 
 export default function Overview() {
@@ -68,7 +68,7 @@ export default function Overview() {
         </div>
         <div className="w-full bg-slate-100 rounded-full h-3">
           <div
-            className="bg-gradient-to-r from-[#207D86] to-[#4CAF50] h-3 rounded-full transition-all duration-700"
+            className="bg-linear-to-r from-[#207D86] to-[#4CAF50] h-3 rounded-full transition-all duration-700"
             style={{ width: `${fulfillPercent}%` }}
           />
         </div>
@@ -134,7 +134,7 @@ export default function Overview() {
 
 function StatCard({ icon, label, value, gradient }) {
   return (
-    <div className={`bg-gradient-to-r ${gradient} rounded-2xl p-5 text-white shadow-lg`}>
+    <div className={`bg-linear-to-r ${gradient} rounded-2xl p-5 text-white shadow-lg`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-white/70 font-medium">{label}</p>
