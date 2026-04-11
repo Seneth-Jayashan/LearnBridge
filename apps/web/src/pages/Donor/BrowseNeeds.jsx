@@ -64,7 +64,6 @@ export default function BrowseNeeds() {
   const handlePledge = async (id) => {
     try {
       setPledging(id);
-      toast.info("Processing your pledge...");
       await pledgeDonation(id);
       toast.success("Thank you for your pledge! The school will be notified ❤️");
       fetchNeeds();
@@ -89,7 +88,6 @@ export default function BrowseNeeds() {
         return;
       }
 
-      toast.info("Opening payment gateway...");
       const res = await initiatePayment(id);
       const paymentData = res.data;
 

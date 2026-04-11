@@ -29,7 +29,6 @@ export default function MyDonations() {
   const handleFulfill = async (id) => {
     try {
       setFulfilling(id);
-      toast.info("Updating status...");
       await markFulfilled(id);
       toast.success("Marked as fulfilled! 🎉 Thank you for completing your donation!");
       fetchMyDonations();
