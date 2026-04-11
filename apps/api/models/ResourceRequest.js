@@ -10,7 +10,7 @@ const resourceRequestSchema = new mongoose.Schema(
     },
     schoolObjectId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "School",      
+      ref: "School",
       default: null,
     },
     itemName: {
@@ -34,6 +34,19 @@ const resourceRequestSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // ── New fields ─────────────────────────────────────────────
+    targetGroup: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    
+    condition: {
+      type: String,
+      enum: ["New", "Used - Good", "Any"],
+      default: "Any",
+    },
+    // ──────────────────────────────────────────────────────────
     urgency: {
       type: String,
       enum: ["High", "Medium", "Low"],
@@ -57,7 +70,6 @@ const resourceRequestSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    // PayHere payment fields
     paymentOrderId: {
       type: String,
       default: null,

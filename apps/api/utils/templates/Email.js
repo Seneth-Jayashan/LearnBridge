@@ -3,6 +3,7 @@ import sendEmail from "../../services/Email.js";
 const BRAND_NAME = "Learn Bridge"; 
 
 export const accountCreationEmail = async (name, login, password, email) => {
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) return { success: true };
     const htmlContent = `
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
@@ -37,6 +38,7 @@ export const accountCreationEmail = async (name, login, password, email) => {
 };
 
 export const sendVerificationEmail = async (email, otp) => {
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) return { success: true };
     const htmlContent = `
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
