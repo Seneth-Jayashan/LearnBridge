@@ -1,6 +1,6 @@
 // src/pages/donor/ImpactReports.jsx
 import { useEffect, useState } from "react";
-import { getImpactReport } from "../../services/donorServices";
+import { getImpactReport } from "../../services/DonorServices";
 import { toast } from "react-toastify";
 
 export default function ImpactReports() {
@@ -162,7 +162,7 @@ export default function ImpactReports() {
 
 function ImpactCard({ icon, label, value, gradient, isText }) {
   return (
-    <div className={`bg-gradient-to-r ${gradient} rounded-2xl p-5 text-white shadow-lg`}>
+    <div className={`bg-linear-to-r ${gradient} rounded-2xl p-5 text-white shadow-lg`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-white/70 font-medium">{label}</p>
