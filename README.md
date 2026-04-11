@@ -1615,9 +1615,9 @@ npm test
 Commands:
 
 ```bash
-npx artillery run performance/load-test.yml
-npx artillery run performance/load-test.yml --output performance/report.json
-npx artillery report performance/report.json
+npx artillery run tests/performance/load-test.yml
+npx artillery run tests/performance/load-test.yml --output tests/performance/report.json
+npx artillery report tests/performance/report.json
 ```
 
 Current note:
