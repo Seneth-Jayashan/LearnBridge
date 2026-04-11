@@ -40,10 +40,7 @@ const resourceRequestSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    deadline: {
-      type: Date,
-      default: null,
-    },
+    
     condition: {
       type: String,
       enum: ["New", "Used - Good", "Any"],

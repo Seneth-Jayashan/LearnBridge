@@ -4,6 +4,7 @@ import { getMyDonations, markFulfilled } from "../services/donorServices";
 
 jest.mock("react-toastify", () => ({
   toast: {
+    info: jest.fn(),
     success: jest.fn(),
     error: jest.fn(),
   },
@@ -85,7 +86,9 @@ describe("MyDonations Component", () => {
     await waitFor(() => {
       expect(markFulfilled).toHaveBeenCalledWith("pledged-1");
       expect(getMyDonations).toHaveBeenCalledTimes(2);
-      expect(toast.success).toHaveBeenCalledWith("Marked as fulfilled! 🎉");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Marked as fulfilled! 🎉 Thank you for completing your donation!"
+      );
     });
   });
 

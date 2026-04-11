@@ -9,6 +9,7 @@ import {
 
 jest.mock("react-toastify", () => ({
   toast: {
+    info: jest.fn(),
     success: jest.fn(),
     error: jest.fn(),
   },
@@ -205,7 +206,7 @@ describe("BrowseNeeds Component", () => {
       await waitFor(() => {
         expect(pledgeDonation).toHaveBeenCalledWith("1");
         expect(toast.success).toHaveBeenCalledWith(
-          "Thank you for supporting this school ❤️"
+          "Thank you for your pledge! The school will be notified ❤️"
         );
       });
     });
@@ -279,17 +280,30 @@ describe("BrowseNeeds Component", () => {
       });
     });
 
-    test("❌ NEGATIVE: shows error when payhere not loaded", async () => {
+    test("❌ NEGATIVE: shows error when PayHere script fails to load", async () => {
       const { toast } = require("react-toastify");
-      window.payhere = undefined;
-      render(<BrowseNeeds />);
-      await waitForText("Pay 💳");
-      fireEvent.click(screen.getAllByText("Pay 💳")[0]);
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(
-          expect.stringContaining("Payment system")
-        );
+      const originalAppendChild = document.body.appendChild.bind(document.body);
+      const appendSpy = jest.spyOn(document.body, "appendChild").mockImplementation((el) => {
+        const appended = originalAppendChild(el);
+        if (el.tagName === "SCRIPT" && typeof el.onerror === "function") {
+          el.onerror(new Error("load failed"));
+        }
+        return appended;
       });
+
+      window.payhere = undefined;
+
+      try {
+        render(<BrowseNeeds />);
+        await waitForText("Pay 💳");
+        fireEvent.click(screen.getAllByText("Pay 💳")[0]);
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith("Failed to load PayHere");
+        });
+      } finally {
+        appendSpy.mockRestore();
+      }
     });
   });
 
