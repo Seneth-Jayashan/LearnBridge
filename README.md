@@ -11,12 +11,12 @@ The project supports SDG Goal 4 (Quality Education) and is designed for low-band
 
 - Backend hosting: Railway
 - Frontend hosting: Vercel
-- Domain: https://uniprojects.stie
+- Domain: https://uniprojects.site
 
 Recommended production mapping:
 
-- Frontend app: https://uniprojects.stie
-- API base URL: set in frontend environment as the Railway backend URL
+- Frontend app: https://uniprojects.site
+- API base URL: https://api.uniprojects.site/api/v1
 
 ## Tech Stack
 
@@ -196,7 +196,7 @@ Auth errors:
 
 Base URL:
 
-- Production: Railway backend URL
+- Production: https://api.uniprojects.site/api/v1
 - Local: http://localhost:5000/api/v1
 
 ### System
@@ -1628,7 +1628,7 @@ Current note:
 
 - Backend runs on Railway
 - Frontend runs on Vercel
-- Public domain is uniprojects.stie
+- Public domain is uniprojects.site
 - Ensure CORS_ORIGIN and FRONTEND_URL include the production domain
 - Ensure BACKEND_URL and PayHere callback URLs point to the Railway service
 
