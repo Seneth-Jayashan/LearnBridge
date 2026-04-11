@@ -46,19 +46,24 @@ Recommended production mapping:
 
 ## Local Development
 
-From apps:
+From `apps/`:
 
-1. Install dependencies
-	 npm install
+```bash
+npm install
+npm run dev
+```
 
-2. Run backend and frontend together
-	 npm run dev
+Backend only:
 
-3. Run only backend
-	 npm run api
+```bash
+npm run api
+```
 
-4. Run only frontend
-	 npm run web
+Frontend only:
+
+```bash
+npm run web
+```
 
 Backend default API prefix:
 
@@ -66,21 +71,65 @@ Backend default API prefix:
 
 ## Environment Notes
 
-Backend expects values similar to:
+Use a `.env.local` file in `apps/api/` with the following variables:
 
-- NODE_ENV
-- PORT
-- MONGO_URI or equivalent DB config values
-- JWT_SECRET
-- CORS_ORIGIN
+```dotenv
+# server configuration
+NODE_ENV=development
+PORT=5000
+
+# database configuration
+MONGO_URI=mongodb+srv://LearnBridge_DB:
+DB_NAME=test
+
+# cors configuration
+CORS_ORIGIN=http://localhost:5173
+
+# jwt configuration
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=1d
+JWT_REFRESH_EXPIRES_IN=7d
+
+# bcrypt configuration
+BCRYPT_SALT_ROUNDS=10
+
+# zoho email configuration
+ZOHO_EMAIL=your_zoho_email_address
+ZOHO_ACCOUNT_ID=your_zoho_account_id
+ZOHO_CLIENT_ID=your_zoho_client_id
+ZOHO_CLIENT_SECRET=your_zoho_client_secret
+ZOHO_REFRESH_TOKEN=your_zoho_refresh_token
+
+# payhere configuration
+PAYHERE_ENV=sandbox
+PAYHERE_MERCHANT_ID=1234567
+PAYHERE_MERCHANT_SECRET=your_payhere_merchant_secret
+PAYHERE_RETURN_URL=http://localhost:3000/payment-success
+PAYHERE_CANCEL_URL=http://localhost:3000/payment-cancel
+PAYHERE_NOTIFY_URL=http://localhost:5000/api/payments/notify
+PAYHERE_CURRENCY=LKR
+PAYHERE_API_URL=https://sandbox.payhere.lk/pay/checkout
+
+# sms configuration
+SMS_DRIVER=textlk
+TEXTLK_API_KEY=your_textlk_api_key
+TEXTLK_SENDER_ID="Your Sender ID"
+TEXTLK_URL=https://app.text.lk/api/v3/sms/send
+
+ZOOM_CLIENT_ID=default_client_id
+ZOOM_CLIENT_SECRET=default_client_secret
+ZOOM_ACCOUNT_ID=default_account_id
+
+# cloudinary configuration (required for lesson/assignment/module file uploads)
+CLOUDINARY_CLOUD_NAME=default_cloud_name
+CLOUDINARY_API_KEY=default_api_key
+CLOUDINARY_API_SECRET=default_api_secret
+```
+
+Additional environment values used by the deployed app:
+
 - FRONTEND_URL
 - BACKEND_URL
-- PAYHERE_MERCHANT_ID
-- PAYHERE_MERCHANT_SECRET
-- PAYHERE_CURRENCY
-- PAYHERE_RETURN_URL
-- PAYHERE_CANCEL_URL
-- PAYHERE_NOTIFY_URL
 - GROQ_API_KEY
 
 ## Authentication and Authorization
@@ -102,36 +151,46 @@ Most routes return one of these shapes:
 
 Success examples:
 
+```json
 {
-	"message": "Operation completed",
-	"data": {}
+  "message": "Operation completed",
+  "data": {}
 }
+```
 
 or
 
+```json
 {
-	"message": "Operation completed",
-	"resource": { }
+  "message": "Operation completed",
+  "resource": {}
 }
+```
 
 Validation error (Zod):
 
+```json
 {
-	"message": "Validation Error",
-	"errors": [
-		{ "field": "fieldName", "message": "error message" }
-	]
+  "message": "Validation Error",
+  "errors": [
+    { "field": "fieldName", "message": "error message" }
+  ]
 }
+```
 
 Auth errors:
 
+```json
 {
-	"message": "Not authorized, no token provided"
+  "message": "Not authorized, no token provided"
 }
+```
 
+```json
 {
-	"message": "You do not have permission to perform this action"
+  "message": "You do not have permission to perform this action"
 }
+```
 
 ## Full API Endpoint Reference
 
@@ -146,30 +205,37 @@ Base URL:
 - Auth: public
 - Request body: none
 - Success 200:
+```json
 	{
 		"message": "LearnBridge API is running secure & fast!"
 	}
+```
 
 2. GET /api/v1/health
 - Auth: public
 - Request body: none
 - Success 200:
+```json
 	{
 		"status": "ok",
 		"uptime": 123.45,
 		"timestamp": "2026-04-11T00:00:00.000Z"
 	}
+```
 
 ### Auth Routes (/api/v1/auth)
 
 1. POST /auth/login
 - Auth: public
 - Request:
+```json
 	{
 		"identifier": "email_or_phone_or_student_reg",
 		"password": "string"
 	}
+```
 - Success 200 normal login:
+```json
 	{
 		"message": "Login successful",
 		"accessToken": "jwt",
@@ -183,34 +249,44 @@ Base URL:
 			"isSchoolVerified": true
 		}
 	}
+```
 - Success 200 first-login flow:
+```json
 	{
 		"message": "First login detected. OTP sent to your email and phone.",
 		"requiresOtpVerification": true,
 		"userId": "userId"
 	}
+```
 
 2. POST /auth/verify-first-login-otp
 - Auth: public
 - Request:
+```json
 	{
 		"userId": "userId",
 		"otp": "123456"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "OTP verified successfully. Please enter your new password.",
 		"resetToken": "jwt"
 	}
+```
 
 3. POST /auth/setup-new-password
 - Auth: public
 - Request:
+```json
 	{
 		"resetToken": "jwt",
 		"newPassword": "newSecret"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Password updated successfully. Welcome to your dashboard!",
 		"accessToken": "jwt",
@@ -221,53 +297,67 @@ Base URL:
 			"role": "teacher"
 		}
 	}
+```
 
 4. POST /auth/refresh
 - Auth: cookie refreshToken
 - Request body: none
 - Success 200:
+```json
 	{
 		"accessToken": "jwt"
 	}
+```
 
 5. POST /auth/forgot-password
 - Auth: public
 - Request:
+```json
 	{
 		"identifier": "email_or_phone_or_student_reg"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "OTP sent.",
 		"success": true
 	}
+```
 
 6. POST /auth/reset-password
 - Auth: public
 - Request:
+```json
 	{
 		"identifier": "email_or_phone_or_student_reg",
 		"otp": "123456",
 		"newPassword": "newSecret"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Password reset successfully",
 		"success": true
 	}
+```
 
 7. POST /auth/logout
 - Auth: protected
 - Request body: none
 - Success 200:
+```json
 	{
 		"message": "Logged out successfully."
 	}
+```
 
 8. GET /auth/me
 - Auth: protected
 - Request body: none
 - Success 200:
+```json
 	{
 		"user": {
 			"_id": "userId",
@@ -278,6 +368,7 @@ Base URL:
 			"school": { "_id": "schoolId", "name": "School" }
 		}
 	}
+```
 
 ### User Routes (/api/v1/users)
 
@@ -289,6 +380,7 @@ Base URL:
 2. POST /users/register-donor
 - Auth: public
 - Request:
+```json
 	{
 		"firstName": "A",
 		"lastName": "B",
@@ -303,15 +395,19 @@ Base URL:
 			"country": "Sri Lanka"
 		}
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Donor profile created successfully",
 		"userId": "userId"
 	}
+```
 
 3. POST /users/register-teacher
 - Auth: public
 - Request:
+```json
 	{
 		"firstName": "A",
 		"lastName": "B",
@@ -320,29 +416,39 @@ Base URL:
 		"password": "secret123",
 		"schoolId": "optionalSchoolId"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Teacher registered. Awaiting School Admin verification."
 	}
+```
 	or
+```json
 	{
 		"message": "Standalone Teacher registered successfully."
 	}
+```
 
 4. POST /users/restore
 - Auth: public
 - Request:
+```json
 	{
 		"identifier": "email_or_phone_or_reg"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Profile restored successfully"
 	}
+```
 
 5. PUT /users/profile
 - Auth: protected
 - Request:
+```json
 	{
 		"firstName": "A",
 		"lastName": "B",
@@ -352,7 +458,9 @@ Base URL:
 			"street": "new"
 		}
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Profile updated successfully",
 		"user": {
@@ -360,26 +468,33 @@ Base URL:
 			"firstName": "A"
 		}
 	}
+```
 
 6. PUT /users/update-password
 - Auth: protected
 - Request:
+```json
 	{
 		"currentPassword": "old",
 		"newPassword": "newSecret"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Password updated successfully"
 	}
+```
 
 7. DELETE /users/profile
 - Auth: protected
 - Request body: none
 - Success 200:
+```json
 	{
 		"message": "Profile deleted successfully"
 	}
+```
 
 ### Super Admin Routes (/api/v1/admin)
 
@@ -388,6 +503,7 @@ School management
 1. POST /admin/create-school
 - Auth: protected, role super_admin
 - Request:
+```json
 	{
 		"schoolData": {
 			"name": "School Name",
@@ -406,12 +522,15 @@ School management
 			"password": "secret123"
 		}
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "School and Admin created successfully",
 		"school": { "_id": "schoolId", "name": "School Name" },
 		"adminId": "userId"
 	}
+```
 
 2. GET /admin/schools
 - Auth: protected, role super_admin
@@ -426,23 +545,28 @@ School management
 - Content-Type: multipart/form-data or json
 - Request fields: name, contactEmail, contactPhone, isActive, logo file or logoUrl, address
 - Success 200:
+```json
 	{
 		"message": "School updated successfully",
 		"school": { }
 	}
+```
 
 5. DELETE /admin/schools/:id
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "School deleted successfully"
 	}
+```
 
 User management
 
 6. POST /admin/create-user
 - Auth: protected, role super_admin
 - Request:
+```json
 	{
 		"firstName": "A",
 		"lastName": "B",
@@ -455,11 +579,14 @@ User management
 		"stream": "Mathematics Stream",
 		"address": { }
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "User created successfully",
 		"userId": "userId"
 	}
+```
 
 7. GET /admin/users
 - Auth: protected, role super_admin
@@ -473,72 +600,94 @@ User management
 - Auth: protected, role super_admin
 - Request: any updatable user fields
 - Success 200:
+```json
 	{
 		"message": "User updated successfully",
 		"user": { }
 	}
+```
 
 10. DELETE /admin/users/:id
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "User deleted successfully"
 	}
+```
 
 11. PATCH /admin/users/:id/toggle-status
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "User activated successfully"
 	}
+```
 	or
+```json
 	{
 		"message": "User deactivated successfully"
 	}
+```
 
 12. PATCH /admin/users/:id/toggle-lock
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "User locked successfully"
 	}
+```
 	or
+```json
 	{
 		"message": "User unlocked successfully"
 	}
+```
 
 13. PATCH /admin/users/:id/restore
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "User restored successfully"
 	}
+```
 
 Utility
 
 14. POST /admin/check-phone
 - Auth: protected, role super_admin
 - Request:
+```json
 	{
 		"phoneNumber": "0770000000"
 	}
+```
 - Success 200:
+```json
 	{
 		"exists": true,
 		"count": 1
 	}
+```
 
 15. POST /admin/check-email
 - Auth: protected, role super_admin
 - Request:
+```json
 	{
 		"email": "user@mail.com"
 	}
+```
 - Success 200:
+```json
 	{
 		"exists": true,
 		"count": 1
 	}
+```
 
 ### School Admin Routes (/api/v1/school-admin)
 
@@ -551,10 +700,12 @@ Utility
 - Content-Type: multipart/form-data or json
 - Request fields: contactEmail, contactPhone, logo file or logoUrl, address
 - Success 200:
+```json
 	{
 		"message": "School profile updated successfully",
 		"school": { }
 	}
+```
 
 Student management
 
@@ -565,6 +716,7 @@ Student management
 4. POST /school-admin/students
 - Auth: protected, role school_admin
 - Request:
+```json
 	{
 		"firstName": "A",
 		"lastName": "B",
@@ -576,33 +728,41 @@ Student management
 		"stream": "Biology Stream",
 		"address": { }
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Student created successfully",
 		"studentRegNumber": "STU0001",
 		"studentId": "userId"
 	}
+```
 
 5. PUT /school-admin/students/:studentId
 - Auth: protected, role school_admin
 - Request: student profile fields
 - Success 200:
+```json
 	{
 		"message": "Student updated successfully"
 	}
+```
 
 6. PATCH /school-admin/students/:studentId/deactivate
 - Auth: protected, role school_admin
 - Success 200:
+```json
 	{
 		"message": "Student deactivated successfully."
 	}
+```
 
 Teacher management
 
 7. POST /school-admin/teachers
 - Auth: protected, role school_admin
 - Request:
+```json
 	{
 		"firstName": "A",
 		"lastName": "B",
@@ -611,10 +771,13 @@ Teacher management
 		"password": "secret123",
 		"schoolId": "optional"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Teacher registered successfully."
 	}
+```
 
 8. GET /school-admin/teachers
 - Auth: protected, role school_admin
@@ -627,22 +790,27 @@ Teacher management
 10. PATCH /school-admin/teachers/:teacherId/verify
 - Auth: protected, role school_admin
 - Success 200:
+```json
 	{
 		"message": "Teacher verified successfully."
 	}
+```
 
 11. DELETE /school-admin/teachers/:teacherId/remove
 - Auth: protected, role school_admin
 - Success 200:
+```json
 	{
 		"message": "Teacher removed from school successfully. They are now a standalone teacher."
 	}
+```
 
 Needs registry
 
 12. POST /school-admin/needs
 - Auth: protected, role school_admin
 - Request:
+```json
 	{
 		"itemName": "Books",
 		"quantity": 100,
@@ -650,11 +818,14 @@ Needs registry
 		"description": "Grade 10 science books",
 		"urgency": "High"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Need posted successfully",
 		"need": { }
 	}
+```
 
 13. GET /school-admin/school/my-needs
 - Auth: protected, role school_admin
@@ -664,21 +835,26 @@ Needs registry
 - Auth: protected, role school_admin
 - Request: itemName, quantity, amount, description, urgency
 - Success 200:
+```json
 	{
 		"message": "Need updated successfully",
 		"need": { }
 	}
+```
 
 15. DELETE /school-admin/school/:id
 - Auth: protected, role school_admin
 - Success 200:
+```json
 	{
 		"message": "Need deleted successfully"
 	}
+```
 
 16. GET /school-admin/needs/donor/:needId
 - Auth: protected, role school_admin
 - Success 200:
+```json
 	{
 		"donor": {
 			"firstName": "A",
@@ -694,6 +870,7 @@ Needs registry
 			"paymentStatus": "Completed"
 		}
 	}
+```
 
 ### Donor Routes (/api/v1/donor)
 
@@ -705,22 +882,28 @@ Needs registry
 - Auth: protected, role donor
 - Request: profile fields
 - Success 200:
+```json
 	{
 		"message": "Profile updated successfully",
 		"user": { }
 	}
+```
 
 3. PUT /donor/profile/change-password
 - Auth: protected, role donor
 - Request:
+```json
 	{
 		"currentPassword": "old",
 		"newPassword": "new"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Password updated successfully"
 	}
+```
 
 4. GET /donor/my
 - Auth: protected, role donor
@@ -729,6 +912,7 @@ Needs registry
 5. GET /donor/overview
 - Auth: protected, role donor
 - Success 200:
+```json
 	{
 		"total": 10,
 		"pending": 3,
@@ -738,10 +922,12 @@ Needs registry
 		"recentDonations": [ ],
 		"urgentNeeds": [ ]
 	}
+```
 
 6. GET /donor/impact
 - Auth: protected, role donor
 - Success 200:
+```json
 	{
 		"totalItemsDonated": 120,
 		"totalSchoolsSupported": 5,
@@ -750,6 +936,7 @@ Needs registry
 		"thisMonthSchools": 2,
 		"log": [ ]
 	}
+```
 
 7. GET /donor/
 - Auth: protected, role donor
@@ -760,19 +947,23 @@ Needs registry
 - Auth: protected, role donor
 - Request body: none
 - Success 200:
+```json
 	{
 		"message": "Pledge successful",
 		"need": { }
 	}
+```
 
 9. PUT /donor/:id/complete
 - Auth: protected, role donor
 - Request body: none
 - Success 200:
+```json
 	{
 		"message": "Marked as fulfilled",
 		"need": { }
 	}
+```
 
 ### Payment Routes (/api/v1/payments)
 
@@ -780,6 +971,7 @@ Needs registry
 - Auth: protected, role donor
 - Request body: none
 - Success 200:
+```json
 	{
 		"sandbox": true,
 		"merchant_id": "...",
@@ -801,6 +993,7 @@ Needs registry
 		"custom_1": "needId",
 		"custom_2": "donorId"
 	}
+```
 
 2. POST /payments/notify
 - Auth: public (PayHere callback)
@@ -810,15 +1003,19 @@ Needs registry
 3. POST /payments/confirm
 - Auth: protected, role donor
 - Request:
+```json
 	{
 		"orderId": "ORDER_need_timestamp",
 		"needId": "needId"
 	}
+```
 - Success 200:
+```json
 	{
 		"message": "Payment confirmed, need fulfilled!",
 		"need": { }
 	}
+```
 
 4. GET /payments/my-history
 - Auth: protected, role donor
@@ -828,33 +1025,41 @@ Needs registry
 - Auth: protected
 - Request body: none
 - Success 200:
+```json
 	{
 		"message": "Reset successful"
 	}
+```
 
 ### Levels Routes (/api/v1/levels)
 
 1. POST /levels/seed-defaults
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "Default levels synced successfully",
 		"created": 0,
 		"updated": 4
 	}
+```
 
 2. POST /levels/
 - Auth: protected, role super_admin
 - Request:
+```json
 	{
 		"name": "Advanced Level",
 		"description": "Grade 12-13"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Level created successfully",
 		"level": { }
 	}
+```
 
 3. GET /levels/
 - Auth: protected
@@ -868,41 +1073,51 @@ Needs registry
 - Auth: protected, role super_admin
 - Request: name, description
 - Success 200:
+```json
 	{
 		"message": "Level updated successfully",
 		"level": { }
 	}
+```
 
 6. DELETE /levels/:id
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "Level deleted successfully"
 	}
+```
 
 ### Grades Routes (/api/v1/grades)
 
 1. POST /grades/seed-defaults
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "Default grades synced successfully",
 		"created": 0,
 		"updated": 13
 	}
+```
 
 2. POST /grades/
 - Auth: protected, role super_admin
 - Request:
+```json
 	{
 		"name": "10",
 		"description": "Grade 10"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Grade created successfully",
 		"grade": { }
 	}
+```
 
 3. GET /grades/
 - Auth: protected
@@ -916,17 +1131,21 @@ Needs registry
 - Auth: protected, role super_admin
 - Request: name, description
 - Success 200:
+```json
 	{
 		"message": "Grade updated successfully",
 		"grade": { }
 	}
+```
 
 6. DELETE /grades/:id
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "Grade deleted successfully"
 	}
+```
 
 ### Modules Routes (/api/v1/modules)
 
@@ -943,6 +1162,7 @@ Needs registry
 - Auth: protected, role super_admin
 - Content-Type: multipart/form-data or json
 - Request:
+```json
 	{
 		"name": "Physics",
 		"description": "Module",
@@ -951,30 +1171,37 @@ Needs registry
 		"grade": "gradeId",
 		"subjectStream": "Mathematics Stream"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Module created successfully",
 		"module": { }
 	}
+```
 
 4. PUT /modules/:id
 - Auth: protected, role super_admin
 - Request fields same as create (partial)
 - Success 200:
+```json
 	{
 		"message": "Module updated successfully",
 		"module": { }
 	}
+```
 
 5. DELETE /modules/:id
 - Auth: protected, role super_admin
 - Success 200:
+```json
 	{
 		"message": "Module deleted successfully",
 		"deletedLessons": 0,
 		"deletedAssignments": 0,
 		"deletedAssignmentSubmissions": 0
 	}
+```
 
 ### Lessons Routes (/api/v1/lessons)
 
@@ -982,6 +1209,7 @@ Needs registry
 - Auth: protected, roles teacher or school_admin or super_admin
 - Content-Type: multipart/form-data or json
 - Request:
+```json
 	{
 		"title": "Lesson 1",
 		"description": "Intro",
@@ -991,12 +1219,15 @@ Needs registry
 		"createZoomMeeting": true,
 		"zoomStartTime": "2026-04-20T10:00:00.000Z"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Lesson created successfully",
 		"lesson": { },
 		"onlineMeeting": { }
 	}
+```
 
 2. GET /lessons/
 - Auth: protected
@@ -1010,34 +1241,42 @@ Needs registry
 4. GET /lessons/:id/material-download
 - Auth: protected
 - Success 200:
+```json
 	{
 		"downloadUrl": "signedUrl",
 		"fileName": "file.pdf"
 	}
+```
 
 5. GET /lessons/:id/video-download
 - Auth: protected
 - Success 200:
+```json
 	{
 		"downloadUrl": "videoUrl",
 		"fileName": "video.mp4"
 	}
+```
 
 6. PUT /lessons/:id
 - Auth: protected, roles teacher or school_admin or super_admin
 - Request: partial create fields
 - Success 200:
+```json
 	{
 		"message": "Lesson updated successfully",
 		"lesson": { }
 	}
+```
 
 7. DELETE /lessons/:id
 - Auth: protected, roles teacher or school_admin or super_admin
 - Success 200:
+```json
 	{
 		"message": "Lesson deleted successfully"
 	}
+```
 
 ### Assignments Routes (/api/v1/assignments)
 
@@ -1045,6 +1284,7 @@ Needs registry
 - Auth: protected, roles teacher or school_admin or super_admin
 - Content-Type: multipart/form-data or json
 - Request:
+```json
 	{
 		"title": "Assignment 1",
 		"description": "Solve questions",
@@ -1052,11 +1292,14 @@ Needs registry
 		"materialUrl": "optional",
 		"dueDate": "2026-05-01T10:00:00.000Z"
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Assignment created successfully",
 		"assignment": { }
 	}
+```
 
 2. GET /assignments/
 - Auth: protected
@@ -1070,10 +1313,12 @@ Needs registry
 4. GET /assignments/:id/material-download
 - Auth: protected
 - Success 200:
+```json
 	{
 		"downloadUrl": "signedUrl",
 		"fileName": "assignment.pdf"
 	}
+```
 
 5. POST /assignments/:id/submit
 - Auth: protected, role student
@@ -1082,18 +1327,22 @@ Needs registry
 	- submission file (required)
 	- notes (optional)
 - Success 200:
+```json
 	{
 		"message": "Assignment submitted successfully",
 		"submission": { },
 		"submissionStatus": "on_time"
 	}
+```
 
 6. GET /assignments/:id/my-submission
 - Auth: protected, role student
 - Success 200:
+```json
 	{
 		"submission": { }
 	}
+```
 
 7. GET /assignments/:id/submissions
 - Auth: protected, roles teacher or school_admin or super_admin
@@ -1102,32 +1351,39 @@ Needs registry
 8. GET /assignments/:id/submissions/:submissionId/download
 - Auth: protected, roles teacher or school_admin or super_admin
 - Success 200:
+```json
 	{
 		"downloadUrl": "signedUrl",
 		"fileName": "student-work.pdf"
 	}
+```
 
 9. PUT /assignments/:id
 - Auth: protected, roles teacher or school_admin or super_admin
 - Request: partial create fields
 - Success 200:
+```json
 	{
 		"message": "Assignment updated successfully",
 		"assignment": { }
 	}
+```
 
 10. DELETE /assignments/:id
 - Auth: protected, roles teacher or school_admin or super_admin
 - Success 200:
+```json
 	{
 		"message": "Assignment deleted successfully"
 	}
+```
 
 ### Quiz Routes (/api/v1/quizzes)
 
 1. POST /quizzes/
 - Auth: protected, role teacher
 - Request:
+```json
 	{
 		"title": "Quiz 1",
 		"moduleId": "moduleId",
@@ -1142,11 +1398,14 @@ Needs registry
 		"timeLimit": 20,
 		"isPublished": true
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Quiz created successfully",
 		"quizId": "quizId"
 	}
+```
 
 2. GET /quizzes/my-quizzes
 - Auth: protected, role teacher
@@ -1155,13 +1414,16 @@ Needs registry
 3. GET /quizzes/results/teacher
 - Auth: protected, role teacher
 - Success 200:
+```json
 	{
 		"results": [ ]
 	}
+```
 
 4. GET /quizzes/:id/results
 - Auth: protected, role teacher
 - Success 200:
+```json
 	{
 		"quiz": {
 			"_id": "quizId",
@@ -1172,22 +1434,27 @@ Needs registry
 		},
 		"results": [ ]
 	}
+```
 
 5. PUT /quizzes/:id
 - Auth: protected, role teacher
 - Request: partial create fields
 - Success 200:
+```json
 	{
 		"message": "Quiz updated successfully",
 		"quiz": { }
 	}
+```
 
 6. DELETE /quizzes/:id
 - Auth: protected, role teacher
 - Success 200:
+```json
 	{
 		"message": "Quiz deleted successfully."
 	}
+```
 
 7. GET /quizzes/results/my
 - Auth: protected, role student
@@ -1204,11 +1471,14 @@ Needs registry
 10. POST /quizzes/:id/submit
 - Auth: protected, role student
 - Request:
+```json
 	{
 		"answers": [3, 1, 0, null],
 		"flaggedQuestions": [1, 3]
 	}
+```
 - Success 201:
+```json
 	{
 		"message": "Quiz submitted successfully",
 		"score": 8,
@@ -1216,6 +1486,7 @@ Needs registry
 		"correctAnswers": [3, 1, 0, 2],
 		"resultId": "resultId"
 	}
+```
 
 ### Knowledge Base Routes (/api/v1/knowledge-base)
 
@@ -1227,11 +1498,13 @@ Needs registry
 2. GET /knowledge-base/public/:id/attachment-download?index=0
 - Auth: public
 - Success 200:
+```json
 	{
 		"downloadUrl": "signedUrl",
 		"fileName": "attachment.pdf",
 		"index": 0
 	}
+```
 
 3. GET /knowledge-base/
 - Auth: protected, roles teacher or school_admin or super_admin
@@ -1242,34 +1515,42 @@ Needs registry
 - Auth: protected, roles teacher or school_admin or super_admin
 - Content-Type: multipart/form-data or json
 - Request:
+```json
 	{
 		"title": "How to submit assignments",
 		"content": "Step by step...",
 		"category": "General",
 		"isPublished": true
 	}
+```
 	plus optional attachment files
 - Success 201:
+```json
 	{
 		"message": "Knowledge base entry created",
 		"entry": { }
 	}
+```
 
 5. PUT /knowledge-base/:id
 - Auth: protected, roles teacher or school_admin or super_admin
 - Request: partial create fields + optional attachment replacements
 - Success 200:
+```json
 	{
 		"message": "Knowledge base entry updated",
 		"entry": { }
 	}
+```
 
 6. DELETE /knowledge-base/:id
 - Auth: protected, roles teacher or school_admin or super_admin
 - Success 200:
+```json
 	{
 		"message": "Knowledge base entry deleted"
 	}
+```
 
 ### PDF Quiz Generation Routes (/api/v1/pdf)
 
@@ -1281,6 +1562,7 @@ Needs registry
 	- amount (number of questions)
 	- difficulty (easy, medium, hard)
 - Success 200:
+```json
 	{
 		"questions": [
 			{
@@ -1290,38 +1572,53 @@ Needs registry
 			}
 		]
 	}
+```
 
 ## Testing Strategy by Branch
 
-Unit testing branches
+### Unit Testing Branches
 
-1. user-component-testing
-2. core-component-testing
-3. donate-component-testing
-4. quiz-component-testing
+| Branch | Purpose |
+| --- | --- |
+| `user-component-testing` | User flows and account-related component coverage |
+| `core-component-testing` | Core LMS component coverage |
+| `donate-component-testing` | Donation and resource bridge component coverage |
+| `quiz-component-testing` | Quiz and assessment component coverage |
 
-Unit testing commands
+### Unit Testing Commands
 
-- api/: npm test
-- web/: npm test
+Run the relevant package test command from the package directory:
 
-Integration testing branch
+```bash
+cd apps/api
+npm test
+
+cd ../web
+npm test
+```
+
+### Integration Testing Branch
+
+1. dev-01
+
+Command:
+
+```bash
+cd apps/api
+npm test
+```
+
+### Performance Testing Branch
 
 1. dev-01
 
 Commands:
 
-- api/: npm test
-
-Performance testing branch
-
-1. dev-01
-
-Commands:
-
-- npx artillery run performance/load-test.yml
-- npx artillery run performance/load-test.yml --output performance/report.json
-- npx artillery report performance/report.json
+```bash
+npx artillery run performance/load-test.yml
+npx artillery run performance/load-test.yml --output performance/report.json
+npx artillery report performance/report.json
+```
 
 Current note:
 
