@@ -46,14 +46,14 @@ if (process.env.NODE_ENV === 'development') {
 // General limiter for all routes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 200, 
+    max: 100, 
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
 });
 // Only enable rate limiting in production
-if (process.env.NODE_ENV === "production") {
-   app.use(limiter);
+if (process.env.NODE_ENV !== 'test') {
+    app.use(limiter);
 }
 
 // Relaxed limiter specifically for PDF generation (large payloads + slow AI processing)
