@@ -1617,7 +1617,7 @@ Commands:
 ```bash
 npx artillery run tests/performance/load-test.yml
 npx artillery run tests/performance/load-test.yml --output tests/performance/report.json
-npx artillery report tests/performance/report.json
+npx artillery@2.0.0-29 report tests/performance/report.json
 ```
 
 Current note:
