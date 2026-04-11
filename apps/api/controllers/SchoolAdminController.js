@@ -311,27 +311,29 @@ export const removeTeacherFromSchool = async (req, res) => {
 };
 
 // ─── SCHOOL ADMIN: CREATE A NEED ─────────────────────────────────────────────
-// POST /api/donations
+// ─── CREATE NEED ──────────────────────────────────────────────
 export const createNeed = async (req, res) => {
   try {
-    const { itemName, quantity, amount, description, urgency } = req.body;
+    const { itemName, quantity, amount, description, urgency, targetGroup, deadline, condition } = req.body;
 
     if (!itemName || !quantity) {
       return res.status(400).json({ message: "Item name and quantity are required." });
     }
-
     if (!amount || Number(amount) <= 0) {
       return res.status(400).json({ message: "Please enter a valid amount." });
     }
 
     const need = await ResourceRequest.create({
-      schoolId: req.user._id,                    // ← school_admin user _id
-      schoolObjectId: req.user.school || null,   // ← actual school ObjectId
+      schoolId: req.user._id,
+      schoolObjectId: req.user.school || null,
       itemName,
       quantity,
       amount: Number(amount),
       description,
       urgency: urgency || "Medium",
+      targetGroup: targetGroup || "",
+      deadline: deadline || null,
+      condition: condition || "Any",
       status: "Open",
     });
 
@@ -341,6 +343,7 @@ export const createNeed = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // ─── SCHOOL ADMIN: GET MY POSTED NEEDS ───────────────────────────────────────
 // GET /api/donations/school/my-needs
@@ -356,15 +359,12 @@ export const getMyPostedNeeds = async (req, res) => {
   }
 };
 
-// ─── SCHOOL ADMIN: UPDATE A NEED ─────────────────────────────────────────────
-// PUT /api/donations/school/:id
+// ─── UPDATE NEED ──────────────────────────────────────────────
 export const updateNeed = async (req, res) => {
   try {
     const need = await ResourceRequest.findById(req.params.id);
 
-    if (!need) {
-      return res.status(404).json({ message: "Need not found" });
-    }
+    if (!need) return res.status(404).json({ message: "Need not found" });
 
     if (need.schoolId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to edit this need" });
@@ -376,22 +376,25 @@ export const updateNeed = async (req, res) => {
       });
     }
 
-    const { itemName, quantity, amount, description, urgency } = req.body;
+    const { itemName, quantity, amount, description, urgency, targetGroup, deadline, condition } = req.body;
 
     if (itemName) need.itemName = itemName;
     if (quantity) need.quantity = quantity;
-    if (amount && Number(amount) > 0) need.amount = Number(amount); // ← add this
+    if (amount && Number(amount) > 0) need.amount = Number(amount);
     if (description !== undefined) need.description = description;
     if (urgency) need.urgency = urgency;
+    if (targetGroup !== undefined) need.targetGroup = targetGroup;
+    if (deadline !== undefined) need.deadline = deadline || null;
+    if (condition) need.condition = condition;
 
     await need.save();
-
     res.status(200).json({ message: "Need updated successfully", need });
   } catch (err) {
     console.error("updateNeed error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 // ─── SCHOOL ADMIN: DELETE A NEED ─────────────────────────────────────────────
 // DELETE /api/donations/school/:id
 export const deleteNeed = async (req, res) => {
