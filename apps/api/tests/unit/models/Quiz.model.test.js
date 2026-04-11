@@ -10,6 +10,16 @@
 
 import mongoose from "mongoose";
 
+const logTestEvent = (phase) => {
+  const { currentTestName } = expect.getState();
+  if (currentTestName) {
+    console.log(`[${phase}] ${currentTestName}`);
+  }
+};
+
+beforeEach(() => logTestEvent("START"));
+afterEach(() => logTestEvent("END"));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline schema replicas – no real DB connection needed
 // ─────────────────────────────────────────────────────────────────────────────

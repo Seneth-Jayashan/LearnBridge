@@ -10,6 +10,13 @@
 
 import { jest } from "@jest/globals";
 
+const logTestEvent = (phase) => {
+  const { currentTestName } = expect.getState();
+  if (currentTestName) {
+    console.log(`[${phase}] ${currentTestName}`);
+  }
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1.  Model mocks  (must be declared BEFORE the dynamic import of the controller)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,7 +68,12 @@ const validQuizBody = {
   timeLimit: 30,
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  logTestEvent("START");
+  jest.clearAllMocks();
+});
+
+afterEach(() => logTestEvent("END"));
 
 // ═════════════════════════════════════════════════════════════════════════════
 // createQuiz
