@@ -46,6 +46,14 @@ const getZoomAccessToken = async () => {
 };
 
 export const createZoomMeeting = async ({ topic, agenda, startTime }) => {
+  if (NODE_ENV === "test") {
+    console.log(`Mock createZoomMeeting called with: topic=${topic}, agenda=${agenda}, startTime=${startTime}`);
+    return {
+      id: "mock_meeting_id",
+      join_url: "https://zoom.us/j/mock_meeting_id",
+    };
+  }
+  
   if (!startTime) {
     throw new Error("Zoom start time is required");
   }
