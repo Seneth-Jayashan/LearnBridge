@@ -23,7 +23,6 @@ router.use("/users", UserRoutes);
 router.use("/payments", PaymentRoutes );
 router.use("/donor", DonorRoutes);
 router.use("/school-admin", SchoolAdminRoutes);
-
 router.use("/levels", LevelRoutes);
 router.use("/grades", GradeRoutes);
 router.use("/modules", ModuleRoutes);

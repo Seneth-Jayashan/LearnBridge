@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+
 // --- Context Providers ---
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { UserProvider } from "./contexts/UserContext";
@@ -119,6 +120,7 @@ function App() {
           <AdminProvider>
             <SchoolAdminProvider>
               <AppContent />
+              <ToastContainer position="top-right" autoClose={3000} newestOnTop />
             </SchoolAdminProvider>
           </AdminProvider>
         </UserProvider>

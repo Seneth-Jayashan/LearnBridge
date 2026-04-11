@@ -6,7 +6,7 @@ import {
   updateNeed,
   deleteNeed,
   getDonorDetails,
-} from "../../services/donorServices";
+} from "../../services/DonorServices";
 import { toast } from "react-toastify";
 
 const urgencyColor = {
@@ -21,6 +21,8 @@ const emptyForm = {
   amount: "",
   description: "",
   urgency: "Medium",
+  targetGroup: "",
+  condition: "Any",
 };
 
 export default function NeedsRegistry() {
@@ -32,12 +34,11 @@ export default function NeedsRegistry() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [donorModal, setDonorModal] = useState(null); // ← donor details
+  const [donorModal, setDonorModal] = useState(null);
   const [donorLoading, setDonorLoading] = useState(false);
+  const [viewNeed, setViewNeed] = useState(null);
 
-  useEffect(() => {
-    fetchNeeds();
-  }, []);
+  useEffect(() => { fetchNeeds(); }, []);
 
   const fetchNeeds = async () => {
     try {
@@ -64,6 +65,8 @@ export default function NeedsRegistry() {
       amount: need.amount || "",
       description: need.description || "",
       urgency: need.urgency,
+      targetGroup: need.targetGroup || "",
+      condition: need.condition || "Any",
     });
     setEditingId(need._id);
     setShowModal(true);
@@ -84,17 +87,21 @@ export default function NeedsRegistry() {
     }
     try {
       setSaving(true);
+      const payload = {
+        itemName: form.itemName,
+        quantity: form.quantity,
+        amount: Number(form.amount),
+        description: form.description,
+        urgency: form.urgency,
+        targetGroup: form.targetGroup,
+        condition: form.condition,
+      };
+
       if (editingId) {
-        await updateNeed(editingId, {
-          itemName: form.itemName,
-          quantity: form.quantity,
-          amount: Number(form.amount),
-          description: form.description,
-          urgency: form.urgency,
-        });
+        await updateNeed(editingId, payload);
         toast.success("Need updated successfully ✅");
       } else {
-        await createNeed(form);
+        await createNeed(payload);
         toast.success("Need posted successfully 📢");
       }
       setShowModal(false);
@@ -106,9 +113,7 @@ export default function NeedsRegistry() {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    setConfirmDeleteId(id);
-  };
+  const handleDeleteClick = (id) => setConfirmDeleteId(id);
 
   const handleConfirmDelete = async () => {
     try {
@@ -124,7 +129,6 @@ export default function NeedsRegistry() {
     }
   };
 
-  // ── View Donor ─────────────────────────────────────────────
   const handleViewDonor = async (needId) => {
     try {
       setDonorLoading(true);
@@ -157,9 +161,7 @@ export default function NeedsRegistry() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0A1D32]">Needs Registry</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            Post and manage your school's resource requirements.
-          </p>
+          <p className="text-slate-500 text-sm mt-0.5">Post and manage your school's resource requirements.</p>
         </div>
         <button
           onClick={handleOpenCreate}
@@ -177,14 +179,14 @@ export default function NeedsRegistry() {
         <StatCard icon="✅" label="Fulfilled" value={fulfilled} gradient="from-green-400 to-green-600" />
       </div>
 
-      {/* Needs Table */}
+      {/* Table */}
       {needs.length === 0 ? (
         <div className="text-center text-slate-400 py-20 text-lg">
           No needs posted yet. Click "+ Post New Need" to get started.
         </div>
       ) : (
         <>
-          {/* ── Desktop Table ── */}
+          {/* Desktop Table */}
           <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -207,11 +209,14 @@ export default function NeedsRegistry() {
                     }`}
                   >
                     <td className="px-6 py-4">
-                      <p className="font-semibold text-[#0A1D32]">{need.itemName}</p>
+                      <p
+                        className="font-semibold text-[#0A1D32] cursor-pointer hover:text-[#207D86] transition"
+                        onClick={() => setViewNeed(need)}
+                      >
+                        {need.itemName}
+                      </p>
                       {need.description && (
-                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
-                          {need.description}
-                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{need.description}</p>
                       )}
                     </td>
                     <td className="px-6 py-4 text-slate-600 font-medium">{need.quantity}</td>
@@ -225,11 +230,9 @@ export default function NeedsRegistry() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        need.status === "Open"
-                          ? "bg-[#207D86]/10 text-[#207D86]"
-                          : need.status === "Pledged"
-                          ? "bg-yellow-500/10 text-yellow-500"
-                          : "bg-green-500/10 text-green-500"
+                        need.status === "Open" ? "bg-[#207D86]/10 text-[#207D86]"
+                        : need.status === "Pledged" ? "bg-yellow-500/10 text-yellow-500"
+                        : "bg-green-500/10 text-green-500"
                       }`}>
                         {need.status}
                       </span>
@@ -256,7 +259,6 @@ export default function NeedsRegistry() {
                             </button>
                           </>
                         ) : (
-                          // ← View Donor button for Pledged/Fulfilled
                           <button
                             onClick={() => handleViewDonor(need._id)}
                             disabled={donorLoading}
@@ -273,7 +275,7 @@ export default function NeedsRegistry() {
             </table>
           </div>
 
-          {/* ── Mobile Cards ── */}
+          {/* Mobile Cards */}
           <div className="md:hidden flex flex-col gap-4">
             {needs.map((need) => (
               <div
@@ -282,11 +284,14 @@ export default function NeedsRegistry() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <p className="font-semibold text-[#0A1D32] text-sm">{need.itemName}</p>
+                    <p
+                      className="font-semibold text-[#0A1D32] text-sm cursor-pointer hover:text-[#207D86] transition"
+                      onClick={() => setViewNeed(need)}
+                    >
+                      {need.itemName}
+                    </p>
                     {need.description && (
-                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">
-                        {need.description}
-                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{need.description}</p>
                     )}
                   </div>
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${urgencyColor[need.urgency]}`}>
@@ -304,11 +309,9 @@ export default function NeedsRegistry() {
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    need.status === "Open"
-                      ? "bg-[#207D86]/10 text-[#207D86]"
-                      : need.status === "Pledged"
-                      ? "bg-yellow-500/10 text-yellow-500"
-                      : "bg-green-500/10 text-green-500"
+                    need.status === "Open" ? "bg-[#207D86]/10 text-[#207D86]"
+                    : need.status === "Pledged" ? "bg-yellow-500/10 text-yellow-500"
+                    : "bg-green-500/10 text-green-500"
                   }`}>
                     {need.status}
                   </span>
@@ -348,16 +351,15 @@ export default function NeedsRegistry() {
       {/* ── Post/Edit Modal ── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-7 flex flex-col gap-4 sm:gap-5 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-5 sm:p-7 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
 
             <h2 className="text-lg font-bold text-[#0A1D32]">
               {editingId ? "Edit Need" : "Post New Need"}
             </h2>
 
+            {/* Item Name */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Item Name *
-              </label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Item Name *</label>
               <input
                 type="text"
                 value={form.itemName}
@@ -367,11 +369,10 @@ export default function NeedsRegistry() {
               />
             </div>
 
+            {/* Quantity + Amount */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Quantity *
-                </label>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Quantity *</label>
                 <input
                   type="number"
                   min="1"
@@ -381,15 +382,10 @@ export default function NeedsRegistry() {
                   className="rounded-xl px-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
                 />
               </div>
-
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Amount (LKR) *
-                </label>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Amount (LKR) *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">
-                    Rs.
-                  </span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">Rs.</span>
                   <input
                     type="number"
                     min="1"
@@ -402,23 +398,54 @@ export default function NeedsRegistry() {
               </div>
             </div>
 
+            {/* Description */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Description
-              </label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</label>
               <textarea
-                rows={3}
+                rows={2}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Any additional details..."
+                placeholder="e.g. 100-page notebooks, A4 size needed for upcoming semester"
                 className="rounded-xl px-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32] resize-none"
               />
             </div>
 
+            {/* Target Group */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Urgency
-              </label>
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Who Needs It</label>
+              <select
+                value={form.targetGroup}
+                onChange={(e) => setForm({ ...form, targetGroup: e.target.value })}
+                className="rounded-xl px-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
+              >
+                <option value="">-- Select group --</option>
+                <option value="All Students">👨‍🎓 All Students</option>
+                <option value="Primary Students (Grades 1–5)">📚 Primary Students (Grades 1–5)</option>
+                <option value="Secondary Students (Grades 6–11)">📖 Secondary Students (Grades 6–11)</option>
+                <option value="A/L Students (Grades 12–13)">🎓 A/L Students (Grades 12–13)</option>
+                <option value="Teachers">👩‍🏫 Teachers</option>
+                <option value="Special Needs Students">💛 Special Needs Students</option>
+                <option value="School Staff">🏫 School Staff</option>
+              </select>
+            </div>
+
+            {/* Condition */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Condition</label>
+              <select
+                value={form.condition}
+                onChange={(e) => setForm({ ...form, condition: e.target.value })}
+                className="rounded-xl px-4 py-3 text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#207D86] transition text-[#0A1D32]"
+              >
+                <option value="Any">Any</option>
+                <option value="New">🆕 New</option>
+                <option value="Used - Good">♻️ Used - Good</option>
+              </select>
+            </div>
+
+            {/* Urgency */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Urgency</label>
               <select
                 value={form.urgency}
                 onChange={(e) => setForm({ ...form, urgency: e.target.value })}
@@ -430,6 +457,7 @@ export default function NeedsRegistry() {
               </select>
             </div>
 
+            {/* Buttons */}
             <div className="flex gap-3 justify-end pt-2">
               <button
                 onClick={() => setShowModal(false)}
@@ -454,13 +482,9 @@ export default function NeedsRegistry() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 flex flex-col gap-5">
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center text-3xl">
-                🗑️
-              </div>
+              <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center text-3xl">🗑️</div>
               <h2 className="text-lg font-bold text-[#0A1D32]">Delete Need?</h2>
-              <p className="text-sm text-slate-400">
-                Are you sure you want to delete this need? This action cannot be undone.
-              </p>
+              <p className="text-sm text-slate-400">Are you sure? This action cannot be undone.</p>
             </div>
             <div className="flex gap-3 justify-center">
               <button
@@ -471,7 +495,7 @@ export default function NeedsRegistry() {
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-6 py-2 text-sm font-semibold rounded-xl bg-red-500 text-white hover:bg-red-600 hover:shadow-lg transition-all duration-200"
+                className="px-6 py-2 text-sm font-semibold rounded-xl bg-red-500 text-white hover:bg-red-600 transition-all duration-200"
               >
                 Yes, Delete
               </button>
@@ -480,44 +504,77 @@ export default function NeedsRegistry() {
         </div>
       )}
 
+      {/* ── View Need Details Modal ── */}
+      {viewNeed && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[#0A1D32]">Need Details</h2>
+              <button onClick={() => setViewNeed(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-[#0A1D32]">{viewNeed.itemName}</h3>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${urgencyColor[viewNeed.urgency]}`}>
+                {viewNeed.urgency}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <InfoRow icon="📦" label="Quantity" value={viewNeed.quantity} />
+              <InfoRow icon="💰" label="Amount" value={viewNeed.amount > 0 ? `Rs. ${viewNeed.amount.toLocaleString()}` : "—"} />
+              <InfoRow icon="📝" label="Description" value={viewNeed.description || "—"} />
+              <InfoRow icon="👥" label="Who Needs It" value={viewNeed.targetGroup || "—"} />
+              <InfoRow icon="🏷️" label="Condition" value={viewNeed.condition || "—"} />
+              <InfoRow icon="📅" label="Posted On" value={new Date(viewNeed.createdAt).toLocaleDateString()} />
+              <InfoRow
+                icon="✅"
+                label="Status"
+                value={
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    viewNeed.status === "Open" ? "bg-[#207D86]/10 text-[#207D86]"
+                    : viewNeed.status === "Pledged" ? "bg-yellow-500/10 text-yellow-500"
+                    : "bg-green-500/10 text-green-500"
+                  }`}>
+                    {viewNeed.status}
+                  </span>
+                }
+              />
+            </div>
+
+            <button
+              onClick={() => setViewNeed(null)}
+              className="w-full py-2.5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Donor Details Modal ── */}
       {donorModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999] px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
-
-            {/* Header */}
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-[#0A1D32]">Donor Details</h2>
-              <button
-                onClick={() => setDonorModal(null)}
-                className="text-slate-400 hover:text-slate-600 transition text-xl"
-              >
-                ✕
-              </button>
+              <button onClick={() => setDonorModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
             </div>
 
-            {/* Donor Avatar + Name */}
             <div className="flex items-center gap-4 bg-slate-50 rounded-2xl p-4">
               <div className="w-14 h-14 rounded-full bg-linear-to-r from-[#207D86] to-[#4CAF50] flex items-center justify-center text-white text-xl font-bold shadow">
-                {donorModal.donor?.firstName?.charAt(0)}
-                {donorModal.donor?.lastName?.charAt(0)}
+                {donorModal.donor?.firstName?.charAt(0)}{donorModal.donor?.lastName?.charAt(0)}
               </div>
               <div>
-                <p className="font-bold text-[#0A1D32]">
-                  {donorModal.donor?.firstName} {donorModal.donor?.lastName}
-                </p>
+                <p className="font-bold text-[#0A1D32]">{donorModal.donor?.firstName} {donorModal.donor?.lastName}</p>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-[#207D86]/10 text-[#207D86] font-semibold capitalize">
                   {donorModal.donor?.role}
                 </span>
               </div>
             </div>
 
-            {/* Donor Info */}
             <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                Contact Information
-              </p>
-
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Contact Information</p>
               <InfoRow icon="📧" label="Email" value={donorModal.donor?.email} />
               <InfoRow icon="📞" label="Phone" value={donorModal.donor?.phoneNumber || "—"} />
               <InfoRow
@@ -534,90 +591,47 @@ export default function NeedsRegistry() {
                 label="Member Since"
                 value={
                   donorModal.donor?.createdAt
-                    ? new Date(donorModal.donor.createdAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
+                    ? new Date(donorModal.donor.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
                     : "—"
                 }
               />
             </div>
 
-            {/* Donation Info */}
             <div className="flex flex-col gap-3 border-t border-slate-100 pt-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                Donation Details
-              </p>
-
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Donation Details</p>
               <InfoRow icon="📦" label="Item" value={donorModal.need?.itemName} />
               <InfoRow icon="🔢" label="Quantity" value={donorModal.need?.quantity} />
-              <InfoRow
-                icon="💰"
-                label="Amount"
-                value={
-                  donorModal.need?.amount > 0
-                    ? `Rs. ${donorModal.need.amount.toLocaleString()}`
-                    : "Material Donation"
-                }
-              />
-              <InfoRow
-                icon="💳"
-                label="Payment Method"
-                value={donorModal.need?.paymentMethod || "Pledge (Material)"}
-              />
-              <InfoRow
-                icon="✅"
-                label="Status"
-                value={donorModal.need?.status}
-              />
-              <InfoRow
-                icon="📅"
-                label="Pledged Date"
-                value={
-                  donorModal.need?.pledgedDate
-                    ? new Date(donorModal.need.pledgedDate).toLocaleDateString()
-                    : "—"
-                }
-              />
+              <InfoRow icon="💰" label="Amount" value={donorModal.need?.amount > 0 ? `Rs. ${donorModal.need.amount.toLocaleString()}` : "Material Donation"} />
+              <InfoRow icon="💳" label="Payment Method" value={donorModal.need?.paymentMethod || "Pledge (Material)"} />
+              <InfoRow icon="✅" label="Status" value={donorModal.need?.status} />
+              <InfoRow icon="📅" label="Pledged Date" value={donorModal.need?.pledgedDate ? new Date(donorModal.need.pledgedDate).toLocaleDateString() : "—"} />
               {donorModal.need?.fulfilledDate && (
-                <InfoRow
-                  icon="🎉"
-                  label="Fulfilled Date"
-                  value={new Date(donorModal.need.fulfilledDate).toLocaleDateString()}
-                />
+                <InfoRow icon="🎉" label="Fulfilled Date" value={new Date(donorModal.need.fulfilledDate).toLocaleDateString()} />
               )}
             </div>
 
-            {/* Close button */}
-            <button
-              onClick={() => setDonorModal(null)}
-              className="w-full py-2.5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition"
-            >
+            <button onClick={() => setDonorModal(null)} className="w-full py-2.5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition">
               Close
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
-// ─── Info Row ─────────────────────────────────────────────────────────────────
 function InfoRow({ icon, label, value }) {
   return (
     <div className="flex items-start gap-3 text-sm">
       <span className="text-base">{icon}</span>
       <div className="flex-1">
         <p className="text-xs text-slate-400 font-medium">{label}</p>
-        <p className="text-[#0A1D32] font-medium mt-0.5">{value || "—"}</p>
+        <div className="text-[#0A1D32] font-medium mt-0.5">{value || "—"}</div>
       </div>
     </div>
   );
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, gradient }) {
   return (
     <div className={`bg-linear-to-r ${gradient} rounded-2xl p-4 sm:p-5 text-white shadow-lg`}>
