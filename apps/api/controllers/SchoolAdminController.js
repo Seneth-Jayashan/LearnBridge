@@ -314,7 +314,7 @@ export const removeTeacherFromSchool = async (req, res) => {
 // ─── CREATE NEED ──────────────────────────────────────────────
 export const createNeed = async (req, res) => {
   try {
-    const { itemName, quantity, amount, description, urgency, targetGroup, deadline, condition } = req.body;
+    const { itemName, quantity, amount, description, urgency, targetGroup, condition } = req.body;
 
     if (!itemName || !quantity) {
       return res.status(400).json({ message: "Item name and quantity are required." });
@@ -332,7 +332,6 @@ export const createNeed = async (req, res) => {
       description,
       urgency: urgency || "Medium",
       targetGroup: targetGroup || "",
-      deadline: deadline || null,
       condition: condition || "Any",
       status: "Open",
     });
@@ -376,7 +375,7 @@ export const updateNeed = async (req, res) => {
       });
     }
 
-    const { itemName, quantity, amount, description, urgency, targetGroup, deadline, condition } = req.body;
+    const { itemName, quantity, amount, description, urgency, targetGroup, condition } = req.body;
 
     if (itemName) need.itemName = itemName;
     if (quantity) need.quantity = quantity;
@@ -384,7 +383,6 @@ export const updateNeed = async (req, res) => {
     if (description !== undefined) need.description = description;
     if (urgency) need.urgency = urgency;
     if (targetGroup !== undefined) need.targetGroup = targetGroup;
-    if (deadline !== undefined) need.deadline = deadline || null;
     if (condition) need.condition = condition;
 
     await need.save();
