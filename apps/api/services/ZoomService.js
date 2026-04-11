@@ -46,7 +46,7 @@ const getZoomAccessToken = async () => {
 };
 
 export const createZoomMeeting = async ({ topic, agenda, startTime }) => {
-  if (NODE_ENV === "test") {
+  if (process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID) {
     console.log(`Mock createZoomMeeting called with: topic=${topic}, agenda=${agenda}, startTime=${startTime}`);
     return {
       id: "mock_meeting_id",
