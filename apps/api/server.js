@@ -18,8 +18,6 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-connectDB();
-
 // ==============================================================
 // 1. GLOBAL MIDDLEWARE (Order is Crucial)
 // ==============================================================
@@ -48,14 +46,14 @@ if (process.env.NODE_ENV === 'development') {
 // General limiter for all routes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, 
-    max: 200, 
+    max: 100, 
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Too many requests from this IP, please try again later." }
 });
 // Only enable rate limiting in production
-if (process.env.NODE_ENV === "production") {
-   app.use(limiter);
+if (process.env.NODE_ENV !== 'test') {
+    app.use(limiter);
 }
 
 // Relaxed limiter specifically for PDF generation (large payloads + slow AI processing)
@@ -114,8 +112,12 @@ app.use((req, res) => {
 // 3. SERVER START
 // ==============================================================
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
 
+if (!isTestEnvironment) {
+    connectDB(); // Your real database connection
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    });
+}
 export default app;
