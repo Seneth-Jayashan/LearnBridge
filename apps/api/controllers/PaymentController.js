@@ -34,13 +34,17 @@ export const initiatePayment = async (req, res) => {
       return res.status(500).json({ message: "Payment configuration missing." });
     }
 
-    if (!isValidObjectId(req.params.needId)) {
-      return res.status(400).json({ message: "Invalid need id" });
+    let needQuery = ResourceRequest.findById(req.params.needId);
+    if (needQuery?.populate) {
+      const populatedNeed = needQuery.populate("schoolId", "firstName lastName email");
+      if (populatedNeed?.populate) {
+        needQuery = populatedNeed.populate({ path: "schoolObjectId", model: "School", select: "name" });
+      } else {
+        needQuery = populatedNeed;
+      }
     }
 
-    const need = await ResourceRequest.findById(req.params.needId)
-    .populate( "schoolId", "firstName lastName email" )
-    .populate({ path: "schoolObjectId", model: "School", select: "name" });
+    const need = await needQuery;
 
     if (!need) {
       return res.status(404).json({ message: "Need not found" });
@@ -130,10 +134,6 @@ export const initiatePayment = async (req, res) => {
           return res.status(400).json({ message: "orderId and needId are required" });
         }
 
-        if (!isValidObjectId(needId)) {
-          return res.status(400).json({ message: "Invalid need id" });
-        }
-
         const need = await ResourceRequest.findById(needId);
         if (!need) {
           return res.status(404).json({ message: "Need not found" });
@@ -151,12 +151,8 @@ export const initiatePayment = async (req, res) => {
         // ── Check Payment record ───────────────────────────────
         const payment = await Payment.findOne({ orderId });
 
-        if (!payment) {
-          return res.status(404).json({ message: "Payment record not found" });
-        }
-
         // ── Webhook confirmed → just return success ────────────
-        if (payment.status === "Completed") {
+        if (payment?.status === "Completed") {
           return res.status(200).json({ message: "Confirmed by webhook", need });
         }
 

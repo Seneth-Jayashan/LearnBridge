@@ -34,11 +34,7 @@ export const getAllNeeds = async (req, res) => {
 // PUT /api/donations/:id/pledge
 export const pledgeDonation = async (req, res) => {
   try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid need id" });
-    }
-
-    const need = await ResourceRequest.findById(req.params.id);
+    const need = await ResourceRequest.findById(req.params.id).catch(() => null);
 
     if (!need) {
       return res.status(404).json({ message: "Need not found" });
